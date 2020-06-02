@@ -1,12 +1,63 @@
 from rest_framework import serializers
-
-from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification
-
+from django.contrib.auth.models import AnonymousUser
+from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
+    MerchantReview
+from main.models import Project, ProjectDocument, ProjectTag
 from utils import response
 
-import constants
+import constants, re, math
 
-import re
+
+class ProjectTagShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTag
+        fields = ('id', 'name')
+
+
+class UserShortSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MainUser
+        fields = ('id', 'name')
+
+    def get_name(self, obj):
+        return f'{obj.get_full_name()}'
+
+
+class UserShortAvatarSerializer(UserShortSerializer):
+    avatar = serializers.SerializerMethodField()
+    is_pro = serializers.SerializerMethodField()
+
+    class Meta(UserShortSerializer.Meta):
+        fields = UserShortSerializer.Meta.fields + ('avatar', 'is_pro')
+
+    def get_avatar(self, obj):
+        try:
+            profile = obj.client_profile
+        except:
+            try:
+                profile = obj.merchant_profile
+            except:
+                raise serializers.ValidationError(constants.RESPONSE_SERVER_ERROR)
+        if profile.avatar:
+            return self.context.build_absolute_uri(profile.avatar.url)
+        return None
+
+    def get_is_pro(self, obj):
+        return obj.merchant_profile.is_pro
+
+
+class UserMediumSerializer(UserShortAvatarSerializer):
+    tags = serializers.SerializerMethodField()
+
+    class Meta(UserShortAvatarSerializer.Meta):
+        fields = UserShortAvatarSerializer.Meta.fields + ('is_pro', 'tags')
+
+    def get_tags(self, obj):
+        tags = obj.merchant_profile.tags
+        serializer = ProjectTagShortSerializer(tags, many=True)
+        return serializer.data
 
 
 class PhoneSerializer(serializers.Serializer):
@@ -39,18 +90,29 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
         return profile
 
 
+class ProfileDocumentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfileDocument
+        fields = ('user', 'document')
+
+
 class MerchantProfileCreateSerializer(serializers.ModelSerializer):
-    user = UserClientCreateSerializer()
+    user = UserClientCreateSerializer(required=False)
 
     class Meta:
         model = MerchantProfile
         fields = '__all__'
 
     def create(self, validated_data):
-        user_data = validated_data.pop('user')
-        user = MainUser.objects.create_user(**user_data)
-        if self.context:
-            for phone in self.context:
+        user_data = self.context['user']
+        if user_data:
+            serializer = UserClientCreateSerializer(data=user_data)
+            if serializer.is_valid():
+                user = MainUser.objects.create_user(**user_data)
+            else:
+                raise serializers.ValidationError(response.make_errors(serializer))
+        if self.context['phones']:
+            for phone in self.context['phones']:
                 serializer = PhoneSerializer(data={
                     'phone': phone
                 })
@@ -68,6 +130,19 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                         raise serializers.ValidationError(constants.VALIDATION_PHONE_NOT_VERIFIED)
                     merchant_phone.user = user
                     merchant_phone.save()
+                else:
+                    user.delete()
+                    raise serializers.ValidationError(response.make_errors(serializer))
+        documents = self.context.get('documents')
+        if documents:
+            for document in documents:
+                doc_data = {
+                    'user': user.id,
+                    'document': document
+                }
+                serializer = ProfileDocumentCreateSerializer(data=doc_data)
+                if serializer.is_valid():
+                    serializer.save()
                 else:
                     user.delete()
                     raise serializers.ValidationError(response.make_errors(serializer))
@@ -148,3 +223,108 @@ class CodeVerificationSerializer(serializers.ModelSerializer):
             pass
         CodeVerification.objects.create(phone=merchant_phone, **validated_data)
         return CodeVerification
+
+
+class MerchantMainPageSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    photo = serializers.SerializerMethodField()
+    specialization_name = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MerchantProfile
+        fields = ('id', 'user_name', 'rating', 'photo', 'avatar', 'specialization_name')
+
+    def get_user_name(self, obj):
+        return obj.user.get_full_name()
+
+    def get_photo(self, obj):
+        project = Project.objects.filter(user=obj.user).first()
+        if project:
+            photo = ProjectDocument.objects.filter(project=project).first()
+            if photo:
+                return self.context.build_absolute_uri(photo.document.url)
+            return None
+
+    def get_specialization_name(self, obj):
+        return obj.specializations.first().name
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            return self.context.build_absolute_uri(obj.avatar.url)
+        return None
+
+
+class ReviewMainPageSerializer(serializers.ModelSerializer):
+    user = UserShortAvatarSerializer()
+    creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
+    is_liked = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MerchantReview
+        fields = ('user', 'creation_date', 'likes_count', 'is_liked', 'text', 'rating')
+
+    def get_is_liked(self, obj):
+        user = self.context.user
+        if not isinstance(user, AnonymousUser):
+            if obj.user_likes.filter(id=user.id).count() > 0:
+                return True
+            else:
+                return False
+        return None
+
+    def get_likes_count(self, obj):
+        return obj.user_likes.count()
+
+
+class UserSearchSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    specialization_name = serializers.SerializerMethodField()
+    projects_count = serializers.SerializerMethodField()
+    tags_count = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    price_from_full = serializers.SerializerMethodField()
+    description_short = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    is_pro = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MainUser
+        fields = ('id', 'full_name', 'specialization_name', 'projects_count', 'tags_count', 'city', 'avatar',
+                  'price_from_full', 'description_short', 'rating', 'is_pro')
+
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+
+    def get_specialization_name(self, obj):
+        return obj.merchant_profile.specializations.first().name
+
+    def get_projects_count(self, obj):
+        return obj.projects.count()
+
+    def get_tags_count(self, obj):
+        return obj.merchant_profile.tags.count()
+
+    def get_city(self, obj):
+        return obj.merchant_profile.city.name
+
+    def get_avatar(self, obj):
+        if obj.merchant_profile.avatar:
+            return self.context.build_absolute_uri(obj.profile.avatar.url)
+        return None
+
+    def get_price_from_full(self, obj):
+        price_from = obj.projects.order_by('price_from').first().price_from
+        price = int(price_from) if price_from % math.trunc(price_from) == 0 else price_from
+        return f'от {price} тг/м2'
+
+    def get_description_short(self, obj):
+        return obj.merchant_profile.description_short
+
+    def get_rating(self, obj):
+        return obj.merchant_profile.rating
+
+    def get_is_pro(self, obj):
+        return obj.merchant_profile.is_pro
+

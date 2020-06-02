@@ -9,8 +9,28 @@ def profile_document_path(instance, filename):
     return f'profile_documents/{instance.user.id}/{filename}'
 
 
+def review_document_path(instance, filename):
+    return f'review_documents/{instance.review.id}/{filename}'
+
+
 def project_category_image_path(instance, filename):
     return f'project_category_images/{instance.id}/{filename}'
+
+
+def blog_post_document_path(instance, filename):
+    return f'blog_post_documents/{instance.post.id}/{filename}'
+
+
+def project_document_path(instance, filename):
+    return f'project_documents/{instance.id}/{filename}'
+
+
+def project_render360_path(instance, filename):
+    return f'project_render360_documents/{instance.project.id}/{filename}'
+
+
+def project_comment_document_path(instance, filename):
+    return f'project_comment_documents/{instance.comment.id}/{filename}'
 
 
 def delete_file(document):

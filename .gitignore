@@ -99,3 +99,5 @@ mycommands
 .env.dev.rabbit
 docker-compose.dev.yml
 nginx/
+
+media/

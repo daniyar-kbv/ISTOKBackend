@@ -19,12 +19,8 @@ def activation_created(sender, instance, created=True, **kwargs):
                 send_email.delay(constants.ACTIVATION_EMAIL_SUBJECT,
                                  emails.generate_activation_email(instance.email, request=instance._request),
                                  instance.email)
-
-
-@receiver(post_save, sender=UserActivation)
-def activation_created(sender, instance, created, **kwargs):
-    if instance:
         if created:
-            activation = instance.activation
+            activation = instance
             activation.is_active = False
             activation.save()
+

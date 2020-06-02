@@ -3,13 +3,13 @@ from rest_framework import pagination
 
 
 class CustomPagination(pagination.PageNumberPagination):
-    page_size = 20
+    page_size = 5
 
-    def get_paginated_response(self, data):
-        data_in_data = data.pop('data')
-        data['data'] = {
-            'results': data_in_data,
+    def get_paginated_response(self, data, additional_data):
+        data = {
+            'results': data,
+            'additional_data': additional_data,
             'page': self.page.number,
-            'totalPages': self.page.paginator.num_pages
+            'total_pages': self.page.paginator.num_pages,
         }
         return Response(data)

@@ -27,6 +27,8 @@ RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE = 'Введите только имейл и�
 RESPONSE_VERIFICATION_DOES_NOT_EXIST = 'Подтверждение с таким номером не найдено'
 RESPONSE_VERIFICATION_INVALID_CODE = 'Код подтверждения не верный'
 RESPONSE_PHONE_REGISTERED = 'Зарегестрирован на другого пользователя'
+RESPONSE_SOCIAL_TOKEN_INVALID = 'Токен не действителен'
+RESPONSE_DOES_NOT_EXIST = 'не существует'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'
@@ -41,3 +43,13 @@ EMAIL = 'Email'
 PASSWORD = 'Пароль'
 INCORRECT = 'Неверно'
 MB = 'Мб'
+
+
+FACEBOOK = 'facebook'
+GOOGLE = 'google'
+VK_WEB = 'vk_web'
+
+FACEBOOK_INFO_URL = "https://graph.facebook.com/me?access_token={0}&fields=id,name,email,first_name,last_name&format=json"
+GOOGLE_INFO_URL_V3 = "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={}"
+VK_WEB_INFO_URL = "https://api.vk.com/method/users.get?api_id=6781515&access_token={}&v=5.69&fields=photo_200"
+FACEBOOK_AVATAR_URL = "https://graph.facebook.com/{0}/picture?type=large"

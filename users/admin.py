@@ -6,6 +6,11 @@ from users.models import MainUser, ClientProfile, MerchantProfile, UserActivatio
 import constants
 
 
+@admin.register(ProfileDocument)
+class CityTagAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'document')
+
+
 class InlineProfileDocuments(admin.StackedInline):
     model = ProfileDocument
 
@@ -96,3 +101,4 @@ class InlineCodeVerification(admin.StackedInline):
 class CityTagAdmin(admin.ModelAdmin):
     list_display = ('id', 'phone', 'is_valid')
     inlines = [InlineCodeVerification]
+

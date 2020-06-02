@@ -3,19 +3,19 @@ from rest_framework import viewsets, mixins
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework_jwt.settings import api_settings
+from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 
 from django.shortcuts import redirect
+from django.db.models import Q
 
-from users.models import MainUser, UserActivation, CodeVerification, MerchantPhone
+from users.models import MainUser, UserActivation, CodeVerification, MerchantReview
 from users.serializers import ClientProfileCreateSerializer, MerchantProfileCreateSerializer, UserLoginSerializer, \
     CodeVerificationSerializer
 
-from utils import encryption
-from utils import response
+from utils import encryption, response, oauth, permissions
 from random import randrange
 
 import constants
-import requests
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,22 +27,36 @@ jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 class UserViewSet(viewsets.GenericViewSet,
                   mixins.CreateModelMixin):
     queryset = MainUser.objects.all()
+    parser_classes = (FormParser, MultiPartParser, JSONParser,)
 
     def get_serializer_class(self):
         if self.action == 'create':
             return ClientProfileCreateSerializer
 
     def create(self, request, *args, **kwargs):
-        user = request.data.get('user')
+        request.data._mutable = True
+        user = {
+            'email': request.data.get('email'),
+            'role': int(request.data.get('role')),
+            'password': request.data.get('password')
+        }
         role = user.get('role')
         email = user.get('email')
-        phones = request.data.pop('phones')
         logger.info(f'Registration with email: {email} ({constants.ROLES[0]}) started')
+        phones = request.data.getlist('phones')
+        documents = request.data.getlist('documents')
+        context = {
+            'phones': phones,
+            'user': user,
+            'documents': documents
+        }
         if role == constants.ROLE_CLIENT:
             serializer = ClientProfileCreateSerializer(data=request.data)
         elif role == constants.ROLE_MERCHANT:
-            serializer = MerchantProfileCreateSerializer(data=request.data, context=phones)
+            serializer = MerchantProfileCreateSerializer(data=request.data, context=context)
         else:
+            logger.error(
+                f'Registration with email: {email} ({constants.ROLES[0]}) failed: {constants.RESPONSE_INVALID_ROLE}')
             return Response(response.make_messages([constants.RESPONSE_INVALID_ROLE]), status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             self.perform_create(serializer)
@@ -50,30 +64,44 @@ class UserViewSet(viewsets.GenericViewSet,
             try:
                 user = MainUser.objects.get(email=email)
             except MainUser.DoesNotExist:
-                return Response(response.make_messages([constants.RESPONSE_SERVER_ERROR]), status.HTTP_500_INTERNAL_SERVER_ERROR)
+                logger.error(
+                 f'Registration with email: {email} ({constants.ROLES[0]})  failed: {constants.RESPONSE_SERVER_ERROR}')
+                return Response(response.make_messages([constants.RESPONSE_SERVER_ERROR]),
+                                status.HTTP_500_INTERNAL_SERVER_ERROR)
             payload = jwt_payload_handler(user)
             token = jwt_encode_handler(payload)
             data = {
                 'token': token
             }
+            logger.info(
+                f'Registration with email: {email} ({constants.ROLES[0]}) succeeded')
             return Response(data, status=status.HTTP_200_OK, headers=headers)
+        logger.error(
+            f'Registration with email: {email} ({constants.ROLES[0]}) failed: {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def login_regular(self, request, pk=None):
+        logger.info(f'Regular login ({request.data.get("email")}): started')
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.data.get('email')
             phone = serializer.data.get('phone')
             password = serializer.data.get('password')
             if not email and not phone:
+                logger.error(
+                    f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_ENTER_EMAIL_OR_PHONE}')
                 return Response(response.make_messages([constants.RESPONSE_ENTER_EMAIL_OR_PHONE]))
             if email and phone:
+                logger.error(
+                  f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE}')
                 return Response(response.make_messages([constants.RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE]))
             if email:
                 try:
                     user = MainUser.objects.get(email=email)
                 except MainUser.DoesNotExist:
+                    logger.error(
+                        f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_USER_EMAIL_NOT_EXIST}')
                     return Response(
                         response.make_messages(
                             [[constants.EMAIL, constants.RESPONSE_USER_EMAIL_NOT_EXIST]]
@@ -84,6 +112,8 @@ class UserViewSet(viewsets.GenericViewSet,
                 try:
                     user = MainUser.objects.get(phone=phone)
                 except MainUser.DoesNotExist:
+                    logger.error(
+                        f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_USER_PHONE_NOT_EXIST}')
                     return Response(
                         response.make_messages([constants.PHONE, constants.RESPONSE_USER_PHONE_NOT_EXIST]),
                         status=status.HTTP_400_BAD_REQUEST
@@ -94,31 +124,41 @@ class UserViewSet(viewsets.GenericViewSet,
                 data = {
                     'token': token
                 }
+                logger.info(
+                    f'Regular login ({request.data.get("email")}): succeeded')
                 return Response(data, status.HTTP_200_OK)
+            logger.error(
+                f'Regular login ({request.data.get("email")}): failed {constants.PASSWORD} {constants.INCORRECT}')
             return Response(
                 response.make_messages([[constants.PASSWORD, constants.INCORRECT]]),
                 status.HTTP_400_BAD_REQUEST
             )
+        logger.error(
+            f'Regular login ({request.data.get("email")}): failed {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'], name='send-activation-email')
     def send_activation_email(self, request, pk=None):
         email = request.data.get('email')
         role = request.data.get('role')
+        logger.info(f'Activation email sending ({email}): started')
         if email and role:
             if UserActivation.objects.filter(email=email).count() == 0:
                 activation = UserActivation.objects.create(email=email, role=role)
                 activation._request = request
                 activation._created = True
                 activation.save()
+                logger.info(f'Activation email sending ({email}): succeeded')
                 return Response(status.HTTP_200_OK)
             else:
                 try:
                     activation = UserActivation.objects.get(email=email)
                 except UserActivation.DoesNotExist:
+                    logger.error(f'Activation email sending ({email}): failed {constants.RESPONSE_SERVER_ERROR}')
                     return Response(response.make_messages([constants.RESPONSE_SERVER_ERROR]),
                                     status.HTTP_500_INTERNAL_SERVER_ERROR)
                 if activation.user:
+                    logger.error(f'Activation email sending ({email}): failed {constants.RESPONSE_USER_EXISTS}')
                     return Response(response.make_messages([constants.RESPONSE_USER_EXISTS]),
                                     status.HTTP_400_BAD_REQUEST)
                 activation.delete()
@@ -126,31 +166,40 @@ class UserViewSet(viewsets.GenericViewSet,
                 activation._request = request
                 activation._created = True
                 activation.save()
+                logger.info(f'Activation email sending ({email}): succeeded')
                 return Response(status.HTTP_200_OK)
         if not email and not role:
+            logger.error(f'Activation email sending ({response.make_messages([response.missing_field("Email"), response.missing_field(role)])}')
             return Response(response.make_messages([response.missing_field('Email'), response.missing_field(role)]),
                             status.HTTP_400_BAD_REQUEST)
         if not email:
+            logger.error(f'Activation email sending ({email}): failed {response.missing_field("Email")}')
             return Response(response.make_messages([response.missing_field('Email')]), status.HTTP_400_BAD_REQUEST)
         if not role:
+            logger.error(f'Activation email sending ({email}): failed {response.missing_field("Роль")}')
             return Response(response.make_messages([response.missing_field("Роль")]), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'], name='verify-email')
     def verify_email(self, request, pk=None):
         email = encryption.decrypt(pk)
+        logger.info(f'Email verification ({email}): started')
         try:
             activation = UserActivation.objects.get(email=email)
         except UserActivation.DoesNotExist:
             #  TODO: if no activation
+            logger.error(f'Email verification ({email}): failed')
             return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
         if activation.is_active:
             # TODO: if active
+            logger.error(f'Email verification ({email}): failed')
             return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
         # TODO: if not active
+        logger.error(f'Email verification ({email}): failed')
         return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
 
     @action(detail=False, methods=['post'])
     def verify_phone(self, request, pk=None):
+        logger.info(f'Code verification ({request.data.get("phone").get("phone")}): started')
         code = randrange(1000, 10000)
         while CodeVerification.objects.filter(code=code, phone__is_valid=True).count() > 0:
             code = randrange(1000, 10000)
@@ -159,27 +208,93 @@ class UserViewSet(viewsets.GenericViewSet,
         serializer = CodeVerificationSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f'Code verification ({request.data.get("phone").get("phone")}): succeeded')
             return Response(serializer.validated_data, status.HTTP_200_OK)
+        logger.error(
+            f'Code verification ({request.data.get("phone").get("phone")}): failed {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def send_code(self, request, pk=None):
         serializer = CodeVerificationSerializer(data=request.data)
+        logger.info(f'Send code ({request.data.get("phone").get("phone")}): started')
         if serializer.is_valid():
             try:
                 verification = CodeVerification.objects.get(phone__phone=serializer.validated_data.get('phone').get('phone'))
                 if verification.code != serializer.validated_data.get('code'):
+                    logger.error(f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_INVALID_CODE}')
                     return Response(constants.RESPONSE_VERIFICATION_INVALID_CODE, status.HTTP_400_BAD_REQUEST)
             except CodeVerification.DoesNotExist:
+                logger.error(
+                    f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST}')
                 return Response(constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST, status.HTTP_400_BAD_REQUEST)
             merchant_phone = verification.phone
             merchant_phone.is_valid = True
             merchant_phone.save()
+            logger.error(
+                f'Send code ({request.data.get("phone").get("phone")}): succeeded')
             return Response(status.HTTP_200_OK)
+        logger.error(
+            f'Send code ({request.data.get("phone").get("phone")}): failed {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get'])
-    def social_start(self, request, pk=None):
-        response = requests.request('get', 'https://www.facebook.com/v7.0/dialog/oauth?client_id=250967092789703&redirect_uri=http://localhost:8990/&response_type=code%20token/')
-        print(response.raw)
-        return Response()
+    @action(detail=False, methods=['post'])
+    def social_login(self, request, pk=None):
+        social_type = request.data.get('social_type')
+        email = request.data.get('email', '')
+        phone = request.data.get('phone', '')
+        logger.info(f'Social login ({email}, {social_type}): started')
+        info, error = oauth.get_social_info(request.data, social_type)
+        if not info:
+            logger.error(f'Social login ({email}, {social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
+            return Response(constants.RESPONSE_SERVER_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if not info.get('email', '') and email:
+            info['email'] = email
+        if not info.get('phone', '') and phone:
+            info['phone'] = phone
+        if not info:
+            logger.error(f'Social login ({email}, {social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
+            return Response()
+        try:
+            user = MainUser.objects.get(Q(email=email) | Q(phone=phone))
+            payload = jwt_payload_handler(user)
+            token = jwt_encode_handler(payload)
+            if user.role == constants.ROLE_CLIENT:
+                name = user.client_profile.first_name
+            else:
+                name = user.merchant_profile.first_name
+            data = {
+                'register': False,
+                'name': name,
+                'token': token
+            }
+            logger.info(f'Social login ({email}, {social_type}): succeeded')
+            return Response(data, status.HTTP_200_OK)
+        except:
+            info['register'] = False
+            logger.info(f'Social login ({email}, {social_type}): succeeded')
+        return Response(info, status.HTTP_200_OK)
+
+
+class ProjectReview(viewsets.GenericViewSet):
+    queryset = MerchantReview.objects.all()
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request, pk=None):
+        logger.info(f'Like of merchant review ({pk}) user({request.user.email}) started')
+        try:
+            review = MerchantReview.objects.get(id=pk)
+        except MerchantReview.DoesNotExist:
+            logger.error(f'Like of merchant review ({pk}) user({request.user.email}) failed, {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages([f'Отзыв {constants.RESPONSE_DOES_NOT_EXIST}']), status.HTTP_400_BAD_REQUEST)
+        try:
+            review.user_likes.get(id=request.user.id)
+            review.user_likes.remove(request.user)
+            review.likes_count = review.likes_count - 1
+            review.save()
+        except:
+            review.user_likes.add(request.user)
+            review.likes_count = review.likes_count + 1
+            review.save()
+        logger.info(f'Like of merchant review ({pk}) user({request.user.email}) succeeded')
+        return Response(status.HTTP_200_OK)

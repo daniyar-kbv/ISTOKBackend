@@ -42,8 +42,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_celery_results',
     'phone_field',
+    'corsheaders',
 
     'users',
+    'main',
+    'blog',
+    'other'
 ]
 
 MIDDLEWARE = [
@@ -54,7 +58,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.locale.LocaleMiddleware'
+    'django.middleware.locale.LocaleMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'istok.urls'
@@ -117,7 +123,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "ru-ru"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Almaty'
 
 USE_I18N = True
 
@@ -138,6 +144,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTH_USER_MODEL = 'users.MainUser'
 
 REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 5,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -174,7 +182,7 @@ JWT_AUTH = {
     'JWT_AUDIENCE': None,
     'JWT_ISSUER': None,
 
-    'JWT_ALLOW_REFRESH': False,
+    'JWT_ALLOW_REFRESH': True,
     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
 
     'JWT_AUTH_HEADER_PREFIX': 'JWT',
@@ -221,7 +229,12 @@ LOGGING = {
     },
     'loggers': {
         'main': {
-            'handlers': ['main_file', 'users_file', 'console_handler'],
+            'handlers': ['main_file', 'console_handler'],
+            'level': 'DEBUG',
+            'propogate': True,
+        },
+        'users': {
+            'handlers': ['users_file', 'console_handler'],
             'level': 'DEBUG',
             'propogate': True,
         }
@@ -240,3 +253,5 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 LOCALE_PATHS = (
     os.path.join(BASE_DIR, 'translations', 'locale'),
 )
+
+CORS_ORIGIN_ALLOW_ALL = True

@@ -1,10 +1,11 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser, PermissionsMixin
 
-from utils.upload import user_avatar_path, profile_document_path, project_category_image_path
+from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path
 from utils.validators import validate_file_size, basic_validate_images
 
-from constants import ROLES, ROLE_CLIENT
+from constants import ROLES, ROLE_CLIENT, ROLE_MERCHANT
 
 
 class ProjectCategory(models.Model):
@@ -179,6 +180,34 @@ class MainUserManager(BaseUserManager):
 
         return self._create_user(email, password, **extra_fields)
 
+    def merchant_search(self, arg, request=None):
+        queryset = self.filter(Q(role=ROLE_MERCHANT) & Q(
+                    Q(merchant_profile__first_name__icontains=arg) |
+                    Q(merchant_profile__last_name__icontains=arg) |
+                    Q(merchant_profile__company_name__icontains=arg) |
+                    Q(merchant_profile__categories__name__icontains=arg) |
+                    Q(merchant_profile__specializations__name__icontains=arg) |
+                    Q(merchant_profile__tags__name__icontains=arg) |
+                    Q(merchant_profile__description_full__icontains=arg) |
+                    Q(merchant_profile__description_short__icontains=arg)))
+        if request:
+            if request.data.get('cities'):
+                queryset = queryset.filter(merchant_profile__city_id__in=request.data.get('cities'))
+            if request.data.get('categories'):
+                queryset = queryset.filter(merchant_profile__categories__in=request.data.get('categories'))
+            if request.data.get('specializations'):
+                queryset = queryset.filter(merchant_profile__specializations__in=request.data.get('specializations'))
+            if request.data.get('tags'):
+                queryset = queryset.filter(merchant_profile__tags__in=request.data.get('tags'))
+            if request.data.get('area_from') and request.data.get('area_to'):
+                queryset = queryset.filter(Q(area__gte=request.data.get('area_from')) &
+                                           Q(area__lte=request.data.get('area_to')))
+            if request.data.get('price_from') and request.data.get('price_to'):
+                queryset = queryset.filter(Q(price__gte=request.data.get('price_from')) &
+                                           Q(price__lte=request.data.get('price_to')))
+            queryset = queryset.order_by(request.data.get('order_by') if request.data.get('order_by') else '-merchant_profile__rating')
+        return queryset.distinct()
+
 
 class MainUser(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
@@ -200,6 +229,28 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    def get_full_name(self):
+        try:
+            return f'{self.client_profile.first_name} {self.client_profile.last_name}'
+        except:
+            if self.merchant_profile.company_name:
+                return self.merchant_profile.company_name
+            elif self.merchant_profile.first_name and self.merchant_profile.last_name:
+                return f'{self.merchant_profile.first_name} {self.merchant_profile.last_name}'
+
+    @property
+    def profile(self):
+        if self.role == ROLE_CLIENT:
+            try:
+                return self.client_profile
+            except:
+                return self.merchant_profile
+        elif self.role == ROLE_MERCHANT:
+            try:
+                return self.merchant_profile
+            except:
+                return self.client_profile
 
 
 class ProfileDocument(models.Model):
@@ -289,10 +340,11 @@ class MerchantProfile(Profile):
                                              null=True,
                                              blank=False,
                                              verbose_name='Описание документов')
-    pro = models.BooleanField(default=False,
+    is_pro = models.BooleanField(default=False,
                               blank=True,
                               null=False,
                               verbose_name='Про аккаунт')
+    rating = models.FloatField(default=0, null=True, blank=True, verbose_name='Рейтинг')
 
     class Meta:
         verbose_name = 'Профиль специалиста'
@@ -364,3 +416,80 @@ class CodeVerification(models.Model):
 
     def __str__(self):
         return f'{self.id}: {self.phone.phone}'
+
+
+class MerchantReview(models.Model):
+    user = models.ForeignKey(MainUser,
+                             on_delete=models.CASCADE,
+                             null=False,
+                             blank=False,
+                             related_name='sent_reviews',
+                             verbose_name='Отправитель',)
+    merchant = models.ForeignKey(MainUser,
+                                 on_delete=models.CASCADE,
+                                 null=False,
+                                 blank=False,
+                                 related_name='received_reviews',
+                                 verbose_name='Получатель')
+    user_likes = models.ManyToManyField(MainUser,
+                                        blank=True,
+                                        related_name='reviews_likes',
+                                        verbose_name='Пользователи лайки')
+    likes_count = models.IntegerField(default=0, null=False, blank=True, verbose_name='Количество лайков')
+    rating = models.FloatField(default=0,
+                               null=False,
+                               blank=False,
+                               verbose_name='Рейтинг')
+    text = models.CharField(max_length=500,
+                            null=False,
+                            blank=False,
+                            verbose_name='Основной текст')
+    creation_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+    def __str__(self):
+        return f'{self.id}: {self.user.get_full_name()} -> {self.merchant.get_full_name()}'
+
+
+class ReviewDocument(models.Model):
+    review = models.ForeignKey(MerchantReview,
+                               on_delete=models.CASCADE,
+                               null=False,
+                               blank=False,
+                               related_name='documents',
+                               verbose_name='Отзыв')
+    document = models.FileField(upload_to=review_document_path,
+                                validators=[validate_file_size, basic_validate_images],
+                                verbose_name='Документ')
+
+    class Meta:
+        verbose_name = 'Фото отзыва'
+        verbose_name_plural = 'Фото отзывов'
+
+    def __str__(self):
+        return f'Document ({self.id}) of review ({self.review.id})'
+
+
+class ReviewReply(models.Model):
+    review = models.OneToOneField(MerchantReview,
+                               on_delete=models.CASCADE,
+                               null=False,
+                               blank=False,
+                               related_name='reply',
+                               verbose_name='Отзыв')
+    text = models.CharField(max_length=1000, blank=False, null=False, verbose_name='Основной текст')
+    user_likes = models.ManyToManyField(MainUser,
+                                        related_name='reply_likes',
+                                        verbose_name='Лайки')
+    creation_date = models.DateTimeField(auto_now=True, null=False, blank=False)
+    likes_count = models.IntegerField(default=0, null=False, blank=True, verbose_name='Количество лайков')
+
+    class Meta:
+        verbose_name = 'Ответ на отзыв'
+        verbose_name_plural = 'Ответы на отзывы'
+
+    def __str__(self):
+        return f'{self.id}: review ({self.review.id})'
