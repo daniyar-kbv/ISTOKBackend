@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
-    MerchantReview
+    MerchantReview, ReviewReply, ReviewDocument
 from main.models import Project, ProjectDocument, ProjectTag
 from utils import response
 
@@ -77,14 +77,14 @@ class UserClientCreateSerializer(serializers.ModelSerializer):
 
 
 class ClientProfileCreateSerializer(serializers.ModelSerializer):
-    user = UserClientCreateSerializer()
+    user = UserClientCreateSerializer(required=False)
 
     class Meta:
         model = ClientProfile
         fields = ('first_name', 'last_name', 'date_of_birth', 'user')
 
     def create(self, validated_data):
-        user_data = validated_data.pop('user')
+        user_data = self.context['user']
         user = MainUser.objects.create_user(**user_data)
         profile = ClientProfile.objects.create(user=user, **validated_data)
         return profile
@@ -277,6 +277,51 @@ class ReviewMainPageSerializer(serializers.ModelSerializer):
         return obj.user_likes.count()
 
 
+class MerchantReviewReplyDetailListSerializer(serializers.ModelSerializer):
+    user = UserShortAvatarSerializer()
+    creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
+    is_liked = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReviewReply
+        fields = ('user', 'creation_date', 'likes_count', 'is_liked', 'text')
+
+    def get_is_liked(self, obj):
+        user = self.context.user
+        if not isinstance(user, AnonymousUser):
+            if obj.user_likes.filter(id=user.id).count() > 0:
+                return True
+            else:
+                return False
+        return None
+
+    def get_likes_count(self, obj):
+        return obj.user_likes.count()
+
+
+class MerchantReviewDetailList(ReviewMainPageSerializer):
+    photos = serializers.SerializerMethodField()
+    reply = serializers.SerializerMethodField()
+
+    class Meta(ReviewMainPageSerializer.Meta):
+        fields = ReviewMainPageSerializer.Meta.fields + ('photos', 'reply')
+
+    def get_photos(self, obj):
+        urls = []
+        comment_documents = ReviewDocument.objects.filter(review=obj)
+        for doc in comment_documents:
+            urls.append(self.context.build_absolute_uri(doc.document.url))
+        return urls
+
+    def get_reply(self, obj):
+        try:
+            reply = obj.reply
+            serializer = MerchantReviewReplyDetailListSerializer(reply, context=self.context)
+            return serializer.data
+        except:
+            return None
+
+
 class UserSearchSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     specialization_name = serializers.SerializerMethodField()
@@ -311,7 +356,7 @@ class UserSearchSerializer(serializers.ModelSerializer):
 
     def get_avatar(self, obj):
         if obj.merchant_profile.avatar:
-            return self.context.build_absolute_uri(obj.profile.avatar.url)
+            return self.context['request'].build_absolute_uri(obj.profile.avatar.url)
         return None
 
     def get_price_from_full(self, obj):
@@ -328,3 +373,50 @@ class UserSearchSerializer(serializers.ModelSerializer):
     def get_is_pro(self, obj):
         return obj.merchant_profile.is_pro
 
+
+class UserTopDetailSerializer(UserSearchSerializer):
+    reviews_count = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()
+
+    class Meta(UserSearchSerializer.Meta):
+        fields = UserSearchSerializer.Meta.fields + ('reviews_count', 'url')
+
+    def get_reviews_count(self, obj):
+        return MerchantReview.objects.filter(user=obj).count()
+
+    def get_url(self, obj):
+        try:
+            return obj.merchant_profile.url
+        except:
+            return None
+
+
+class MerchantDetailSerializer(serializers.ModelSerializer):
+    documents = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+    description_full = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MainUser
+        fields = ('id', 'description_full', 'documents', 'tags')
+
+    def get_documents(self, obj):
+        urls = []
+        comment_documents = ProfileDocument.objects.filter(user=obj)
+        for doc in comment_documents:
+            urls.append(self.context.build_absolute_uri(doc.document.url))
+        return urls
+
+    def get_tags(self, obj):
+        try:
+            tags = obj.merchant_profile.tags
+            serializer = ProjectTagShortSerializer(tags, many=True)
+            return serializer.data
+        except:
+            return []
+
+    def get_description_full(self, obj):
+        try:
+            return obj.merchant_profile.description_full
+        except:
+            return None

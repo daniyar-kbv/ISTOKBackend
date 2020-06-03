@@ -29,6 +29,7 @@ RESPONSE_VERIFICATION_INVALID_CODE = 'Код подтверждения не в�
 RESPONSE_PHONE_REGISTERED = 'Зарегестрирован на другого пользователя'
 RESPONSE_SOCIAL_TOKEN_INVALID = 'Токен не действителен'
 RESPONSE_DOES_NOT_EXIST = 'не существует'
+RESPONSE_USER_NOT_MERCHANT = 'Пользователь не является специалтстом'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'

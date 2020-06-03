@@ -10,9 +10,11 @@ from django.db.models import Q
 
 from users.models import MainUser, UserActivation, CodeVerification, MerchantReview
 from users.serializers import ClientProfileCreateSerializer, MerchantProfileCreateSerializer, UserLoginSerializer, \
-    CodeVerificationSerializer
-
-from utils import encryption, response, oauth, permissions
+    CodeVerificationSerializer, UserSearchSerializer, UserTopDetailSerializer, MerchantReviewDetailList, \
+    MerchantDetailSerializer
+from main.models import Project
+from main.serializers import ProjectDetailListSerializer
+from utils import encryption, response, oauth, permissions, pagination
 from random import randrange
 
 import constants
@@ -25,13 +27,31 @@ jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 
 class UserViewSet(viewsets.GenericViewSet,
-                  mixins.CreateModelMixin):
+                  mixins.CreateModelMixin,
+                  mixins.ListModelMixin):
     queryset = MainUser.objects.all()
     parser_classes = (FormParser, MultiPartParser, JSONParser,)
 
     def get_serializer_class(self):
         if self.action == 'create':
             return ClientProfileCreateSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = MainUser.objects.merchant_search(request=request)
+        paginator = pagination.CustomPagination()
+        paginator.page_size = 18
+        page = paginator.paginate_queryset(queryset, request=request)
+        if page is not None:
+            context = {
+                'request': request
+            }
+            serializer = UserSearchSerializer(page, many=True, context=context)
+            additional_data = {
+                'total_found': queryset.count()
+            }
+            return paginator.get_paginated_response(serializer.data, additional_data=additional_data)
+        serializer = UserSearchSerializer(queryset, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
@@ -51,7 +71,7 @@ class UserViewSet(viewsets.GenericViewSet,
             'documents': documents
         }
         if role == constants.ROLE_CLIENT:
-            serializer = ClientProfileCreateSerializer(data=request.data)
+            serializer = ClientProfileCreateSerializer(data=request.data, context=context)
         elif role == constants.ROLE_MERCHANT:
             serializer = MerchantProfileCreateSerializer(data=request.data, context=context)
         else:
@@ -141,10 +161,11 @@ class UserViewSet(viewsets.GenericViewSet,
     def send_activation_email(self, request, pk=None):
         email = request.data.get('email')
         role = request.data.get('role')
+        name = request.data.get('name')
         logger.info(f'Activation email sending ({email}): started')
         if email and role:
             if UserActivation.objects.filter(email=email).count() == 0:
-                activation = UserActivation.objects.create(email=email, role=role)
+                activation = UserActivation.objects.create(email=email, role=role, name=name)
                 activation._request = request
                 activation._created = True
                 activation.save()
@@ -254,7 +275,7 @@ class UserViewSet(viewsets.GenericViewSet,
             info['phone'] = phone
         if not info:
             logger.error(f'Social login ({email}, {social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
-            return Response()
+            return Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
         try:
             user = MainUser.objects.get(Q(email=email) | Q(phone=phone))
             payload = jwt_payload_handler(user)
@@ -274,6 +295,75 @@ class UserViewSet(viewsets.GenericViewSet,
             info['register'] = False
             logger.info(f'Social login ({email}, {social_type}): succeeded')
         return Response(info, status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def top_details(self, request, pk=None):
+        try:
+            user = MainUser.objects.get(id=pk)
+        except MainUser.DoesNotExist:
+            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
+        if user.role == constants.ROLE_CLIENT:
+            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+        context = {
+            'request': request
+        }
+        serializer = UserTopDetailSerializer(user, context=context)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def projects(self, request, pk=None):
+        try:
+            user = MainUser.objects.get(id=pk)
+        except MainUser.DoesNotExist:
+            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
+        if user.role == constants.ROLE_CLIENT:
+            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+        projects = Project.objects.filter(user=user)
+        paginator = pagination.CustomPagination()
+        paginator.page_size = 8
+        page = paginator.paginate_queryset(projects, request)
+        if page is not None:
+            serializer = ProjectDetailListSerializer(projects, many=True, context=request)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = ProjectDetailListSerializer(projects, many=True, context=request)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def reviews(self, request, pk=None):
+        try:
+            user = MainUser.objects.get(id=pk)
+        except MainUser.DoesNotExist:
+            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
+        if user.role == constants.ROLE_CLIENT:
+            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+        reviews = MerchantReview.objects.filter(merchant=user)
+        if request.data.get('order_by'):
+            order_by = request.data.get('order_by')
+        else:
+            order_by = '-creation_date'
+        reviews.order_by(order_by)
+        paginator = pagination.CustomPagination()
+        paginator.page_size = 8
+        page = paginator.paginate_queryset(reviews, request)
+        if page is not None:
+            serializer = MerchantReviewDetailList(reviews, many=True, context=request)
+            data = {
+                'total_found': reviews.count()
+            }
+            return paginator.get_paginated_response(serializer.data, additional_data=data)
+        serializer = MerchantReviewDetailList(reviews, many=True, context=request)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def details(self, request, pk=None):
+        try:
+            user = MainUser.objects.get(id=pk)
+        except MainUser.DoesNotExist:
+            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
+        if user.role == constants.ROLE_CLIENT:
+            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+        serializer = MerchantDetailSerializer(user)
+        return Response(serializer.data)
 
 
 class ProjectReview(viewsets.GenericViewSet):
@@ -298,3 +388,4 @@ class ProjectReview(viewsets.GenericViewSet):
             review.save()
         logger.info(f'Like of merchant review ({pk}) user({request.user.email}) succeeded')
         return Response(status.HTTP_200_OK)
+

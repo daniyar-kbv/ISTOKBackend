@@ -1,7 +1,7 @@
 from django.contrib import admin
 from users.models import MainUser, ClientProfile, MerchantProfile, UserActivation, ProjectPurposeType, ProjectPurpose, \
     ProjectTag, ProjectPurposeSubType, ProjectStyle, ProjectType, ProjectCategory, ProfileDocument, City, Country, \
-    Specialization, MerchantPhone, CodeVerification
+    Specialization, MerchantPhone, CodeVerification, MerchantReview, ReviewReply, ReviewDocument
 
 import constants
 
@@ -102,3 +102,19 @@ class CityTagAdmin(admin.ModelAdmin):
     list_display = ('id', 'phone', 'is_valid')
     inlines = [InlineCodeVerification]
 
+
+class InlineReviewDocument(admin.StackedInline):
+    model = ReviewDocument
+
+
+@admin.register(MerchantReview)
+class MerchantReviewAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'merchant')
+    filter_horizontal = ('user_likes', )
+    inlines = [InlineReviewDocument, ]
+
+
+@admin.register(ReviewReply)
+class ReviewReplyAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'review')
+    filter_horizontal = ('user_likes', )

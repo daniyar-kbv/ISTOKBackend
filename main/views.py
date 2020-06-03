@@ -9,9 +9,10 @@ from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from django.shortcuts import redirect
 from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
-from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment
+from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplaint
 from main.serializers import ProjectMainPageSerializer, ServicesMainPageSerialzier, ProjectModalSerializer, \
-    ProjectSearchSerializer, ProjectDetailSerializer, CommentDetailSerializer
+    ProjectSearchSerializer, ProjectDetailSerializer, ProjectCommentDetailSerializer, ProjectCommentWithReplySerializer, \
+    ProjectCommentCreateSerializer
 from blog.models import MainPageBlogPost, BlogPost
 from blog.serializers import BlogPostMainPageSerializer, BlogPostSearchSerializer
 from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser
@@ -56,7 +57,7 @@ class MainPageClient(views.APIView):
             'reviews': reviews_serializer.data,
             'faqs': faqs_serializer.data
         }
-        return Response(data)
+        return Response(data, status.HTTP_200_OK)
 
 
 @authentication_classes((JSONWebTokenAuthentication, ))
@@ -72,7 +73,7 @@ class MainPageMerchant(views.APIView):
             'blog_posts': blogs_serializer.data,
             'top_merchants': merchants_serializer.data,
         }
-        return Response(data)
+        return Response(data, status.HTTP_200_OK)
 
 
 @permission_classes((permissions.IsAuthenticated, ))
@@ -81,13 +82,14 @@ class MainPageFavorites(views.APIView):
     def get(self, request):
         projects = Project.objects.filter(user_favorites__user=request.user).order_by("-user_favorites__creation_date")
         projects_serializer = ProjectMainPageSerializer(projects, many=True, context=request)
-        return Response(projects_serializer.data)
+        return Response(projects_serializer.data, status.HTTP_200_OK)
 
 
 class ProjectViewSet(viewsets.GenericViewSet,
                      mixins.ListModelMixin,
                      mixins.RetrieveModelMixin):
     queryset = Project.objects.all()
+    parser_classes = (FormParser, MultiPartParser, JSONParser,)
 
     def list(self, request, *args, **kwargs):
         queryset = Project.objects.search(request=request)
@@ -104,13 +106,13 @@ class ProjectViewSet(viewsets.GenericViewSet,
             }
             return paginator.get_paginated_response(serializer.data, additional_data=data)
         serializer = UserSearchSerializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         project_serializer = ProjectDetailSerializer(instance, context=request)
         comments = ProjectComment.objects.filter(project=instance)[:5]
-        comment_serializer = CommentDetailSerializer(comments, many=True, context=request)
+        comment_serializer = ProjectCommentDetailSerializer(comments, many=True, context=request)
         recents_serializer = None
         if not isinstance(request.user, AnonymousUser):
             recents = []
@@ -126,7 +128,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
             'comments': comment_serializer.data,
             'recents': recents_serializer if recents_serializer is None else recents_serializer.data
         }
-        return Response(data)
+        return Response(data, status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
@@ -154,6 +156,44 @@ class ProjectViewSet(viewsets.GenericViewSet,
         serializer = ProjectModalSerializer(project, context=request)
         return Response(serializer.data, status.HTTP_200_OK)
 
+    @action(detail=True, methods=['get', 'post'])
+    def comments(self, request, pk=None):
+        if request.method == 'GET':
+            try:
+                project = self.queryset.get(id=pk)
+            except Project.DoesNotExist:
+                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                                status.HTTP_400_BAD_REQUEST)
+            comments = ProjectComment.objects.filter(project=project).order_by('-creation_date')
+            serializer = ProjectCommentWithReplySerializer(comments, many=True, context=request)
+            return Response(serializer.data, status.HTTP_200_OK)
+        elif request.method == 'POST':
+            logger.info(f'Project({pk}) comment create: started')
+            try:
+                project = self.queryset.get(id=pk)
+            except Project.DoesNotExist:
+                logger.error(f'Project({pk}) comment create failed: Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                                status.HTTP_400_BAD_REQUEST)
+            context = {
+                'documents': request.data.pop('documents')
+            }
+            serializer = ProjectCommentCreateSerializer(data=request.data, context=context)
+            if serializer.is_valid():
+                serializer.save(project=project, user=request.user)
+                logger.info(f'Project({pk}) comment create succeeded')
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            logger.error(f'Project({pk}) comment create failed: {response.make_errors(serializer)}')
+            return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+
+    # @action(detail=True, methods=['post'])
+    # def complain(self, request, pk=None):
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     self.perform_create(serializer)
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 class ProjectsSearch(views.APIView):
     def get(self, request):
@@ -176,7 +216,7 @@ class ProjectsSearch(views.APIView):
             }
             return paginator.get_paginated_response(serializer.data, additional_data=data)
         serializer = UserSearchSerializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 
 class MerchantsSearch(views.APIView):
@@ -189,7 +229,10 @@ class MerchantsSearch(views.APIView):
         paginator.page_size = 18
         page = paginator.paginate_queryset(queryset, request)
         if page is not None:
-            serializer = UserSearchSerializer(page, many=True, context=request)
+            context = {
+                'request': request
+            }
+            serializer = UserSearchSerializer(page, many=True, context=context)
             data = {
                 'projects_count': Project.objects.search(search).count(),
                 'blog_count': BlogPost.objects.search(search).count(),
@@ -197,7 +240,7 @@ class MerchantsSearch(views.APIView):
             }
             return paginator.get_paginated_response(serializer.data, additional_data=data)
         serializer = UserSearchSerializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 
 class BlogSearch(views.APIView):
@@ -218,7 +261,7 @@ class BlogSearch(views.APIView):
             }
             return paginator.get_paginated_response(serializer.data, additional_data=data)
         serializer = UserSearchSerializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 
 class CommentViewSet(viewsets.GenericViewSet):

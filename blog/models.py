@@ -86,7 +86,7 @@ class PostDocument(models.Model):
         verbose_name_plural = 'Документы блога'
 
     def __str__(self):
-        return f'{self.id}: post({self.post.id})'
+        return f'{self.id}: пост({self.post.id})'
 
 
 class MainPageBlogPost(models.Model):

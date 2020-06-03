@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
-from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView
+from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView, ProjectCommentReply, \
+    ProjectCommentDocument
 from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurpose, ProjectPurposeSubType, ProjectTag, \
     ProjectPurposeType, MerchantProfile
 from users.serializers import UserShortSerializer, UserMediumSerializer, UserShortAvatarSerializer
-
+from utils import response
 import constants, math
 
 
@@ -112,8 +113,8 @@ class ProjectModalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ('id', 'city_name', 'category_name', 'purpose_name', 'type_name', 'style_name', 'area_full', 'price_from_full',
-                  'price_total_full', 'is_favorite', 'photos')
+        fields = ('id', 'city_name', 'category_name', 'purpose_name', 'type_name', 'style_name', 'area_full',
+                  'price_from_full', 'price_total_full', 'is_favorite', 'photos')
 
     def get_city_name(self, obj):
         try:
@@ -215,7 +216,11 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         return f'от {price} тг/м2'
 
 
-class CommentDetailSerializer(serializers.ModelSerializer):
+class ProjectDetailListSerializer(ProjectSearchSerializer):
+    user = UserShortAvatarSerializer()
+
+
+class ProjectCommentDetailSerializer(serializers.ModelSerializer):
     user = UserShortAvatarSerializer()
     creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
     likes_count = serializers.SerializerMethodField()
@@ -256,3 +261,79 @@ class ProjectDetailSerializer(ProjectModalSerializer):
 
     def get_favorites_count(self, obj):
         return obj.user_favorites.count()
+
+
+class ProjectCommentReplyListSerializer(serializers.ModelSerializer):
+    user = UserShortAvatarSerializer()
+    creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
+    likes_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectCommentReply
+        fields = ('id', 'user', 'text', 'creation_date', 'likes_count', 'is_liked')
+
+    def get_likes_count(self, obj):
+        return obj.likes_count
+
+    def get_is_liked(self, obj):
+        user = self.context.user
+        if not isinstance(user, AnonymousUser):
+            if obj.user_likes.filter(id=user.id).count() > 0:
+                return True
+            else:
+                return False
+        return None
+
+
+class ProjectCommentWithReplySerializer(ProjectCommentDetailSerializer):
+    reply = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
+
+    class Meta(ProjectCommentDetailSerializer.Meta):
+        fields = ProjectCommentDetailSerializer.Meta.fields + ('photos', 'reply')
+
+    def get_reply(self, obj):
+        try:
+            reply = obj.reply
+            serializer = ProjectCommentReplyListSerializer(reply, context=self.context)
+            return serializer.data
+        except:
+            return None
+
+    def get_photos(self, obj):
+        urls = []
+        comment_documents = ProjectCommentDocument.objects.filter(comment=obj)
+        for doc in comment_documents:
+            urls.append(self.context.build_absolute_uri(doc.document.url))
+        return urls
+
+
+class ProjectCommentDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectCommentDocument
+        fields = '__all__'
+
+
+class ProjectCommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectComment
+        fields = '__all__'
+        read_only_fields = ['project', 'user']
+
+    def create(self, validated_data):
+        validated_data.pop('user_likes')
+        comment = ProjectComment.objects.create(**validated_data)
+        documents = self.context.get('documents')
+        for doc in documents:
+            data = {
+                'document': doc,
+                'comment': comment.id
+            }
+            serializer = ProjectCommentDocumentSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                comment.delete()
+                raise serializers.ValidationError(response.make_errors(serializer))
+        return comment

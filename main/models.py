@@ -128,7 +128,7 @@ class ProjectDocument(models.Model):
         verbose_name_plural = 'Фото проектов'
 
     def __str__(self):
-        return f'{self.id}: project ({self.project.name[0:10]}...)'
+        return f'{self.id}: проект ({self.project.name[0:10]}...)'
 
 
 class Render360(models.Model):
@@ -147,7 +147,7 @@ class Render360(models.Model):
         verbose_name_plural = 'Фото 360 проектов'
 
     def __str__(self):
-        return f'{self.id}: project ({self.project.name[0:10]}...)'
+        return f'{self.id}: проект ({self.project.name[0:10]}...)'
 
 
 class ProjectView(models.Model):
@@ -170,7 +170,7 @@ class ProjectView(models.Model):
         verbose_name_plural = 'Просмотры проектов'
 
     def __str__(self):
-        return f'{self.id}: user({self.user_id}) - project({self.project_id})'
+        return f'{self.id}: пользователь({self.user_id}) - проект({self.project_id})'
 
 
 class ProjectComment(models.Model):
@@ -200,10 +200,16 @@ class ProjectComment(models.Model):
         verbose_name_plural = 'Комментарии проектов'
 
     def __str__(self):
-        return f'{self.id}: project({self.project.id}) text: {self.text[:15]}'
+        return f'{self.id}: проект({self.project.id}) текст: {self.text[:15]}'
 
 
 class ProjectCommentReply(models.Model):
+    user = models.ForeignKey(MainUser,
+                             on_delete=models.CASCADE,
+                             null=False,
+                             blank=False,
+                             related_name='project_comments_replies',
+                             verbose_name='Пользователь')
     comment = models.OneToOneField(ProjectComment,
                                    on_delete=models.CASCADE,
                                    null=False,
@@ -212,13 +218,18 @@ class ProjectCommentReply(models.Model):
                                    verbose_name='Комментарий')
     text = models.CharField(max_length=1000, blank=False, null=False, verbose_name='Основной текст')
     creation_date = models.DateTimeField(auto_now=True, null=True, blank=True)
+    user_likes = models.ManyToManyField(MainUser,
+                                        blank=True,
+                                        related_name='project_comments_reply_likes',
+                                        verbose_name='Лайки пользователь')
+    likes_count = models.IntegerField(default=0, null=False, blank=True, verbose_name='Количество лайков')
 
     class Meta:
-        verbose_name = 'Комментарий пректа'
-        verbose_name_plural = 'Комментарии пректов'
+        verbose_name = 'Ответ на комментарий проекта'
+        verbose_name_plural = 'Ответы на комментарии пректов'
 
     def __str__(self):
-        return f'{self.id}: comment({self.comment.id}) text: {self.text[:15]}'
+        return f'{self.id}: коммент({self.comment.id}) текст: {self.text[:15]}'
 
 
 class ProjectCommentDocument(models.Model):
@@ -237,7 +248,28 @@ class ProjectCommentDocument(models.Model):
         verbose_name_plural = 'Документы комментариев'
 
     def __str__(self):
-        return f'{self.id}: comment({self.comment.id}), document({self.document.name})'
+        return f'{self.id}: коммент({self.comment.id}), документ({self.document.name})'
 
 
-# class ProjectComplaint(models.Model)
+class ProjectComplaint(models.Model):
+    user = models.ForeignKey(MainUser,
+                             on_delete=models.CASCADE,
+                             null=False,
+                             blank=False,
+                             related_name='project_complaints',
+                             verbose_name='Пользователь')
+    project = models.ForeignKey(Project,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name='complaints',
+                                verbose_name='Проект')
+    text = models.CharField(max_length=1000, null=False, blank=False, verbose_name='Причина')
+    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата')
+
+    class Meta:
+        verbose_name = 'Жалоба на проект'
+        verbose_name_plural = 'Жалобы на проекты'
+
+    def __str__(self):
+        return f'{self.id}: проект({self.project.id}): {self.text[:15]}...'

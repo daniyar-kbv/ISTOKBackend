@@ -180,16 +180,18 @@ class MainUserManager(BaseUserManager):
 
         return self._create_user(email, password, **extra_fields)
 
-    def merchant_search(self, arg, request=None):
-        queryset = self.filter(Q(role=ROLE_MERCHANT) & Q(
-                    Q(merchant_profile__first_name__icontains=arg) |
-                    Q(merchant_profile__last_name__icontains=arg) |
-                    Q(merchant_profile__company_name__icontains=arg) |
-                    Q(merchant_profile__categories__name__icontains=arg) |
-                    Q(merchant_profile__specializations__name__icontains=arg) |
-                    Q(merchant_profile__tags__name__icontains=arg) |
-                    Q(merchant_profile__description_full__icontains=arg) |
-                    Q(merchant_profile__description_short__icontains=arg)))
+    def merchant_search(self, arg=None, request=None):
+        queryset = self.filter(role=ROLE_MERCHANT)
+        if arg:
+            queryset = queryset.filter(
+                                Q(merchant_profile__first_name__icontains=arg) |
+                                Q(merchant_profile__last_name__icontains=arg) |
+                                Q(merchant_profile__company_name__icontains=arg) |
+                                Q(merchant_profile__categories__name__icontains=arg) |
+                                Q(merchant_profile__specializations__name__icontains=arg) |
+                                Q(merchant_profile__tags__name__icontains=arg) |
+                                Q(merchant_profile__description_full__icontains=arg) |
+                                Q(merchant_profile__description_short__icontains=arg))
         if request:
             if request.data.get('cities'):
                 queryset = queryset.filter(merchant_profile__city_id__in=request.data.get('cities'))
@@ -228,7 +230,7 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
-        return self.email
+        return f'{self.id}: {self.get_full_name()}'
 
     def get_full_name(self):
         try:
@@ -238,6 +240,7 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
                 return self.merchant_profile.company_name
             elif self.merchant_profile.first_name and self.merchant_profile.last_name:
                 return f'{self.merchant_profile.first_name} {self.merchant_profile.last_name}'
+            return None
 
     @property
     def profile(self):
@@ -369,6 +372,7 @@ class UserActivation(models.Model):
     is_active = models.BooleanField(default=False, null=False, blank=False, verbose_name='Активный')
     creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата создания')
     role = models.PositiveSmallIntegerField(choices=ROLES, default=ROLE_CLIENT, verbose_name='Роль')
+    name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Имя')
 
     class Meta:
         verbose_name = 'Активация'
@@ -470,10 +474,16 @@ class ReviewDocument(models.Model):
         verbose_name_plural = 'Фото отзывов'
 
     def __str__(self):
-        return f'Document ({self.id}) of review ({self.review.id})'
+        return f'Документ ({self.id}) отзыва ({self.review.id})'
 
 
 class ReviewReply(models.Model):
+    user = models.ForeignKey(MainUser,
+                             on_delete=models.CASCADE,
+                             null=False,
+                             blank=False,
+                             related_name='merchant_reviews_replies',
+                             verbose_name='Пользователь')
     review = models.OneToOneField(MerchantReview,
                                on_delete=models.CASCADE,
                                null=False,
@@ -482,6 +492,7 @@ class ReviewReply(models.Model):
                                verbose_name='Отзыв')
     text = models.CharField(max_length=1000, blank=False, null=False, verbose_name='Основной текст')
     user_likes = models.ManyToManyField(MainUser,
+                                        blank=True,
                                         related_name='reply_likes',
                                         verbose_name='Лайки')
     creation_date = models.DateTimeField(auto_now=True, null=False, blank=False)
@@ -492,4 +503,4 @@ class ReviewReply(models.Model):
         verbose_name_plural = 'Ответы на отзывы'
 
     def __str__(self):
-        return f'{self.id}: review ({self.review.id})'
+        return f'{self.id}: отзыв ({self.review.id})'

@@ -9,7 +9,7 @@ urlpatterns = [
 ]
 
 router = routers.DefaultRouter()
-router.register('user', UserViewSet)
+router.register('', UserViewSet)
 router.register('reviews', ProjectReview)
 
 urlpatterns += router.urls
