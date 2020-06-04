@@ -369,7 +369,7 @@ class UserActivation(models.Model):
                                 related_name='activation',
                                 verbose_name='Пользователь')
     email = models.EmailField(null=False, blank=False, verbose_name='Email')
-    is_active = models.BooleanField(default=False, null=False, blank=False, verbose_name='Активный')
+    is_active = models.BooleanField(default=True, null=False, blank=False, verbose_name='Активный')
     creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата создания')
     role = models.PositiveSmallIntegerField(choices=ROLES, default=ROLE_CLIENT, verbose_name='Роль')
     name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Имя')

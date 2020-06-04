@@ -249,6 +249,8 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = int(os.environ.get('EMAIL_USE_TLS'))
 EMAIL_USE_SSL = int(os.environ.get('EMAIL_USE_SSL'))
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+SERVER_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 LOCALE_PATHS = (
     os.path.join(BASE_DIR, 'translations', 'locale'),
