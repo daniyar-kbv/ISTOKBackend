@@ -18,4 +18,9 @@ def create_url(viewset, name, arg, request):
     view.basename = router.get_default_basename(UserViewSet)
     view.request = None
     base_url = request.build_absolute_uri("/")
-    return f'{base_url[0:len(base_url)-1]}{view.reverse_action(name, args=[arg])}'
+    url = f'{base_url[0:len(base_url)-1]}{view.reverse_action(name, args=[arg])}'
+    if url.__contains__('istokhome.ru'):
+        url.replace('istokhome.ru', 'istokhome.com')
+    if url.__contains__('istokhome.kz'):
+        url.replace('istokhome.kz', 'istokhome.com')
+    return url
