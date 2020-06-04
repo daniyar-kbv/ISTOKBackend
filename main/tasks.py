@@ -26,4 +26,4 @@ def send_email(subject, body, to, attachments=None):
         logger.info(f'Task: Email sending to {to} finished')
     except:
         logger.info(f'Task: Email sending to {to} failed')
-        # send_email(subject, body, to, attachments)
+        send_email(subject, body, to, attachments)
