@@ -11,8 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task
-def send_email(subject, body, to, attachments=None):
+def send_email(subject, body, to, attachments=None, count=0):
     logger.info(f'Task: Email sending to {to} started')
+    if count == 10:
+        return
     try:
         email = EmailMessage(
             subject,
@@ -26,4 +28,4 @@ def send_email(subject, body, to, attachments=None):
         logger.info(f'Task: Email sending to {to} finished')
     except:
         logger.info(f'Task: Email sending to {to} failed')
-        send_email(subject, body, to, attachments)
+        send_email(subject, body, to, attachments, count=count+1)
