@@ -20,7 +20,9 @@ def create_url(viewset, name, arg, request):
     base_url = request.build_absolute_uri("/")
     url = f'{base_url[0:len(base_url)-1]}{view.reverse_action(name, args=[arg])}'
     if url.__contains__('istokhome.ru'):
-        url.replace('istokhome.ru', 'istokhome.com')
+        url = url.replace('istokhome.ru', 'istokhome.com')
     if url.__contains__('istokhome.kz'):
-        url.replace('istokhome.kz', 'istokhome.com')
+        url = url.replace('istokhome.kz', 'istokhome.com')
+    if url.__contains__('185.146.3.49'):
+        url = url.replace('185.146.3.49', 'istokhome.com')
     return url

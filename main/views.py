@@ -186,6 +186,14 @@ class ProjectViewSet(viewsets.GenericViewSet,
             logger.error(f'Project({pk}) comment create failed: {response.make_errors(serializer)}')
             return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get', 'post'])
+    def tests(self, request, pk=None):
+        str = 'http://istokhome.ru/api/users/gAAAAABe2IOG_UQYRUijFDUmq1bg159RIcUiy9GbPYD2T7FaJBiN89-brOUuxu6XQRz2Zgh0NlE8BUBfhamaHcx3eFgAxWUz78myo7M78NT0P-7ivFdNJpM=/verify_email/'
+        print(str.__contains__('istokhome.ru'))
+        str = str.replace('istokhome.ru', 'istokhome.com')
+        print(str)
+        return Response()
+
     # @action(detail=True, methods=['post'])
     # def complain(self, request, pk=None):
     #     serializer = self.get_serializer(data=request.data)
