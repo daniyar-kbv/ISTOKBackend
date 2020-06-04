@@ -30,12 +30,13 @@ services:
     ports:
       - "5432:5432"
   web:
+    restart: always
     build: .
     command: sh -c "/wait &&
       ./manage.py compilemessages --locale=ru &&
       ./manage.py migrate &&
       ./manage.py collectstatic --no-input --clear &&
-      gunicorn istok.wsgi:application --bind 0.0.0.0:8990"
+      gunicorn istok.wsgi:application --bind 0.0.0.0:8990 --reload"
     volumes:
       - .:/istok
       - static_volume:/istok/staticfiles
