@@ -31,6 +31,7 @@ class UserViewSet(viewsets.GenericViewSet,
                   mixins.ListModelMixin):
     queryset = MainUser.objects.all()
     parser_classes = (FormParser, MultiPartParser, JSONParser,)
+    http_method_names = ['get', 'post']
 
     def get_serializer_class(self):
         if self.action == 'create':
