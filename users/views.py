@@ -216,7 +216,7 @@ class UserViewSet(viewsets.GenericViewSet,
             return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
         # TODO: if not active
         logger.error(f'Email verification ({email}): failed')
-        return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
+        return redirect(f'http://192.168.0.107:3000/registration-specials?email={email}')
 
     @action(detail=False, methods=['post'])
     def verify_phone(self, request, pk=None):
