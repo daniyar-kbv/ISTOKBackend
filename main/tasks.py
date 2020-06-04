@@ -26,6 +26,6 @@ def send_email(subject, body, to, attachments=None, count=0):
             email.attach_file(attachments)
         email.send()
         logger.info(f'Task: Email sending to {to} finished')
-    except:
-        logger.info(f'Task: Email sending to {to} failed')
+    except Exception as e:
+        logger.info(f'Task: Email sending to {to} failed {print(e) if count == 0 else ""}')
         send_email(subject, body, to, attachments, count=count+1)
