@@ -16,7 +16,7 @@ def activation_created(sender, instance, created=True, **kwargs):
         attrs_needed = ['_request', '_created']
         if all(hasattr(instance, attr) for attr in attrs_needed):
             if instance._created:
-                send_email(constants.ACTIVATION_EMAIL_SUBJECT,
+                send_email.delay(constants.ACTIVATION_EMAIL_SUBJECT,
                                  emails.generate_activation_email(instance.email, request=instance._request),
                                  instance.email)
         if created:
