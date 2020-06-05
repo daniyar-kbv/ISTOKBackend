@@ -299,7 +299,7 @@ class Profile(models.Model):
 
 
 class ClientProfile(Profile):
-    date_of_birth = models.DateTimeField(null=False, blank=False, verbose_name='Дата рождения')
+    date_of_birth = models.DateField(null=False, blank=False, verbose_name='Дата рождения')
     user = models.OneToOneField(MainUser,
                                 on_delete=models.CASCADE,
                                 null=False,
