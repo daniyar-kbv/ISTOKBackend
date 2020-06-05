@@ -36,7 +36,7 @@ services:
       ./manage.py compilemessages --locale=ru &&
       ./manage.py migrate &&
       ./manage.py collectstatic --no-input --clear &&
-      gunicorn istok.wsgi:application --bind 0.0.0.0:8990 --reload"
+      ./manage.py runserver 0.0.0.0:8990""
     volumes:
       - .:/istok
       - static_volume:/istok/staticfiles
