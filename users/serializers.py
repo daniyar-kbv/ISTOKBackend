@@ -77,6 +77,8 @@ class PhoneSerializer(serializers.Serializer):
 
 
 class UserClientCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(required=False)
+
     class Meta:
         model = MainUser
         fields = ('email', 'password', 'role')
@@ -91,7 +93,12 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_data = self.context['user']
-        user = MainUser.objects.create_user(**user_data)
+        serializer = UserClientCreateSerializer(data=user_data)
+        if serializer.is_valid():
+            user = serializer.save()
+        else:
+            raise serializers.ValidationError(response.make_errors(serializer))
+        # user = MainUser.objects.create_user(**user_data)
         profile = ClientProfile.objects.create(user=user, **validated_data)
         return profile
 

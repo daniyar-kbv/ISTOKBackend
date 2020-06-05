@@ -326,3 +326,12 @@ class ProjectTagViewSet(viewsets.GenericViewSet,
     queryset = ProjectTag.objects.all()
     serializer_class = ProjectTagShortSerializer
     pagination_class = None
+
+    @action(detail=False, methods=['post'])
+    def search(self, request, pk=None):
+        search = request.GET.get('search')
+        if not search:
+            search = ''
+        queryset = ProjectTag.objects.search(search)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)

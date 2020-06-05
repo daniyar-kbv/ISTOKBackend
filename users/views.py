@@ -9,7 +9,7 @@ from django.shortcuts import redirect
 from django.db.models import Q
 
 from users.models import MainUser, UserActivation, CodeVerification, MerchantReview, ProjectTag, ProjectCategory, City, \
-    Specialization, Country
+    Specialization, Country, MerchantPhone
 from users.serializers import ClientProfileCreateSerializer, MerchantProfileCreateSerializer, UserLoginSerializer, \
     CodeVerificationSerializer, UserSearchSerializer, UserTopDetailSerializer, MerchantReviewDetailList, \
     MerchantDetailSerializer, ProjectTagShortSerializer, SpecializationSerializer
@@ -267,6 +267,9 @@ class UserViewSet(viewsets.GenericViewSet,
         social_type = request.data.get('social_type')
         email = request.data.get('email', '')
         phone = request.data.get('phone', '')
+        role = request.data.get('role')
+        if not role:
+            return Response(response.make_messages(['role: Укажите роль']))
         logger.info(f'Social login ({email}, {social_type}): started')
         info, error = oauth.get_social_info(request.data, social_type)
         if not info:
@@ -280,7 +283,11 @@ class UserViewSet(viewsets.GenericViewSet,
             logger.error(f'Social login ({email}, {social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
             return Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
         try:
-            user = MainUser.objects.get(Q(email=email) | Q(phone=phone))
+            if MainUser.objects.filter(email=info['email']).count() > 0:
+                user = MainUser.objects.get(email=info['email'])
+            else:
+                phone = MerchantPhone.objects.get(phone=info['phone'])
+                user = phone.user
             payload = jwt_payload_handler(user)
             token = jwt_encode_handler(payload)
             if user.role == constants.ROLE_CLIENT:
@@ -295,7 +302,30 @@ class UserViewSet(viewsets.GenericViewSet,
             logger.info(f'Social login ({email}, {social_type}): succeeded')
             return Response(data, status.HTTP_200_OK)
         except:
-            info['register'] = False
+            if role == constants.ROLE_CLIENT and info['email'] and info['first_name'] and info['birthday']:
+                user = {
+                    'email': info['email'],
+                    'role': int(request.data.get('role'))
+                }
+                role = user.get('role')
+                email = user.get('email')
+                context = {
+                    'user': user
+                }
+                info['date_of_birth'] = info['birthday']
+                serializer = ClientProfileCreateSerializer(data=info, context=context)
+                if serializer.is_valid():
+                    profile = serializer.save()
+                    user = profile.user
+                    payload = jwt_payload_handler(user)
+                    token = jwt_encode_handler(payload)
+                    data = {
+                        'register': False,
+                        'token': token
+                    }
+                    return Response(data)
+                return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            info['register'] = True
             logger.info(f'Social login ({email}, {social_type}): succeeded')
         return Response(info, status.HTTP_200_OK)
 

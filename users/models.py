@@ -92,6 +92,11 @@ class ProjectStyle(models.Model):
         return f'{self.id}: {self.name}'
 
 
+class ProjectTagManager(models.Manager):
+    def search(self, arg):
+        return self.filter(name__icontains=arg)
+
+
 class ProjectTag(models.Model):
     name = models.CharField(max_length=100, null=False, blank=False, verbose_name='Название')
     category = models.ForeignKey(ProjectCategory,
@@ -100,6 +105,7 @@ class ProjectTag(models.Model):
                                  blank=False,
                                  related_name='tags',
                                  verbose_name='Категория')
+    objects = ProjectTagManager()
 
     class Meta:
         verbose_name = 'Тэг'
