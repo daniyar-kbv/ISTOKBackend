@@ -4,9 +4,35 @@ from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectCo
     ProjectCommentDocument
 from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurpose, ProjectPurposeSubType, ProjectTag, \
     ProjectPurposeType, MerchantProfile
+from users.models import Country, City
 from users.serializers import UserShortSerializer, UserMediumSerializer, UserShortAvatarSerializer
 from utils import response
 import constants, math
+
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = '__all__'
+
+
+class CountrySerializer(serializers.ModelSerializer):
+    cities = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Country
+        fields = ('id', 'name', 'cities')
+
+    def get_cities(self, obj):
+        cities = City.objects.filter(country=obj)
+        serializer = CitySerializer(cities, many=True)
+        return serializer.data
+
+
+class ProjectCategoryShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectCategory
+        fields = ('id', 'name')
 
 
 class ProjectCategorySerializer(serializers.ModelSerializer):

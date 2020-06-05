@@ -9,14 +9,16 @@ from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from django.shortcuts import redirect
 from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
-from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplaint
+from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplaint, City, \
+    ProjectCategory
 from main.serializers import ProjectMainPageSerializer, ServicesMainPageSerialzier, ProjectModalSerializer, \
     ProjectSearchSerializer, ProjectDetailSerializer, ProjectCommentDetailSerializer, ProjectCommentWithReplySerializer, \
-    ProjectCommentCreateSerializer
+    ProjectCommentCreateSerializer, CitySerializer, ProjectCategoryShortSerializer
 from blog.models import MainPageBlogPost, BlogPost
 from blog.serializers import BlogPostMainPageSerializer, BlogPostSearchSerializer
-from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser
-from users.serializers import MerchantMainPageSerializer, ReviewMainPageSerializer, UserSearchSerializer
+from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser, Specialization, ProjectTag
+from users.serializers import MerchantMainPageSerializer, ReviewMainPageSerializer, UserSearchSerializer, \
+    SpecializationSerializer, ProjectTagShortSerializer
 from other.models import FAQ
 from other.serializers import FAQSerializer
 from utils import permissions, response, pagination, projects
@@ -296,3 +298,31 @@ class CommentViewSet(viewsets.GenericViewSet):
             comment.save()
         logger.info(f'Like of project comment ({pk}) user({request.user.email}) succeeded')
         return Response(status.HTTP_200_OK)
+
+
+class CityViewSet(viewsets.GenericViewSet,
+                  mixins.ListModelMixin):
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+    pagination_class = None
+
+
+class ProjectCategoryViewSet(viewsets.GenericViewSet,
+                      mixins.ListModelMixin):
+    queryset = ProjectCategory.objects.all()
+    serializer_class = ProjectCategoryShortSerializer
+    pagination_class = None
+
+
+class SpecializationViewSet(viewsets.GenericViewSet,
+                            mixins.ListModelMixin):
+    queryset = Specialization.objects.all()
+    serializer_class = SpecializationSerializer
+    pagination_class = None
+
+
+class ProjectTagViewSet(viewsets.GenericViewSet,
+                        mixins.ListModelMixin):
+    queryset = ProjectTag.objects.all()
+    serializer_class = ProjectTagShortSerializer
+    pagination_class = None

@@ -16,10 +16,13 @@ class BlogPostCategory(models.Model):
 
 
 class BlogPostManager(models.Manager):
-    def search(self, arg, request=None):
-        queryset = self.filter(Q(title__icontains=arg) |
+    def search(self, arg=None, request=None):
+        if arg:
+            queryset = self.filter(Q(title__icontains=arg) |
                                Q(subtitle__icontains=arg) |
                                Q(text__icontains=arg))
+        else:
+            queryset = self.all()
         if request:
             if request.data.get('categories'):
                 queryset = queryset.filter(category_id__in=request.data.get('categories'))

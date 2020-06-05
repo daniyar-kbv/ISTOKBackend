@@ -23,6 +23,7 @@ urlpatterns = i18n_patterns(
     url(r'^api/admin/', admin.site.urls),
     url(r'^api/users/', include('users.urls')),
     url(r'^api/main/', include('main.urls')),
+    url(r'^api/blogs/', include('blog.urls')),
     prefix_default_language=False
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

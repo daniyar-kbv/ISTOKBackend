@@ -1,5 +1,5 @@
 from rest_framework.response import Response
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, views
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework_jwt.settings import api_settings
@@ -8,13 +8,15 @@ from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from django.shortcuts import redirect
 from django.db.models import Q
 
-from users.models import MainUser, UserActivation, CodeVerification, MerchantReview
+from users.models import MainUser, UserActivation, CodeVerification, MerchantReview, ProjectTag, ProjectCategory, City, \
+    Specialization, Country
 from users.serializers import ClientProfileCreateSerializer, MerchantProfileCreateSerializer, UserLoginSerializer, \
     CodeVerificationSerializer, UserSearchSerializer, UserTopDetailSerializer, MerchantReviewDetailList, \
-    MerchantDetailSerializer
+    MerchantDetailSerializer, ProjectTagShortSerializer, SpecializationSerializer
 from main.models import Project
-from main.serializers import ProjectDetailListSerializer
-from utils import encryption, response, oauth, permissions, pagination
+from main.serializers import ProjectDetailListSerializer, ProjectCategoryShortSerializer, CitySerializer, \
+    CountrySerializer
+from utils import encryption, response, oauth, permissions, pagination, general
 from random import randrange
 
 import constants
@@ -390,3 +392,21 @@ class ProjectReview(viewsets.GenericViewSet):
         logger.info(f'Like of merchant review ({pk}) user({request.user.email}) succeeded')
         return Response(status.HTTP_200_OK)
 
+
+class RegisterPage(views.APIView):
+    def get(self, request):
+        tags = ProjectTag.objects.all()
+        tags_serializer = ProjectTagShortSerializer(tags, many=True)
+        countries = Country.objects.all()
+        countries_serializer = CountrySerializer(countries, many=True)
+        categories = ProjectCategory.objects.all()
+        categories_serializer = ProjectCategoryShortSerializer(categories, many=True)
+        specializations = Specialization.objects.all()
+        specializations_serializer = SpecializationSerializer(specializations, many=True)
+        data = {
+            'categories': categories_serializer.data,
+            'locations': countries_serializer.data,
+            'specializations': specializations_serializer.data,
+            'tags': tags_serializer.data
+        }
+        return Response(data)

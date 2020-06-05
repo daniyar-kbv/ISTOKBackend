@@ -1,6 +1,7 @@
 from django.urls import path
 from main.views import MainPageClient, MainPageMerchant, ProjectViewSet, MainPageFavorites, MerchantsSearch, \
-    ProjectsSearch, BlogSearch, CommentViewSet
+    ProjectsSearch, BlogSearch, CommentViewSet, CityViewSet, ProjectCategoryViewSet, SpecializationViewSet, \
+    ProjectTagViewSet
 from rest_framework import routers
 
 urlpatterns = [
@@ -15,5 +16,9 @@ urlpatterns = [
 router = routers.DefaultRouter()
 router.register('projects', ProjectViewSet)
 router.register('comments', CommentViewSet)
+router.register('cities', CityViewSet)
+router.register('categories', ProjectCategoryViewSet)
+router.register('specializations', SpecializationViewSet)
+router.register('project_tags', ProjectTagViewSet)
 
 urlpatterns += router.urls

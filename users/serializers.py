@@ -1,11 +1,17 @@
 from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
-    MerchantReview, ReviewReply, ReviewDocument
+    MerchantReview, ReviewReply, ReviewDocument, Specialization
 from main.models import Project, ProjectDocument, ProjectTag
 from utils import response
 
 import constants, re, math
+
+
+class SpecializationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Specialization
+        fields = ('id', 'name')
 
 
 class ProjectTagShortSerializer(serializers.ModelSerializer):
