@@ -278,7 +278,10 @@ class MerchantMainPageSerializer(serializers.ModelSerializer):
             return None
 
     def get_specialization_name(self, obj):
-        return obj.specializations.first().name
+        try:
+            return obj.specializations.first().name
+        except:
+            return None
 
     def get_avatar(self, obj):
         if obj.avatar:
@@ -374,7 +377,10 @@ class UserSearchSerializer(serializers.ModelSerializer):
         return obj.get_full_name()
 
     def get_specialization_name(self, obj):
-        return obj.merchant_profile.specializations.first().name
+        try:
+            return obj.merchant_profile.specializations.first().name
+        except:
+            return None
 
     def get_projects_count(self, obj):
         return obj.projects.count()
@@ -391,9 +397,12 @@ class UserSearchSerializer(serializers.ModelSerializer):
         return None
 
     def get_price_from_full(self, obj):
-        price_from = obj.projects.order_by('price_from').first().price_from
-        price = int(price_from) if price_from % math.trunc(price_from) == 0 else price_from
-        return f'от {price} тг/м2'
+        try:
+            price_from = obj.projects.order_by('price_from').first().price_from
+            price = int(price_from) if price_from % math.trunc(price_from) == 0 else price_from
+            return f'от {price} тг/м2'
+        except:
+            return None
 
     def get_description_short(self, obj):
         return obj.merchant_profile.description_short
