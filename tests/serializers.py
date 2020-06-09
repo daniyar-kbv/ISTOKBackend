@@ -32,6 +32,8 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        validated_data.pop('user_likes')
+
         post = BlogPost.objects.create(**validated_data)
 
         documents = self.context.get('documents')
