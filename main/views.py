@@ -190,10 +190,14 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['get', 'post'])
     def tests(self, request, pk=None):
-        str = 'http://istokhome.ru/api/users/gAAAAABe2IOG_UQYRUijFDUmq1bg159RIcUiy9GbPYD2T7FaJBiN89-brOUuxu6XQRz2Zgh0NlE8BUBfhamaHcx3eFgAxWUz78myo7M78NT0P-7ivFdNJpM=/verify_email/'
-        print(str.__contains__('istokhome.ru'))
-        str = str.replace('istokhome.ru', 'istokhome.com')
-        print(str)
+        # str = 'http://istokhome.ru/api/users/gAAAAABe2IOG_UQYRUijFDUmq1bg159RIcUiy9GbPYD2T7FaJBiN89-brOUuxu6XQRz2Zgh0NlE8BUBfhamaHcx3eFgAxWUz78myo7M78NT0P-7ivFdNJpM=/verify_email/'
+        # print(str.__contains__('istokhome.ru'))
+        # str = str.replace('istokhome.ru', 'istokhome.com')
+        # print(str)
+        from faker import Faker
+        fake = Faker('ru_RU')
+        print(fake.address())
+
         return Response()
 
     # @action(detail=True, methods=['post'])

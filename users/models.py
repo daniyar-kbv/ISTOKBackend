@@ -284,7 +284,7 @@ class ProfileDocument(models.Model):
 class Profile(models.Model):
     first_name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Имя')
     last_name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Фамилия')
-    rating = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name='Рейтинг')
+    rating = models.FloatField(null=True, blank=True, verbose_name='Рейтинг')
 
     avatar = models.FileField(upload_to=user_avatar_path,
                               validators=[validate_file_size, basic_validate_images],

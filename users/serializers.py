@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
+from django.conf import settings
 from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
     MerchantReview, ReviewReply, ReviewDocument, Specialization
 from main.models import Project, ProjectDocument, ProjectTag
@@ -100,6 +101,15 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(response.make_errors(serializer))
         # user = MainUser.objects.create_user(**user_data)
         profile = ClientProfile.objects.create(user=user, **validated_data)
+        if settings.DEBUG:
+            if self.context['avatar']:
+                profile.avatar = self.context['avatar']
+                profile.save()
+            if self.context['rating']:
+                print(self.context['rating'])
+                print(float(self.context['rating']))
+                profile.rating = float(self.context['rating'])
+                profile.save()
         return profile
 
 

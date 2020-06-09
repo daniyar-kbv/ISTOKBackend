@@ -58,6 +58,7 @@ class UserViewSet(viewsets.GenericViewSet,
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
+        print(request.data)
         user = {
             'email': request.data.get('email'),
             'role': int(request.data.get('role')),
@@ -71,7 +72,9 @@ class UserViewSet(viewsets.GenericViewSet,
         context = {
             'phones': phones,
             'user': user,
-            'documents': documents
+            'documents': documents,
+            'avatar': request.data.get('avatar'),
+            'rating': request.data.get('rating')
         }
         if role == constants.ROLE_CLIENT:
             serializer = ClientProfileCreateSerializer(data=request.data, context=context)
