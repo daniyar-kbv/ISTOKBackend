@@ -22,7 +22,7 @@ def blog_post_document_path(instance, filename):
 
 
 def project_document_path(instance, filename):
-    return f'project_documents/{filename}'
+    return f'project_documents/{instance.project.id}/{filename}'
 
 
 def project_render360_path(instance, filename):
