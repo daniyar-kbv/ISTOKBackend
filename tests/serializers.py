@@ -8,8 +8,6 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        print(validated_data)
-
         tags = validated_data.pop('tags')
 
         project = Project.objects.create(**validated_data)
@@ -18,6 +16,8 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             project.tags.add(tag)
 
         documents = self.context.get('documents')
+
+        print(documents)
 
         if documents:
             for document in documents:
