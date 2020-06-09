@@ -43,6 +43,7 @@ class BlogPost(models.Model):
                              verbose_name='Создатель')
     creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
     user_likes = models.ManyToManyField(MainUser,
+                                        blank=True,
                                         related_name='blog_post_likes',
                                         verbose_name='Лайки пользователей')
     category = models.ForeignKey(BlogPostCategory,
