@@ -248,11 +248,13 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
         try:
             return f'{self.client_profile.first_name} {self.client_profile.last_name}'
         except:
-            if self.merchant_profile.company_name:
-                return self.merchant_profile.company_name
-            elif self.merchant_profile.first_name and self.merchant_profile.last_name:
-                return f'{self.merchant_profile.first_name} {self.merchant_profile.last_name}'
-            return None
+            try:
+                if self.merchant_profile.company_name:
+                    return self.merchant_profile.company_name
+                elif self.merchant_profile.first_name and self.merchant_profile.last_name:
+                    return f'{self.merchant_profile.first_name} {self.merchant_profile.last_name}'
+            except:
+                return f'{self.email}'
 
     @property
     def profile(self):
