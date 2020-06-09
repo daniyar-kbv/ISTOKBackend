@@ -8,4 +8,4 @@ from utils import upload
 def order_picture_deleted(sender, instance, created=True, **kwargs):
     doc = ProjectDocument.objects.filter(project=instance).first()
     if doc:
-        upload.delete_folder(doc)
+        upload.delete_folder(doc.document)
