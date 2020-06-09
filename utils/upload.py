@@ -14,7 +14,7 @@ def review_document_path(instance, filename):
 
 
 def project_category_image_path(instance, filename):
-    return f'project_category_images/{instance.id}/{filename}'
+    return f'project_category_images/{filename}/{filename}'
 
 
 def blog_post_document_path(instance, filename):
@@ -22,7 +22,7 @@ def blog_post_document_path(instance, filename):
 
 
 def project_document_path(instance, filename):
-    return f'project_documents/{instance.id}/{filename}'
+    return f'project_documents/{filename}/{filename}'
 
 
 def project_render360_path(instance, filename):
