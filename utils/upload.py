@@ -14,7 +14,7 @@ def review_document_path(instance, filename):
 
 
 def project_category_image_path(instance, filename):
-    return f'project_category_images/{filename}/{filename}'
+    return f'project_category_images/{filename}'
 
 
 def blog_post_document_path(instance, filename):
@@ -22,7 +22,7 @@ def blog_post_document_path(instance, filename):
 
 
 def project_document_path(instance, filename):
-    return f'project_documents/{filename}/{filename}'
+    return f'project_documents/{filename}'
 
 
 def project_render360_path(instance, filename):
@@ -33,7 +33,13 @@ def project_comment_document_path(instance, filename):
     return f'project_comment_documents/{instance.comment.id}/{filename}'
 
 
-def delete_file(document):
+def delete_folder(document):
     path = os.path.abspath(os.path.join(document.path, '..'))
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+
+
+def delete_file(document):
+    path = os.path.abspath(os.path.join(document.path, '.'))
     if os.path.isdir(path):
         shutil.rmtree(path)
