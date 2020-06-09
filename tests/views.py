@@ -58,6 +58,8 @@ class MerchantReviewViewSet(viewsets.GenericViewSet,
 
 class MerchantReviewReplyViewSet(viewsets.GenericViewSet,
                                  mixins.CreateModelMixin):
+    queryset = ReviewReply.objects.all()
+
     def create(self, request, *args, **kwargs):
         try:
             review = MerchantReview.objects.get(id=request.data.get('review'))
