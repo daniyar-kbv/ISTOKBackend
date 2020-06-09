@@ -15,7 +15,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         context = {
             'documents': documents
         }
-        serializer = self.get_serializer(data=request.data, context=context)
+        serializer = ProjectCreateSerializer(data=request.data, context=context)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
