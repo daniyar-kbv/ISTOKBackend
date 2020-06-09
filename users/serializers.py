@@ -52,7 +52,10 @@ class UserShortAvatarSerializer(UserShortSerializer):
         return None
 
     def get_is_pro(self, obj):
-        return obj.merchant_profile.is_pro
+        try:
+            return obj.merchant_profile.is_pro
+        except:
+            None
 
 
 class UserMediumSerializer(UserShortAvatarSerializer):
