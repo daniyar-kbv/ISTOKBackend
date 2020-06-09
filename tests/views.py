@@ -11,7 +11,6 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
     def create(self, request, *args, **kwargs):
         documents = request.data.getlist('documents')
-        print(documents)
         context = {
             'documents': documents
         }

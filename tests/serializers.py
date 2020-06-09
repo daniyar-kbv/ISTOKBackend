@@ -8,6 +8,8 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        print(validated_data)
+
         tags = validated_data.pop('tags')
 
         project = Project.objects.create(**validated_data)
