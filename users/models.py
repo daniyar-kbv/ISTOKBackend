@@ -25,23 +25,29 @@ class ProjectCategory(models.Model):
         return f'{self.id}: {self.name}'
 
 
-class ProjectPurposeSubType(models.Model):
-    name = models.CharField(max_length=100, null=False, blank=False, verbose_name='Название')
-
-    class Meta:
-        verbose_name = 'Подтип назначения'
-        verbose_name_plural = 'Подтипы назначения'
-
-    def __str__(self):
-        return f'{self.id}: {self.name}'
-
-
 class ProjectPurposeType(models.Model):
     name = models.CharField(max_length=100, null=False, blank=False, verbose_name='Название')
 
     class Meta:
         verbose_name = 'Тип назначения'
         verbose_name_plural = 'Типы назначений'
+
+    def __str__(self):
+        return f'{self.id}: {self.name}'
+
+
+class ProjectPurposeSubType(models.Model):
+    name = models.CharField(max_length=100, null=False, blank=False, verbose_name='Название')
+    type = models.ForeignKey(ProjectPurposeType,
+                           on_delete=models.CASCADE,
+                           null=True,
+                           blank=False,
+                           related_name='subtypes',
+                           verbose_name='Тип')
+
+    class Meta:
+        verbose_name = 'Подтип назначения'
+        verbose_name_plural = 'Подтипы назначения'
 
     def __str__(self):
         return f'{self.id}: {self.name}'

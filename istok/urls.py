@@ -25,6 +25,7 @@ urlpatterns = i18n_patterns(
     url(r'^api/main/', include('main.urls')),
     url(r'^api/blogs/', include('blog.urls')),
     url(r'^api/profiles/', include('profiles.urls')),
+    url(r'^api/tests/', include('tests.urls')),
     prefix_default_language=False
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
