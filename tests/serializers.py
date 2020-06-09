@@ -15,7 +15,8 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         for tag in tags:
             project.tags.add(tag)
 
-        documents = self.context['documents']
+        documents = self.context.get('documents')
+
         if documents:
             for document in documents:
                 ProjectDocument.objects.create(project=project, document=document)
