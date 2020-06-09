@@ -8,7 +8,12 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        tags = validated_data.pop('tags')
+
         project = Project.objects.create(**validated_data)
+
+        for tag in tags:
+            project.tags.add(tag)
 
         documents = self.context['documents']
         if documents:
