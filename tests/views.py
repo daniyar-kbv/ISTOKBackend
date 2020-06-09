@@ -1,8 +1,9 @@
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
-from tests.serializers import ProjectCreateSerializer, BlogPostCreateSerializer
+from tests.serializers import ProjectCreateSerializer, BlogPostCreateSerializer, MerchantReviewCreateSerialzier
 from main.models import Project
 from blog.models import BlogPost
+from users.models import MerchantReview
 
 
 class ProjectViewSet(viewsets.GenericViewSet,
@@ -32,6 +33,22 @@ class BlogPostViewSet(viewsets.GenericViewSet,
             'documents': documents
         }
         serializer = BlogPostCreateSerializer(data=request.data, context=context)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class MerchantReviewViewSet(viewsets.GenericViewSet,
+                            mixins.CreateModelMixin):
+    queryset = MerchantReview.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        documents = request.data.getlist('documents')
+        context = {
+            'documents': documents
+        }
+        serializer = MerchantReviewCreateSerialzier(data=request.data, context=context)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)

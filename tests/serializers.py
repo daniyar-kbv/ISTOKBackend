@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from main.models import Project, ProjectDocument
 from blog.models import BlogPost, PostDocument
+from users.models import MerchantReview, ReviewDocument
 
 
 class ProjectCreateSerializer(serializers.ModelSerializer):
@@ -42,3 +43,21 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
             for document in documents:
                 PostDocument.objects.create(post=post, document=document)
         return post
+
+
+class MerchantReviewCreateSerialzier(serializers.ModelSerializer):
+    class Meta:
+        model = MerchantReview
+        fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data.pop('user_likes')
+
+        review = MerchantReview.objects.create(**validated_data)
+
+        documents = self.context.get('documents')
+
+        if documents:
+            for document in documents:
+                ReviewDocument.objects.create(review=review, document=document)
+        return review
