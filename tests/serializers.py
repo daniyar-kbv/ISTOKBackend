@@ -14,3 +14,4 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         if documents:
             for document in documents:
                 ProjectDocument.objects.create(project=project, document=document)
+        return project
