@@ -106,8 +106,6 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
                 profile.avatar = self.context['avatar']
                 profile.save()
             if self.context['rating']:
-                print(self.context['rating'])
-                print(float(self.context['rating']))
                 profile.rating = float(self.context['rating'])
                 profile.save()
         return profile
@@ -179,6 +177,13 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
             profile.specializations.add(specialization)
         for tag in tags:
             profile.tags.add(tag)
+        if settings.DEBUG:
+            if self.context['avatar']:
+                profile.avatar = self.context['avatar']
+                profile.save()
+            if self.context['rating']:
+                profile.rating = float(self.context['rating'])
+                profile.save()
         return profile
 
 
