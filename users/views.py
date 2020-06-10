@@ -399,7 +399,7 @@ class UserViewSet(viewsets.GenericViewSet,
             return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
         if user.role == constants.ROLE_CLIENT:
             return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
-        serializer = MerchantDetailSerializer(user)
+        serializer = MerchantDetailSerializer(user, context=request)
         return Response(serializer.data)
 
 
