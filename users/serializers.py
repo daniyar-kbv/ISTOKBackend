@@ -345,11 +345,13 @@ class MerchantReviewDetailList(ReviewMainPageSerializer):
         comment_documents = ReviewDocument.objects.filter(review=obj)
         for doc in comment_documents:
             urls.append(self.context.build_absolute_uri(doc.document.url))
+        print(urls)
         return urls
 
     def get_reply(self, obj):
         try:
             reply = obj.reply
+            print(reply)
             serializer = MerchantReviewReplyDetailListSerializer(reply, context=self.context)
             return serializer.data
         except:
