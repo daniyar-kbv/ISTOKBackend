@@ -385,7 +385,9 @@ class UserViewSet(viewsets.GenericViewSet,
         if page is not None:
             print('qwe')
             serializer = MerchantReviewDetailList(reviews, many=True, context=request)
+            print('aaaaa')
             print(serializer.data)
+            print('bbbbb')
             data = {
                 'total_found': reviews.count()
             }
