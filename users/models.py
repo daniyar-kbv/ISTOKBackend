@@ -470,7 +470,7 @@ class MerchantReview(models.Model):
         verbose_name_plural = 'Отзывы'
 
     def __str__(self):
-        return f'{self.id}: {self.user.get_full_name()} -> {self.merchant.get_full_name()}'
+        return f'{self.id}: {self.user.id}:{self.user.get_full_name()} -> {self.merchant.id}:{self.merchant.get_full_name()}'
 
 
 class ReviewDocument(models.Model):
