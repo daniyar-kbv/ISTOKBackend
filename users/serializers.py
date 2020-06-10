@@ -352,7 +352,10 @@ class MerchantReviewDetailList(ReviewMainPageSerializer):
     def get_reply(self, obj):
         try:
             print('reply')
-            reply = obj.reply
+            try:
+                reply = obj.reply
+            except:
+                return None
             print(reply)
             serializer = MerchantReviewReplyDetailListSerializer(reply, context=self.context)
             print('ser')
