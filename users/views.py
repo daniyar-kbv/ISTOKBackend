@@ -384,12 +384,10 @@ class UserViewSet(viewsets.GenericViewSet,
         page = paginator.paginate_queryset(reviews, request)
         if page is not None:
             serializer = MerchantReviewDetailList(reviews, many=True, context=request)
-            print(serializer.data)
+            print(serializer.errors)
             data = {
                 'total_found': reviews.count()
             }
-            print(serializer.data)
-            print(serializer.errors)
             return paginator.get_paginated_response(serializer.data, additional_data=data)
         serializer = MerchantReviewDetailList(reviews, many=True, context=request)
         return Response(serializer.data, status.HTTP_200_OK)

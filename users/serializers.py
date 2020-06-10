@@ -327,11 +327,9 @@ class MerchantReviewReplyDetailListSerializer(serializers.ModelSerializer):
                 return True
             else:
                 return False
-        print('anon')
         return None
 
     def get_likes_count(self, obj):
-        print(obj.user_likes.count())
         return obj.user_likes.count()
 
 
@@ -351,17 +349,10 @@ class MerchantReviewDetailList(ReviewMainPageSerializer):
 
     def get_reply(self, obj):
         try:
-            print('reply')
-            try:
-                reply = obj.reply
-            except:
-                return None
-            print(reply)
+            reply = obj.reply
             serializer = MerchantReviewReplyDetailListSerializer(reply, context=self.context)
-            print('ser')
             return serializer.data
         except:
-            print(None)
             return None
 
 
