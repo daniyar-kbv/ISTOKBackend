@@ -82,11 +82,11 @@ class ProjectCommentCreateSerialzier(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('user_likes')
 
-        review = MerchantReview.objects.create(**validated_data)
+        comment = ProjectComment.objects.create(**validated_data)
 
         documents = self.context.get('documents')
 
         if documents:
             for document in documents:
-                ReviewDocument.objects.create(review=review, document=document)
-        return review
+                ProjectCommentDocument.objects.create(comment=comment, document=document)
+        return comment
