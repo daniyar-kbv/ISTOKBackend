@@ -378,26 +378,19 @@ class UserViewSet(viewsets.GenericViewSet,
             order_by = request.data.get('order_by')
         else:
             order_by = '-creation_date'
-        print(order_by)
         reviews = reviews.order_by(order_by)
-        print('asd')
         paginator = pagination.CustomPagination()
-        print('qwe')
         paginator.page_size = 8
         page = paginator.paginate_queryset(reviews, request)
-        print('zxc')
         if page is not None:
-            print('rty')
             serializer = MerchantReviewDetailList(reviews, many=True, context=request)
-            print('fgh')
             data = {
                 'total_found': reviews.count()
             }
-            print('vbn')
+            print(serializer.data)
+            print(serializer.errors)
             return paginator.get_paginated_response(serializer.data, additional_data=data)
-        print('yui')
         serializer = MerchantReviewDetailList(reviews, many=True, context=request)
-        print('vbn')
         return Response(serializer.data, status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
