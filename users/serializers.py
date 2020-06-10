@@ -46,7 +46,7 @@ class UserShortAvatarSerializer(UserShortSerializer):
             try:
                 profile = obj.merchant_profile
             except:
-                raise serializers.ValidationError(constants.RESPONSE_SERVER_ERROR)
+                return None
         if profile.avatar:
             return self.context.build_absolute_uri(profile.avatar.url)
         return None

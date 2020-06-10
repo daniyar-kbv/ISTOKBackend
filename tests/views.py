@@ -72,7 +72,6 @@ class MerchantReviewReplyViewSet(viewsets.GenericViewSet,
             pass
         data = request.data
         data['user'] = review.merchant_id
-        print('data')
         serializer = MerchantReviewReplyCreateSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
