@@ -371,27 +371,22 @@ class UserViewSet(viewsets.GenericViewSet,
         except MainUser.DoesNotExist:
             return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']),
                             status.HTTP_400_BAD_REQUEST)
-        print('qwe')
         if user.role == constants.ROLE_CLIENT:
             return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
-        print('asd')
         reviews = MerchantReview.objects.filter(merchant=user)
         if request.data.get('order_by'):
             order_by = request.data.get('order_by')
         else:
             order_by = '-creation_date'
-        print('zxc')
         reviews.order_by(order_by)
         paginator = pagination.CustomPagination()
         paginator.page_size = 8
         page = paginator.paginate_queryset(reviews, request)
-        print('rty')
         if page is not None:
             serializer = MerchantReviewDetailList(reviews, many=True, context=request)
             data = {
                 'total_found': reviews.count()
             }
-            print('fgh')
             return paginator.get_paginated_response(serializer.data, additional_data=data)
         serializer = MerchantReviewDetailList(reviews, many=True, context=request)
         return Response(serializer.data, status.HTTP_200_OK)
