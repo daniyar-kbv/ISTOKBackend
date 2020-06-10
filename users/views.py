@@ -378,6 +378,7 @@ class UserViewSet(viewsets.GenericViewSet,
             order_by = request.data.get('order_by')
         else:
             order_by = '-creation_date'
+        print(order_by)
         reviews = reviews.order_by(order_by)
         paginator = pagination.CustomPagination()
         paginator.page_size = 8
