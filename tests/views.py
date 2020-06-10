@@ -1,7 +1,7 @@
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 from tests.serializers import ProjectCreateSerializer, BlogPostCreateSerializer, MerchantReviewCreateSerialzier, \
-    MerchantReviewReplyCreateSerializer, ProjectCommentCreateSerialzier
+    MerchantReviewReplyCreateSerializer, ProjectCommentCreateSerialzier, ProjectCommentReplyCreateSerializer
 from main.models import Project, ProjectComment, ProjectCommentReply
 from blog.models import BlogPost
 from users.models import MerchantReview, ReviewReply
@@ -89,6 +89,29 @@ class ProjectCommentViewSet(viewsets.GenericViewSet,
             'documents': documents
         }
         serializer = ProjectCommentCreateSerialzier(data=request.data, context=context)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class ProjectCommentReplyViewSet(viewsets.GenericViewSet,
+                                 mixins.CreateModelMixin):
+    queryset = ProjectCommentReply.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        try:
+            comment = ProjectComment.objects.get(id=request.data.get('comment'))
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        try:
+            ProjectCommentReply.objects.get(comment=comment)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except:
+            pass
+        data = request.data
+        data['user'] = comment.project.user_id
+        serializer = MerchantReviewReplyCreateSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)

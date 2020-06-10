@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from main.models import Project, ProjectDocument, ProjectComment, ProjectCommentDocument
+from main.models import Project, ProjectDocument, ProjectComment, ProjectCommentDocument, ProjectCommentReply
 from blog.models import BlogPost, PostDocument
 from users.models import MerchantReview, ReviewDocument, ReviewReply
 
@@ -90,3 +90,14 @@ class ProjectCommentCreateSerialzier(serializers.ModelSerializer):
             for document in documents:
                 ProjectCommentDocument.objects.create(comment=comment, document=document)
         return comment
+
+
+class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectCommentReply
+        fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data.pop('user_likes')
+        review = ProjectCommentReply.objects.create(**validated_data)
+        return review
