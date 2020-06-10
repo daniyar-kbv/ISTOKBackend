@@ -6,7 +6,6 @@ class CustomPagination(pagination.PageNumberPagination):
     page_size = 5
 
     def get_paginated_response(self, data, additional_data=None):
-        print(additional_data)
         data = {
             'results': data,
             'additional_data': additional_data,
