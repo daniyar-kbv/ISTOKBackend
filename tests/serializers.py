@@ -74,19 +74,19 @@ class MerchantReviewReplyCreateSerializer(serializers.ModelSerializer):
         return review
 
 
-# class ProjectCommentCreateSerialzier(serializers.ModelSerializer):
-#     class Meta:
-#         model = ProjectComment
-#         fields = '__all__'
-#
-#     def create(self, validated_data):
-#         validated_data.pop('user_likes')
-#
-#         review = MerchantReview.objects.create(**validated_data)
-#
-#         documents = self.context.get('documents')
-#
-#         if documents:
-#             for document in documents:
-#                 ReviewDocument.objects.create(review=review, document=document)
-#         return review
+class ProjectCommentCreateSerialzier(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectComment
+        fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data.pop('user_likes')
+
+        review = MerchantReview.objects.create(**validated_data)
+
+        documents = self.context.get('documents')
+
+        if documents:
+            for document in documents:
+                ReviewDocument.objects.create(review=review, document=document)
+        return review

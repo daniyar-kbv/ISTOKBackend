@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework import routers
-from tests.views import ProjectViewSet, BlogPostViewSet, MerchantReviewViewSet, MerchantReviewReplyViewSet
+from tests.views import ProjectViewSet, BlogPostViewSet, MerchantReviewViewSet, MerchantReviewReplyViewSet, \
+    ProjectCommentViewSet
 
 urlpatterns = [
 ]
@@ -10,5 +11,6 @@ router.register('projects', ProjectViewSet)
 router.register('blogs', BlogPostViewSet)
 router.register('reviews', MerchantReviewViewSet)
 router.register('review_replies', MerchantReviewReplyViewSet)
+router.register('project_comments', ProjectCommentViewSet)
 
 urlpatterns += router.urls
