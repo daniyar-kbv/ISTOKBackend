@@ -110,7 +110,7 @@ class ProjectCommentReplyViewSet(viewsets.GenericViewSet,
         except:
             pass
         data = request.data
-        data.mutable = True
+        data._mutable = True
         data['user'] = comment.project.user_id
         serializer = ProjectCommentReplyCreateSerializer(data=data)
         serializer.is_valid(raise_exception=True)
