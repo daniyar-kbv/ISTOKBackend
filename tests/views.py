@@ -111,7 +111,7 @@ class ProjectCommentReplyViewSet(viewsets.GenericViewSet,
             pass
         data = request.data
         data['user'] = comment.project.user_id
-        serializer = MerchantReviewReplyCreateSerializer(data=data)
+        serializer = ProjectCommentReplyCreateSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
