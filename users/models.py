@@ -314,7 +314,6 @@ class ClientProfile(Profile):
                                 blank=False,
                                 related_name='client_profile',
                                 verbose_name='Профиль')
-    phone = models.CharField(max_length=18, null=True, blank=True, verbose_name='Номер телефона')
 
     class Meta:
         verbose_name = 'Профиль клиента'

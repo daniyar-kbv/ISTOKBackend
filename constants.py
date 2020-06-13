@@ -8,11 +8,22 @@ ROLES = (
     (ROLE_MERCHANT, 'Специалист'),
 )
 
+QUESTION_RADIO = 1
+QUESTION_DROPDOWN = 2
+QUESTION_CHECKBOX = 3
+
+QUESTION_TYPES = (
+    (QUESTION_RADIO, 'Переключатель'),
+    (QUESTION_DROPDOWN, 'Выпадающий список'),
+    (QUESTION_CHECKBOX, 'Чекбокс')
+)
+
 ACTIVATION_EMAIL_SUBJECT = 'test'
 ACTIVATION_EMAIL_BODY_START = 'test'
 ACTIVATION_EMAIL_BODY_END = 'test'
 
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+DATE_FORMAT = '%Y-%m-%d'
 PHONE_FORMAT = '\+7 \(\w{3}\) \w{3}-\w{2}-\w{2}'
 
 MAX_REGULAR_FILE_SIZE = 10000000
@@ -30,6 +41,7 @@ RESPONSE_PHONE_REGISTERED = 'Зарегестрирован на другого 
 RESPONSE_SOCIAL_TOKEN_INVALID = 'Токен не действителен'
 RESPONSE_DOES_NOT_EXIST = 'не существует'
 RESPONSE_USER_NOT_MERCHANT = 'Пользователь не является специалтстом'
+RESPONSE_FIELD_REQUIRED = 'Обязательное поле'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'
@@ -38,13 +50,16 @@ VALIDATION_MAX_FILE_SIZE = 'Максимальный размер файла'
 VALIDATION_CODE_FORMAT = 'Формат кода подтверждения: XXXX'
 VALIDATION_CODE_ONLY_DIGITS = 'Код подтверждения должен состоять только из цифр'
 VALIDATION_PHONE_NOT_VERIFIED = 'Номер телефона не подтвержден'
+VALIDATION_PASSWORD_DIGITS = 'Пароль должен содержать хотя бы 1 цифру'
+VALIDATION_PASSWORD_UPPERCASE = 'Пароль должен содержать хотя бы 1 заглавную букву'
+VALIDATION_PASSWORD_LOWERCASE = 'Пароль должен содержать хотя бы 1 прописную букву'
+VALIDATION_PASSWORD_LENGTH = 'Пароль должен состоять минимум из 8 символов'
 
 PHONE = 'Номер телефона'
 EMAIL = 'Email'
 PASSWORD = 'Пароль'
 INCORRECT = 'Неверно'
 MB = 'Мб'
-
 
 FACEBOOK = 'facebook'
 GOOGLE = 'google'

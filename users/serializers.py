@@ -4,7 +4,7 @@ from django.conf import settings
 from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
     MerchantReview, ReviewReply, ReviewDocument, Specialization
 from main.models import Project, ProjectDocument, ProjectTag
-from utils import response
+from utils import response, validators
 
 import constants, re, math
 
@@ -74,10 +74,7 @@ class PhoneSerializer(serializers.Serializer):
     phone = serializers.CharField()
 
     def validate_phone(self, value):
-        regex = constants.PHONE_FORMAT
-        if not isinstance(value, str) or re.search(regex, value) is None:
-            raise serializers.ValidationError(constants.VALIDATION_PHONE_FORMAT_ERROR)
-        return value
+        return validators.validate_phone(value)
 
 
 class UserClientCreateSerializer(serializers.ModelSerializer):
@@ -86,6 +83,13 @@ class UserClientCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MainUser
         fields = ('email', 'password', 'role')
+
+    def validate_password(self, value):
+        return validators.validate_password(value)
+
+    def create(self, validated_data):
+        user = MainUser.objects.create_user(**validated_data)
+        return user
 
 
 class ClientProfileCreateSerializer(serializers.ModelSerializer):
@@ -102,7 +106,6 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
             user = serializer.save()
         else:
             raise serializers.ValidationError(response.make_errors(serializer))
-        # user = MainUser.objects.create_user(**user_data)
         profile = ClientProfile.objects.create(user=user, **validated_data)
         if settings.DEBUG:
             if self.context['avatar']:
@@ -145,13 +148,13 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                         merchant_phone = MerchantPhone.objects.get(phone=phone)
                     except MerchantPhone.DoesNotExist:
                         user.delete()
-                        raise serializers.ValidationError(constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)
+                        raise serializers.ValidationError(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]))
                     if merchant_phone.user is not None:
                         user.delete()
-                        raise serializers.ValidationError(f'{phone} {constants.RESPONSE_PHONE_REGISTERED}')
+                        raise serializers.ValidationError(response.make_messages([f'{phone} {constants.RESPONSE_PHONE_REGISTERED}']))
                     if not merchant_phone.is_valid:
                         user.delete()
-                        raise serializers.ValidationError(constants.VALIDATION_PHONE_NOT_VERIFIED)
+                        raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_NOT_VERIFIED]))
                     merchant_phone.user = user
                     merchant_phone.save()
                 else:
@@ -200,13 +203,13 @@ class UserLoginSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         if value == '' or value is None:
-            raise serializers.ValidationError(constants.VALIDATION_CANT_BE_BLANK)
+            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_CANT_BE_BLANK]))
         return value
 
     def validate_phone(self, value):
         regex = constants.PHONE_FORMAT
         if not isinstance(value, str) or re.search(regex, value) is None:
-            raise serializers.ValidationError(constants.VALIDATION_PHONE_FORMAT_ERROR)
+            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
         return value
 
 
@@ -218,7 +221,7 @@ class MerchantPhoneVerification(serializers.ModelSerializer):
     def validate_phone(self, value):
         regex = constants.PHONE_FORMAT
         if not isinstance(value, str) or re.search(regex, value) is None:
-            raise serializers.ValidationError(constants.VALIDATION_PHONE_FORMAT_ERROR)
+            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
         return value
 
 
@@ -232,9 +235,9 @@ class CodeVerificationSerializer(serializers.ModelSerializer):
     def validate_code(self, value):
         for char in value:
             if char not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-                raise serializers.ValidationError(constants.VALIDATION_PHONE_FORMAT_ERROR)
+                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
         if len(value) != 4:
-            raise serializers.ValidationError(constants.VALIDATION_PHONE_FORMAT_ERROR)
+            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
         return value
 
     def create(self, validated_data):
@@ -243,7 +246,7 @@ class CodeVerificationSerializer(serializers.ModelSerializer):
             try:
                 merchant_phone = MerchantPhone.objects.get(phone=phone)
             except MerchantPhone.DoesNotExist:
-                raise serializers.ValidationError(constants.RESPONSE_SERVER_ERROR)
+                raise serializers.ValidationError(response.make_messages([constants.RESPONSE_SERVER_ERROR]))
         else:
             merchant_phone = MerchantPhone.objects.create(phone=phone)
         try:
@@ -460,3 +463,4 @@ class MerchantDetailSerializer(serializers.ModelSerializer):
             return obj.merchant_profile.description_full
         except:
             return None
+

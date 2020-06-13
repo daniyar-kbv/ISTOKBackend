@@ -2,8 +2,9 @@ from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
 import constants
 
+
 class OwnerPermission(BasePermission):
-    message = 'You must be logged in or the owner of the order to update/delete.'
+    message = 'Вы должны быть создателем обьекта что бы его изменять'
 
     def has_permission(self, request, view):
         if view.action not in ['list', 'retrieve']:
@@ -19,18 +20,14 @@ class OwnerPermission(BasePermission):
 
 
 class IsClient(BasePermission):
-    message = 'You must be logged in or the owner of the order to update/delete.'
+    message = 'Вы должны быть клиентом'
 
     def has_permission(self, request, view):
-        if view.action not in ['list', 'retrieve']:
-            return request.user.is_authenticated and request.user.role == constants.ROLE_CLIENT
-        return True
+        return request.user.is_authenticated and request.user.role == constants.ROLE_CLIENT
 
 
 class IsMerchant(BasePermission):
-    message = 'You must be logged in or the owner of the order to update/delete.'
+    message = 'Вы должны быть специалистом'
 
     def has_permission(self, request, view):
-        if view.action not in ['list', 'retrieve']:
-            return request.user.is_authenticated and request.user.role == constants.ROLE_MERCHANT
-        return True
+        return request.user.is_authenticated and request.user.role == constants.ROLE_MERCHANT

@@ -23,8 +23,8 @@ def activation_created(sender, instance, created=True, **kwargs):
 
 @receiver(pre_delete, sender=MainUser)
 def user_pre_delete(sender, instance, created=True, **kwargs):
-    if MainUser.profile.avatar:
-        upload.delete_folder(MainUser.profile.avatar)
+    if instance.profile.avatar:
+        upload.delete_folder(instance.profile.avatar)
     doc = ProfileDocument.objects.filter(user=instance).first()
     if doc:
         upload.delete_folder(doc.document)

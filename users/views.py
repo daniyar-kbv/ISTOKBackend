@@ -58,7 +58,6 @@ class UserViewSet(viewsets.GenericViewSet,
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
-        print(request.data)
         user = {
             'email': request.data.get('email'),
             'role': int(request.data.get('role')),
