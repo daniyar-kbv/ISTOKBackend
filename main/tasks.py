@@ -1,9 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-
 from celery import shared_task
-
 from django.core.mail import EmailMessage
-
+from profiles.models import UsersPaidFeature
 import os
 import logging
 
@@ -29,3 +27,14 @@ def send_email(subject, body, to, attachments=None, count=0):
     except Exception as e:
         logger.info(f'Task: Email sending to {to} failed {print(e) if count == 0 else ""}')
         send_email(subject, body, to, attachments, count=count+1)
+
+
+@shared_task
+def deactivate_user_feature(id):
+    try:
+        feature = UsersPaidFeature.objects.get(id=id)
+        feature.is_active = False
+        feature.save()
+    except:
+        pass
+

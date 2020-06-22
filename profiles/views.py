@@ -2,20 +2,25 @@ from rest_framework import viewsets, mixins, status, permissions, views, excepti
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
+from rest_framework_jwt.settings import api_settings
 from django.db.models import Q
 from profiles.serializers import ClientProfileGetSerializer, ClientProfileUpdateSerializer, UserChangePasswordSerializer, \
     FormUserAnswerCreatePostSerializer, ClientProfileMerchantSerializer, ApplicationBaseSerializer, \
     ApplicationClientConfirmedSerializer, ApplicationClientFinishedSerializer, ApplicationDeclinedSerializer, \
     ApplicationMerchantConfirmedDeclinedWaitingSerializer, ApplicationDeclineSerializer, ApplicationDetailSerializer, \
     ApplicationCreateSerializer, MerchantProfileTopSerializer, MerchantProfileGetSerializer, MerchantProfileForUpdate, \
-    MerchantProfileUpdate
+    MerchantProfileUpdate, PaidFeatureTypeListSerializer
 from users.serializers import PhoneSerializer, ClientRatingCreateSerializer, MerchantReviewCreateSerializer
 from users.models import MainUser, MerchantPhone
-from profiles.models import FormQuestionGroup, Application, ApplicationDocument
+from profiles.models import FormQuestionGroup, Application, ApplicationDocument, PaidFeatureType, Transaction, \
+    UsersPaidFeature
 from profiles.serializers import FormQuestionGroupSerializer
 from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
 import constants
+
+jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 
 class ProfileViewSet(viewsets.GenericViewSet,
@@ -25,6 +30,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['get', 'put'], permission_classes=[permissions.IsAuthenticated])
     def my_profile(self, request, pk=None):
+        request.data._mutable = True
         user = request.user
         if request.method == 'GET':
             if user.role == constants.ROLE_CLIENT:
@@ -62,19 +68,38 @@ class ProfileViewSet(viewsets.GenericViewSet,
                     documents = request.data.pop('documents')
                 delete_documents = []
                 if request.data.get('delete_documents'):
-                    print(request.data.get('delete_documents'))
                     delete_documents = request.data.pop('delete_documents')
                 total_documents = request.data.get('total_documents')
+                if total_documents:
+                    try:
+                        if int(total_documents) > 6:
+                            return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 6']),
+                                            status.HTTP_400_BAD_REQUEST)
+                    except:
+                        return Response(
+                            response.make_messages([f'total_documents: {constants.RESPONSE_RIGHT_ONLY_DIGITS}']),
+                            status.HTTP_400_BAD_REQUEST
+                        )
+                else:
+                    return Response(response.make_messages([f'total_documents: {constants.RESPONSE_FIELD_REQUIRED}']),
+                                    status.HTTP_400_BAD_REQUEST)
                 context = {
                     'phones': phones,
                     'documents': documents,
                     'delete_documents': delete_documents,
-                    'total_files': total_documents
+                    'email': request.data.get('email')
                 }
                 profile = request.user.profile
-                serializer = MerchantProfileUpdate(instance=profile, context=context)
-                serializer.update()
-                return Response(serializer.data)
+                serializer = MerchantProfileUpdate(profile, data=request.data, context=context)
+                if serializer.is_valid():
+                    serializer.save()
+                    payload = jwt_payload_handler(user)
+                    token = jwt_encode_handler(payload)
+                    data = {
+                        'token': token
+                    }
+                    return Response(data)
+                return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['put'], permission_classes=[permissions.IsAuthenticated])
     def change_password(self, request, pk=None):
@@ -120,6 +145,30 @@ class ProfileViewSet(viewsets.GenericViewSet,
     def for_update(self, request, pk=None):
         serializer = MerchantProfileForUpdate(request.user.profile, context=request)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
+    def features(self, request, pk=None):
+        type = request.data.get('type')
+        if not type:
+            return Response(response.make_messages([f'type {constants.RESPONSE_FIELD_REQUIRED}']))
+        if request.method == 'GET':
+            if not isinstance(type, int) or type < 1 or type > len(constants.PAID_FEATURE_TYPES):
+                return Response(response.make_messages([f'Тип {constants.RESPONSE_PAID_TYPE_INVALID}']))
+            features = PaidFeatureType.objects.filter(type=type)
+            serializer = PaidFeatureTypeListSerializer(features, many=True)
+            return Response(serializer.data)
+        elif request.method == 'POST':
+            try:
+                type = PaidFeatureType.objects.get(id=type)
+            except:
+                return Response(response.make_messages([f'Типа {constants.RESPONSE_DOES_NOT_EXIST}']),
+                                status.HTTP_400_BAD_REQUEST)
+            transaction = Transaction.objects.create(number='test')
+            if type.type == constants.PAID_FEATURE_PRO:
+                UsersPaidFeature.objects.create(user=request.user, type=type, transaction=transaction, is_active=True)
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response()
 
 
 class IsPhoneValidView(views.APIView):

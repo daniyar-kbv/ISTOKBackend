@@ -1,6 +1,6 @@
 from django.contrib import admin
 from profiles.models import FormQuestionGroup, FormQuestion, FormAnswer, FormUserAnswer, ApplicationDocument, \
-    Application
+    Application, PaidFeatureType, UsersPaidFeature
 
 
 class InlineFormAnswer(admin.StackedInline):
@@ -36,3 +36,14 @@ class InlineApplicationDocument(admin.StackedInline):
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'merchant', 'status')
     inlines = [InlineApplicationDocument, ]
+
+
+@admin.register(PaidFeatureType)
+class PaidFeatureTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'type', 'price')
+
+
+@admin.register(UsersPaidFeature)
+class UsersPaidFeatureAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'type')
+

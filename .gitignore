@@ -94,9 +94,7 @@ myenv/
 
 mycommands
 
-.env.dev
-.env.dev.db
-.env.dev.rabbit
+
 docker-compose.dev.yml
 nginx/
 

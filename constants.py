@@ -42,6 +42,26 @@ APPLICATION_DECLINED_STRING = 'declined'
 APPLICATION_STATUSES_STRING = [APPLICATION_CREATED_STRING, APPLICATION_CONFIRMED_STRING, APPLICATION_FINISHED_STRING,
                                APPLICATION_FINISHED_CONFIRMED_STRING, APPLICATION_DECLINED_STRING]
 
+PAID_FEATURE_PRO = 1
+PAID_FEATURE_TOP = 2
+PAID_FEATURE_DETAILED = 3
+
+PAID_FEATURE_TYPES = (
+    (PAID_FEATURE_PRO, 'Про аккаунт'),
+    (PAID_FEATURE_TOP, 'Топ проект'),
+    (PAID_FEATURE_DETAILED, 'Выделеный проект')
+)
+
+TIME_DAY = 1
+TIME_MONTH = 2
+TIME_YEAR = 3
+
+TIME_TYPES = (
+    (TIME_DAY, 'Дни'),
+    (TIME_MONTH, 'Месяца'),
+    (TIME_YEAR, 'Года')
+)
+
 ACTIVATION_EMAIL_SUBJECT = 'test'
 ACTIVATION_EMAIL_BODY_START = 'test'
 ACTIVATION_EMAIL_BODY_END = 'test'
@@ -70,6 +90,9 @@ RESPONSE_FIELD_REQUIRED = 'Обязательное поле'
 RESPONSE_STATUS_NOT_VALID = 'Введенный статус не действителен'
 RESPONSE_APPLICATION_STATUS_NOT_VALID = 'Статусы заявки для этого действия:'
 RESPONSE_CANT_MODIFY = 'Вы не можете изменять этот обьект'
+RESPONSE_MAX_FILES = 'Максимальное количество файлов:'
+RESPONSE_RIGHT_ONLY_DIGITS = 'Только цифровые значения'
+RESPONSE_PAID_TYPE_INVALID = 'Типы платной услуги: 1 - Про, 2 - Топ, 3 - Выделеный'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'

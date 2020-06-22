@@ -44,6 +44,5 @@ def delete_folder(document):
 
 
 def delete_file(document):
-    path = os.path.abspath(os.path.join(document.path, '.'))
-    if os.path.isdir(path):
-        shutil.rmtree(path)
+    path = os.path.abspath(document.path)
+    os.remove(path)

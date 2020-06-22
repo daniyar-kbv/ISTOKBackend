@@ -3,9 +3,9 @@ from users.models import MainUser, ClientProfile, MerchantReview, ProjectCategor
 from users.serializers import PhoneSerializer, MerchantPhone, UserShortRatingSerializer, MerchantProfile, \
     ProfileDocumentCreateSerializer, SpecializationWithCategorySerializer
 from profiles.models import FormAnswer, FormQuestion, FormQuestionGroup, FormUserAnswer, Application, \
-    ApplicationDocument
+    ApplicationDocument, PaidFeatureType, UsersPaidFeature
 from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagSerializer
-from utils import response, upload, validators
+from utils import response, upload, validators, general
 from datetime import datetime
 import constants, os
 
@@ -264,7 +264,8 @@ class MerchantProfileForUpdate(serializers.ModelSerializer):
 class MerchantProfileUpdate(serializers.ModelSerializer):
     class Meta:
         model = MerchantProfile
-        fields = '__all__'
+        fields = ('first_name', 'last_name', 'company_name', 'city', 'address', 'specializations', 'tags',
+                  'categories', 'description_short', 'description_full', 'url', 'documents_description')
 
     def update(self, instance, validated_data):
         user = instance.user
@@ -280,7 +281,7 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
                     except MerchantPhone.DoesNotExist:
                         raise serializers.ValidationError(
                             response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]))
-                    if merchant_phone.user is not user and merchant_phone.user is not None:
+                    if merchant_phone.user != user and merchant_phone.user is not None:
                         raise serializers.ValidationError(
                             response.make_messages([f'{phone} {constants.RESPONSE_PHONE_REGISTERED}']))
                     if not merchant_phone.is_valid:
@@ -301,14 +302,8 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
                 if serializer.is_valid():
                     doc_serializers.append(serializer)
                 else:
-                    user.delete()
                     raise serializers.ValidationError(response.make_errors(serializer))
-            doc = ProfileDocument.objects.filter(user=instance).first()
-            if doc:
-                upload.delete_folder(doc.document)
-            docs = ProfileDocument.objects.filter(user=user)
-            docs.delete()
-        email = self.context['email']
+        email = self.context.get('email')
         if email:
             try:
                 usr = MainUser.objects.get(email=email)
@@ -323,9 +318,14 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
         delete_documents = self.context.get('delete_documents')
         for del_doc in delete_documents:
             path = del_doc
-            firstpos = path.rfind("/")
-            lastpos = len(path)
-            print(path[firstpos + 1:lastpos])
+            first_pos = path.rfind("/")
+            last_pos = len(path)
+            name = path[first_pos + 1:last_pos]
+            doc_objects = ProfileDocument.objects.filter(user=user)
+            for doc in doc_objects:
+                if doc.filename() == name:
+                    upload.delete_file(doc.document)
+                    doc.delete()
         for serializer in doc_serializers:
             serializer.save()
         categories = validated_data.pop('categories')
@@ -592,3 +592,15 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
                         doc_obj.delete()
                     raise serializers.ValidationError(response.make_errors(serializer))
         return application
+
+
+class PaidFeatureTypeListSerializer(serializers.ModelSerializer):
+    time_unit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaidFeatureType
+        fields = ('id', 'time_amount', 'time_unit', 'text', 'price', 'beneficial')
+
+    def get_time_unit(self, obj):
+        return general.format_time_period(obj.time_amount, obj.time_unit)
+
