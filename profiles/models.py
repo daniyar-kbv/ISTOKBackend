@@ -1,5 +1,7 @@
 from django.db import models
-from users.models import MainUser
+from users.models import MainUser, ProjectCategory
+from main.models import Project
+from utils import upload, validators
 import constants
 
 
@@ -75,3 +77,89 @@ class FormUserAnswer(models.Model):
 
     def __str__(self):
         return f'{self.id}: {self.user.id}({self.user}) -> {self.answer.id}({self.answer}))'
+
+
+class Application(models.Model):
+    client = models.ForeignKey(MainUser,
+                               on_delete=models.DO_NOTHING,
+                               null=True,
+                               blank=False,
+                               related_name='client_applications',
+                               verbose_name='Клиент')
+    merchant = models.ForeignKey(MainUser,
+                                 on_delete=models.DO_NOTHING,
+                                 null=True,
+                                 blank=False,
+                                 related_name='merchant_applications',
+                                 verbose_name='Специалист')
+    category = models.ForeignKey(ProjectCategory,
+                                 on_delete=models.DO_NOTHING,
+                                 null=True,
+                                 blank=False,
+                                 related_name='applications',
+                                 verbose_name='Категория')
+    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+    project = models.ForeignKey(Project,
+                                on_delete=models.DO_NOTHING,
+                                null=True,
+                                blank=False,
+                                related_name='applications',
+                                verbose_name='Проект')
+    status = models.PositiveSmallIntegerField(choices=constants.APPLICATION_STATUSES,
+                                              default=constants.APPLICATION_CREATED,
+                                              verbose_name='Статус')
+    comment = models.CharField(max_length=1000,
+                               null=True,
+                               blank=True,
+                               verbose_name='Комментарий')
+    rating = models.FloatField(null=True,
+                               blank=True,
+                               verbose_name='Рейтинг')
+    decline_reason = models.CharField(max_length=1000, null=True, blank=True, verbose_name='Причина отказа')
+
+    class Meta:
+        verbose_name = 'Заявка'
+        verbose_name_plural = 'Заявки'
+        ordering = ['-creation_date']
+
+    def __str__(self):
+        return f'{self.id}: {self.client}, {self.merchant}'
+
+
+class ApplicationDocument(models.Model):
+    application = models.ForeignKey(Application,
+                                    on_delete=models.CASCADE,
+                                    null=False,
+                                    blank=False,
+                                    related_name='documents',
+                                    verbose_name='Заявка')
+    document = models.FileField(upload_to=upload.application_document_path,
+                                validators=[validators.basic_validate_images, validators.validate_file_size],
+                                verbose_name='Документ')
+
+    class Meta:
+        verbose_name = 'Документ заявки'
+        verbose_name_plural = 'Документы заявок'
+
+    def __str__(self):
+        return f'{self.id}: Заявка({self.application_id})'
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(MainUser,
+                             on_delete=models.CASCADE,
+                             null=False,
+                             blank=False,
+                             related_name='notifications',
+                             verbose_name='Пользователь')
+    text = models.TextField(null=False, blank=False, verbose_name='Содержание')
+    read = models.BooleanField(default=False, blank=False, verbose_name='Прочитано')
+
+    class Meta:
+        verbose_name = 'Уведомление'
+        verbose_name_plural = 'Уведомления'
+
+    def __str__(self):
+        return f'{self.id}: {self.user}, {self.text[:15]}'
+
+

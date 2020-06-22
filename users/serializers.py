@@ -2,17 +2,30 @@ from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
-    MerchantReview, ReviewReply, ReviewDocument, Specialization
-from main.models import Project, ProjectDocument, ProjectTag
+    MerchantReview, ReviewReply, ReviewDocument, Specialization, ClientRating
+from main.models import Project, ProjectDocument, ProjectTag, ProjectCategory
 from utils import response, validators
 
 import constants, re, math
+
+
+class ProjectCategoryShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectCategory
+        fields = ('id', 'name')
 
 
 class SpecializationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialization
         fields = ('id', 'name')
+
+
+class SpecializationWithCategorySerializer(SpecializationSerializer):
+    category = ProjectCategoryShortSerializer()
+
+    class Meta(SpecializationSerializer.Meta):
+        fields = SpecializationSerializer.Meta.fields + ('category', )
 
 
 class ProjectTagShortSerializer(serializers.ModelSerializer):
@@ -30,6 +43,19 @@ class UserShortSerializer(serializers.ModelSerializer):
 
     def get_name(self, obj):
         return f'{obj.get_full_name()}'
+
+
+class UserShortRatingSerializer(UserShortSerializer):
+    rating = serializers.SerializerMethodField()
+
+    class Meta(UserShortSerializer.Meta):
+        fields = UserShortSerializer.Meta.fields + ('rating', )
+
+    def get_rating(self, obj):
+        profile = obj.profile
+        if profile:
+            return profile.rating
+        return None
 
 
 class UserShortAvatarSerializer(UserShortSerializer):
@@ -464,3 +490,51 @@ class MerchantDetailSerializer(serializers.ModelSerializer):
         except:
             return None
 
+
+class MerchantReviewDocumentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewDocument
+        fields = '__all__'
+
+
+class MerchantReviewCreateSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField(required=True)
+
+    class Meta:
+        model = MerchantReview
+        fields = ('rating', 'text')
+
+    def create(self, validated_data):
+        review = MerchantReview.objects.create(**validated_data)
+
+        documents = self.context.get('documents')
+        if documents:
+            for document in documents:
+                doc_data = {
+                    'review': review.id,
+                    'document': document,
+                    'user': self.context.get('user').id
+                }
+                serializer = MerchantReviewDocumentCreateSerializer(data=doc_data)
+                if serializer.is_valid():
+                    serializer.save()
+                else:
+                    review.delete()
+                    raise serializers.ValidationError(response.make_errors(serializer))
+        return review
+
+    def validate_rating(self, value):
+        if value < 0 or value > 10:
+            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_RATING_RANGE]))
+        return value
+
+
+class ClientRatingCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientRating
+        fields = ('rating', )
+
+    def validate_rating(self, value):
+        if value < 0 or value > 10:
+            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_RATING_RANGE]))
+        return value

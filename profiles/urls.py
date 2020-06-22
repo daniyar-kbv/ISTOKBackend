@@ -1,5 +1,5 @@
 from django.urls import path
-from profiles.views import ProfileViewSet, IsPhoneValidView
+from profiles.views import ProfileViewSet, IsPhoneValidView, ApplicationViewSet
 from rest_framework import routers
 
 urlpatterns = [
@@ -7,6 +7,7 @@ urlpatterns = [
 ]
 
 router = routers.DefaultRouter()
-router.register('', ProfileViewSet)
+router.register('profile', ProfileViewSet)
+router.register('applications', ApplicationViewSet)
 
 urlpatterns += router.urls

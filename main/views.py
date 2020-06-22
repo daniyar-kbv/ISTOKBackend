@@ -177,9 +177,10 @@ class ProjectViewSet(viewsets.GenericViewSet,
                 logger.error(f'Project({pk}) comment create failed: Проект {constants.RESPONSE_DOES_NOT_EXIST}')
                 return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
                                 status.HTTP_400_BAD_REQUEST)
-            context = {
-                'documents': request.data.pop('documents')
-            }
+            context = {}
+            if request.data.get('documents'):
+                documents = request.data.pop('documents')
+                context['documents'] = documents
             serializer = ProjectCommentCreateSerializer(data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save(project=project, user=request.user)
@@ -190,13 +191,17 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['get', 'post'])
     def tests(self, request, pk=None):
-        # str = 'http://istokhome.ru/api/users/gAAAAABe2IOG_UQYRUijFDUmq1bg159RIcUiy9GbPYD2T7FaJBiN89-brOUuxu6XQRz2Zgh0NlE8BUBfhamaHcx3eFgAxWUz78myo7M78NT0P-7ivFdNJpM=/verify_email/'
-        # print(str.__contains__('istokhome.ru'))
-        # str = str.replace('istokhome.ru', 'istokhome.com')
-        # print(str)
-        from faker import Faker
-        fake = Faker('ru_RU')
-        print(fake.address())
+        cities_ = City.objects.all()
+        cities = cities_
+        print(cities)
+
+        c = City.objects.create(name='asd', country_id=1)
+
+        print(cities)
+
+        c.delete()
+
+        print(cities)
 
         return Response()
 

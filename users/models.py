@@ -4,7 +4,6 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBa
 
 from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path
 from utils.validators import validate_file_size, basic_validate_images
-
 from constants import ROLES, ROLE_CLIENT, ROLE_MERCHANT
 
 
@@ -227,6 +226,7 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
     email = models.EmailField(unique=True, verbose_name='Email')
     role = models.PositiveSmallIntegerField(choices=ROLES, default=ROLE_CLIENT, verbose_name='Роль')
+    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата регистрации')
 
     is_staff = models.BooleanField(default=False, verbose_name='Админ')
     is_active = models.BooleanField(default=True, verbose_name='Активный')
@@ -240,6 +240,7 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ['-id']
 
     def __str__(self):
         return f'{self.id}: {self.get_full_name()}'
@@ -255,6 +256,10 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
                     return f'{self.merchant_profile.first_name} {self.merchant_profile.last_name}'
             except:
                 return f'{self.email}'
+
+    @property
+    def full_name(self):
+        return self.get_full_name()
 
     @property
     def profile(self):
@@ -518,3 +523,27 @@ class ReviewReply(models.Model):
 
     def __str__(self):
         return f'{self.id}: отзыв ({self.review.id})'
+
+
+class ClientRating(models.Model):
+    user = models.ForeignKey(MainUser,
+                             on_delete=models.CASCADE,
+                             null=False,
+                             blank=False,
+                             related_name='to_client_ratings',
+                             verbose_name='Специалист')
+    client = models.ForeignKey(MainUser,
+                               on_delete=models.CASCADE,
+                               null=False,
+                               blank=False,
+                               related_name='client_ratings',
+                               verbose_name='Клиент')
+    rating = models.FloatField(null=False, blank=False, default=0, verbose_name='Рейтинг')
+    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+
+    class Meta:
+        verbose_name = 'Рейтинг клиента'
+        verbose_name_plural = 'Рейтинги клиентов'
+
+    def __str__(self):
+        return f'{self.id}: Специалист({self.user_id}) Клиент({self.client_id}) ({self.rating})'

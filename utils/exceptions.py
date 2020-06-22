@@ -7,11 +7,10 @@ def custom_exception_handler(exc, context):
     # to get the standard error response.
     response = exception_handler(exc, context)
 
-    if isinstance(exc, Http404):
-        print(context.get('view').serializer_class)
+    if hasattr(exc, 'detail'):
         custom_response_data = {
-            'messages': ['Object does not exist']
+            'messages': [exc.detail]
         }
-        response.data = custom_response_data # set the custom response data on response object
+        response.data = custom_response_data
 
     return response

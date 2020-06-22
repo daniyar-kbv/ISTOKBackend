@@ -1,4 +1,5 @@
 from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
+from users.models import MerchantPhone
 
 import constants
 
@@ -31,3 +32,11 @@ class IsMerchant(BasePermission):
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == constants.ROLE_MERCHANT
+
+
+class HasPhone(BasePermission):
+    message = 'У вас нет подтвержденного номера телефона'
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and \
+               MerchantPhone.objects.filter(user=request.user, is_valid=True).count() > 0

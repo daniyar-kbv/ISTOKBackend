@@ -351,15 +351,16 @@ class ProjectCommentCreateSerializer(serializers.ModelSerializer):
         validated_data.pop('user_likes')
         comment = ProjectComment.objects.create(**validated_data)
         documents = self.context.get('documents')
-        for doc in documents:
-            data = {
-                'document': doc,
-                'comment': comment.id
-            }
-            serializer = ProjectCommentDocumentSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                comment.delete()
-                raise serializers.ValidationError(response.make_errors(serializer))
+        if documents:
+            for doc in documents:
+                data = {
+                    'document': doc,
+                    'comment': comment.id
+                }
+                serializer = ProjectCommentDocumentSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                else:
+                    comment.delete()
+                    raise serializers.ValidationError(response.make_errors(serializer))
         return comment

@@ -18,6 +18,30 @@ QUESTION_TYPES = (
     (QUESTION_CHECKBOX, 'Чекбокс')
 )
 
+APPLICATION_CREATED = 1
+APPLICATION_CONFIRMED = 2
+APPLICATION_FINISHED = 3
+APPLICATION_FINISHED_CONFIRMED = 4
+APPLICATION_DECLINED_CLIENT = 5
+APPLICATION_DECLINED_MERCHANT = 6
+
+APPLICATION_STATUSES = (
+    (APPLICATION_CREATED, 'Создана'),
+    (APPLICATION_CONFIRMED, 'Принята'),
+    (APPLICATION_FINISHED, 'Завершена (не подтверждено)'),
+    (APPLICATION_FINISHED_CONFIRMED, 'Завершена'),
+    (APPLICATION_DECLINED_CLIENT, 'Отклонена клиентом'),
+    (APPLICATION_DECLINED_MERCHANT, 'Отклонена специалистом')
+)
+
+APPLICATION_CREATED_STRING = 'created'
+APPLICATION_CONFIRMED_STRING = 'confirmed'
+APPLICATION_FINISHED_STRING = 'finished'
+APPLICATION_FINISHED_CONFIRMED_STRING = 'finished_confirmed'
+APPLICATION_DECLINED_STRING = 'declined'
+APPLICATION_STATUSES_STRING = [APPLICATION_CREATED_STRING, APPLICATION_CONFIRMED_STRING, APPLICATION_FINISHED_STRING,
+                               APPLICATION_FINISHED_CONFIRMED_STRING, APPLICATION_DECLINED_STRING]
+
 ACTIVATION_EMAIL_SUBJECT = 'test'
 ACTIVATION_EMAIL_BODY_START = 'test'
 ACTIVATION_EMAIL_BODY_END = 'test'
@@ -41,7 +65,11 @@ RESPONSE_PHONE_REGISTERED = 'Зарегестрирован на другого 
 RESPONSE_SOCIAL_TOKEN_INVALID = 'Токен не действителен'
 RESPONSE_DOES_NOT_EXIST = 'не существует'
 RESPONSE_USER_NOT_MERCHANT = 'Пользователь не является специалтстом'
+RESPONSE_USER_NOT_CLIENT = 'Пользователь не является клиентом'
 RESPONSE_FIELD_REQUIRED = 'Обязательное поле'
+RESPONSE_STATUS_NOT_VALID = 'Введенный статус не действителен'
+RESPONSE_APPLICATION_STATUS_NOT_VALID = 'Статусы заявки для этого действия:'
+RESPONSE_CANT_MODIFY = 'Вы не можете изменять этот обьект'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'
@@ -54,6 +82,9 @@ VALIDATION_PASSWORD_DIGITS = 'Пароль должен содержать хо�
 VALIDATION_PASSWORD_UPPERCASE = 'Пароль должен содержать хотя бы 1 заглавную букву'
 VALIDATION_PASSWORD_LOWERCASE = 'Пароль должен содержать хотя бы 1 прописную букву'
 VALIDATION_PASSWORD_LENGTH = 'Пароль должен состоять минимум из 8 символов'
+VALIDATION_FORM_NOT_COMPLETE = 'Вы не ответили на все вопросы анкеты'
+VALIDATION_RATING_RANGE = 'Рейтинг может быть от 0 до 10'
+VALIDATION_EMAIL_EXISTS = 'Email заянт другим пользователем'
 
 PHONE = 'Номер телефона'
 EMAIL = 'Email'

@@ -33,6 +33,10 @@ def project_comment_document_path(instance, filename):
     return f'project_comment_documents/{instance.comment.id}/{filename}'
 
 
+def application_document_path(instance, filename):
+    return f'application_documents/{instance.application.id}/{filename}'
+
+
 def delete_folder(document):
     path = os.path.abspath(os.path.join(document.path, '..'))
     if os.path.isdir(path):
