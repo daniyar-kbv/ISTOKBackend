@@ -16,7 +16,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y gettext && \
     apt-get clean && rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/* && rm -rf /tmp/* && \
-    apt-get install -y python3-pip python3-dev && \
-    cd /usr/local/bin && \
-    ln -s /usr/bin/python3 python && \
-    pip3 install --upgrade pip
+
+    pip install --upgrade pip && \
+    pip install --no-cache-dir nibabel pydicom matplotlib pillow && \
+    pip install --no-cache-dir med2image
