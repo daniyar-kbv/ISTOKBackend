@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView, ProjectCommentReply, \
-    ProjectCommentDocument
+    ProjectCommentDocument, Render360, ProjectType
 from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurpose, ProjectPurposeSubType, ProjectTag, \
     ProjectPurposeType, MerchantProfile
 from users.models import Country, City
 from users.serializers import UserShortSerializer, UserMediumSerializer, UserShortAvatarSerializer
-from utils import response
+from utils import response, upload
 import constants, math
 
 
@@ -205,6 +205,24 @@ class ServicesMainPageSerialzier(serializers.ModelSerializer):
         return MerchantProfile.objects.filter(categories__in=[obj]).count()
 
 
+class ProjectDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectDocument
+        fields = '__all__'
+
+
+class Render360Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Render360
+        fields = '__all__'
+
+
+class Render360CreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Render360
+        fields = ('document', )
+
+
 class ProjectSearchSerializer(serializers.ModelSerializer):
     user = UserShortSerializer()
     is_favorite = serializers.SerializerMethodField()
@@ -244,6 +262,211 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
 
 class ProjectDetailListSerializer(ProjectSearchSerializer):
     user = UserShortAvatarSerializer()
+
+
+class ProjectProfileGetSerializer(ProjectSearchSerializer):
+    user = UserShortAvatarSerializer()
+
+    class Meta(ProjectSearchSerializer.Meta):
+        fields_ = ProjectSearchSerializer.Meta.fields
+        fields_ = list(fields_)
+        fields_.remove('is_favorite')
+        fields_.remove('is_top')
+        fields_.remove('is_detailed')
+        fields = tuple(fields_)
+
+
+# class ProjectPromotionSerializer(serializers.ModelSerializer):
+#     class Meta:
+
+
+class ProjectCreateSerializer(serializers.ModelSerializer):
+    category = serializers.IntegerField(required=True, write_only=True)
+    purpose = serializers.IntegerField(required=True, write_only=True)
+    style = serializers.IntegerField(required=True, write_only=True)
+    type = serializers.IntegerField(required=True, write_only=True)
+
+    class Meta:
+        model = Project
+        fields = ('name', 'category', 'purpose', 'type', 'style', 'area', 'price_from', 'price_to', 'description',
+                  'tags',)
+
+    def create(self, validated_data):
+        try:
+            category = ProjectCategory.objects.get(id=validated_data.pop('category'))
+        except:
+            return serializers.ValidationError(f'Category {constants.RESPONSE_DOES_NOT_EXIST}')
+        try:
+            purpose = ProjectPurpose.objects.get(id=validated_data.pop('purpose'))
+        except:
+            return serializers.ValidationError(f'Purpose {constants.RESPONSE_DOES_NOT_EXIST}')
+        try:
+            style = ProjectStyle.objects.get(id=validated_data.pop('style'))
+        except:
+            return serializers.ValidationError(f'Style {constants.RESPONSE_DOES_NOT_EXIST}')
+        try:
+            type = ProjectType.objects.get(id=validated_data.pop('type'))
+        except:
+            return serializers.ValidationError(f'Type {constants.RESPONSE_DOES_NOT_EXIST}')
+        if validated_data.get('price_from') > validated_data.get('price_to'):
+            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+        tags = validated_data.pop('tags')
+        project = Project.objects.create(**validated_data,
+                                         category=category,
+                                         purpose=purpose,
+                                         style=style,
+                                         type=type)
+        documents = self.context.get('documents')
+        doc_objects = []
+        if documents:
+            for doc in documents:
+                doc_data = {
+                    'project': project.id,
+                    'document': doc
+                }
+                serializer = ProjectDocumentSerializer(data=doc_data)
+                if serializer.is_valid():
+                    doc_objects.append(serializer.save())
+                else:
+                    project.delete()
+                    for doc_obj in doc_objects:
+                        doc_obj.delete()
+                    raise serializers.ValidationError(response.make_errors(serializer))
+        render = self.context.get('render')
+        if render:
+            doc_data = {
+                'project': project.id,
+                'document': render
+            }
+            serializer = Render360CreateSerializer(data=doc_data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                project.delete()
+                for doc_obj in doc_objects:
+                    doc_obj.delete()
+                raise serializers.ValidationError(response.make_errors(serializer))
+        for tag in tags:
+            project.tags.add(tag)
+        project.save()
+        return project
+
+
+class ProjectUpdateSerializer(serializers.ModelSerializer):
+    category = serializers.IntegerField(required=False, write_only=True)
+    purpose = serializers.IntegerField(required=False, write_only=True)
+    style = serializers.IntegerField(required=False, write_only=True)
+    type = serializers.IntegerField(required=False, write_only=True)
+    area = serializers.FloatField(required=False)
+    price_from = serializers.FloatField(required=False)
+    price_to = serializers.FloatField(required=False)
+    description = serializers.CharField(required=False)
+
+    class Meta:
+        model = Project
+        fields = ('name', 'category', 'purpose', 'type', 'style', 'area', 'price_from', 'price_to', 'description',
+                  'tags',)
+
+    def update(self, instance, validated_data):
+        category = None
+        if validated_data.get('category'):
+            try:
+                category = ProjectCategory.objects.get(id=validated_data.pop('category'))
+            except:
+                raise serializers.ValidationError(f'Category {constants.RESPONSE_DOES_NOT_EXIST}')
+        purpose = None
+        if validated_data.get('purpose'):
+            try:
+                purpose = ProjectPurpose.objects.get(id=validated_data.pop('purpose'))
+            except:
+                raise serializers.ValidationError(f'Purpose {constants.RESPONSE_DOES_NOT_EXIST}')
+        style = None
+        if validated_data.get('style'):
+            try:
+                style = ProjectStyle.objects.get(id=validated_data.pop('style'))
+            except:
+                raise serializers.ValidationError(f'Style {constants.RESPONSE_DOES_NOT_EXIST}')
+        type = None
+        if validated_data.get('type'):
+            try:
+                type = ProjectType.objects.get(id=validated_data.pop('type'))
+            except:
+                raise serializers.ValidationError(f'Type {constants.RESPONSE_DOES_NOT_EXIST}')
+        if validated_data.get('price_from') and validated_data.get('price_to'):
+            if validated_data.get('price_from') > validated_data.get('price_to'):
+                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+        elif validated_data.get('price_from'):
+            if validated_data.get('price_from') > instance.price_from:
+                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+        elif validated_data.get('price_to'):
+            if instance.price_from > validated_data.get('price_to'):
+                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+        documents = self.context.get('documents')
+        doc_serializers = []
+        if documents:
+            for document in documents:
+                doc_data = {
+                    'project': instance.id,
+                    'document': document
+                }
+                serializer = ProjectDocumentSerializer(data=doc_data)
+                if serializer.is_valid():
+                    doc_serializers.append(serializer)
+                else:
+                    raise serializers.ValidationError(response.make_errors(serializer))
+        render = self.context.get('render')
+        if render:
+            doc_data = {
+                'project': instance.id,
+                'document': render
+            }
+            old_render = Render360.objects.get(project=instance)
+            old_render.project = None
+            old_render.save()
+            serializer = Render360Serializer(data=doc_data)
+            if serializer.is_valid():
+                try:
+                    upload.delete_file(old_render.document)
+                    old_render.delete()
+                except:
+                    pass
+                serializer.save()
+            else:
+                old_render.project = instance
+                old_render.save()
+                raise serializers.ValidationError(response.make_errors(serializer))
+        delete_documents = self.context.get('delete_documents')
+        for del_doc in delete_documents:
+            path = del_doc
+            first_pos = path.rfind("/")
+            last_pos = len(path)
+            name = path[first_pos + 1:last_pos]
+            doc_objects = ProjectDocument.objects.filter(project=instance)
+            for doc in doc_objects:
+                if doc.filename() == name:
+                    upload.delete_file(doc.document)
+                    doc.delete()
+        for serializer in doc_serializers:
+            serializer.save()
+        instance.name = validated_data.get('name', instance.name)
+        instance.area = validated_data.get('area', instance.area)
+        instance.price_from = validated_data.get('price_from', instance.price_from)
+        instance.price_to = validated_data.get('price_to', instance.price_to)
+        instance.description = validated_data.get('description', instance.description)
+        if category:
+            instance.category = category
+        if style:
+            instance.style = style
+        if purpose:
+            instance.purpose = purpose
+        if type:
+            instance.type = type
+        if validated_data.get('tags'):
+            instance.tags.clear()
+            for tag in validated_data.get('tags'):
+                instance.tags.add(tag)
+        instance.save()
+        return instance
 
 
 class ProjectCommentDetailSerializer(serializers.ModelSerializer):

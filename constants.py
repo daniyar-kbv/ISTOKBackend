@@ -93,6 +93,7 @@ RESPONSE_CANT_MODIFY = 'Вы не можете изменять этот обь�
 RESPONSE_MAX_FILES = 'Максимальное количество файлов:'
 RESPONSE_RIGHT_ONLY_DIGITS = 'Только цифровые значения'
 RESPONSE_PAID_TYPE_INVALID = 'Типы платной услуги: 1 - Про, 2 - Топ, 3 - Выделеный'
+RESPONSE_NOT_OWNER = 'Вы не являетесь владельцем'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'
@@ -108,6 +109,7 @@ VALIDATION_PASSWORD_LENGTH = 'Пароль должен состоять мин�
 VALIDATION_FORM_NOT_COMPLETE = 'Вы не ответили на все вопросы анкеты'
 VALIDATION_RATING_RANGE = 'Рейтинг может быть от 0 до 10'
 VALIDATION_EMAIL_EXISTS = 'Email заянт другим пользователем'
+VALIDATION_PRICE_INVALID = 'Цена от должна быть меньше цены до'
 
 PHONE = 'Номер телефона'
 EMAIL = 'Email'
@@ -120,6 +122,7 @@ GOOGLE = 'google'
 VK_WEB = 'vk_web'
 
 FACEBOOK_INFO_URL = "https://graph.facebook.com/me?access_token={0}&fields=id,name,email,first_name,last_name&format=json"
-GOOGLE_INFO_URL_V3 = "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={}"
+GOOGLE_INFO_URL_V3 = "https://oauth2.googleapis.com/tokeninfo?id_token={}"
+VK_INFO_URL = "https://api.vk.com/method/users.get?api_id=6714692&access_token={}&v=5.69&fields=photo_200"
 VK_WEB_INFO_URL = "https://api.vk.com/method/users.get?api_id=6781515&access_token={}&v=5.69&fields=photo_200"
 FACEBOOK_AVATAR_URL = "https://graph.facebook.com/{0}/picture?type=large"

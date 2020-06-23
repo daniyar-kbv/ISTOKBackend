@@ -15,6 +15,9 @@ from users.models import MainUser, MerchantPhone
 from profiles.models import FormQuestionGroup, Application, ApplicationDocument, PaidFeatureType, Transaction, \
     UsersPaidFeature
 from profiles.serializers import FormQuestionGroupSerializer
+from main.models import Project
+from main.serializers import ProjectProfileGetSerializer, ProjectCreateSerializer, ProjectDetailSerializer, \
+    ProjectUpdateSerializer
 from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
 import constants
@@ -169,6 +172,72 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response()
+
+    @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
+    def projects(self, request, pk=None):
+        if request.method == 'GET':
+            projects = Project.objects.filter(user=request.user)
+            serializer = ProjectProfileGetSerializer(projects, many=True, context=request)
+            return Response(serializer.data)
+        elif request.method == 'POST':
+            context = {
+                'render': request.data.get('render')
+            }
+            if request.data.get('documents'):
+                context['documents'] = request.data.pop('documents')
+            serializer = ProjectCreateSerializer(data=request.data, context=context)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return Response(serializer.data)
+            return Response(response.make_errors(serializer))
+
+    @action(detail=True, methods=['get', 'put', 'delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    def project(self, request, pk=None):
+        try:
+            project = Project.objects.get(id=pk)
+        except:
+            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        if project.user != request.user:
+            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
+                            status.HTTP_400_BAD_REQUEST)
+        if request.method == 'GET':
+            serializer = ProjectDetailSerializer(project, context=request)
+            return Response(serializer.data)
+        elif request.method == 'PUT':
+            documents = []
+            if request.data.get('documents'):
+                documents = request.data.pop('documents')
+            delete_documents = []
+            if request.data.get('delete_documents'):
+                delete_documents = request.data.pop('delete_documents')
+            total_documents = request.data.get('total_documents')
+            if total_documents:
+                try:
+                    if int(total_documents) > 6:
+                        return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 6']),
+                                        status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        response.make_messages([f'total_documents: {constants.RESPONSE_RIGHT_ONLY_DIGITS}']),
+                        status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                return Response(response.make_messages([f'total_documents: {constants.RESPONSE_FIELD_REQUIRED}']),
+                                status.HTTP_400_BAD_REQUEST)
+            context = {
+                'documents': documents,
+                'delete_documents': delete_documents,
+                'render': request.data.get('render')
+            }
+            serializer = ProjectUpdateSerializer(project, data=request.data, context=context)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        elif request.method == 'DELETE':
+            project.delete()
+            return Response(status=status.HTTP_200_OK)
 
 
 class IsPhoneValidView(views.APIView):

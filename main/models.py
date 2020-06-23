@@ -134,11 +134,11 @@ class ProjectDocument(models.Model):
 class Render360(models.Model):
     project = models.OneToOneField(Project,
                                    on_delete=models.CASCADE,
-                                   null=False,
+                                   null=True,
                                    blank=False,
                                    related_name='render360',
                                    verbose_name='Проект')
-    document = models.FileField(upload_to=upload.profile_document_path,
+    document = models.FileField(upload_to=upload.project_render360_path,
                                 validators=[validators.validate_file_size, validators.basic_validate_images],
                                 verbose_name='Документ')
 

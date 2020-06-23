@@ -257,7 +257,7 @@ class MerchantProfileForUpdate(serializers.ModelSerializer):
         urls = []
         documents = ProfileDocument.objects.filter(user=obj.user)
         for doc in documents:
-            urls.append(self.context.build_absolute_uri(doc.document))
+            urls.append(self.context.build_absolute_uri(doc.document.url))
         return urls
 
 

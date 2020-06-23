@@ -266,23 +266,14 @@ class UserViewSet(viewsets.GenericViewSet,
     @action(detail=False, methods=['post'])
     def social_login(self, request, pk=None):
         social_type = request.data.get('social_type')
-        email = request.data.get('email', '')
-        phone = request.data.get('phone', '')
-        role = request.data.get('role')
-        if not role:
-            return Response(response.make_messages(['role: Укажите роль']))
-        logger.info(f'Social login ({email}, {social_type}): started')
+        logger.info(f'Social login ({social_type}): started')
         info, error = oauth.get_social_info(request.data, social_type)
         if not info:
-            logger.error(f'Social login ({email}, {social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
-            return Response(constants.RESPONSE_SERVER_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        if not info.get('email', '') and email:
-            info['email'] = email
-        if not info.get('phone', '') and phone:
-            info['phone'] = phone
+            logger.error(f'Social login ({social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
+            return Response(response.make_messages([error]), status.HTTP_500_INTERNAL_SERVER_ERROR)
         if not info:
-            logger.error(f'Social login ({email}, {social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
-            return Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f'Social login ({social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
+            return Response(response.make_messages([error]), status.HTTP_500_INTERNAL_SERVER_ERROR)
         try:
             if MainUser.objects.filter(email=info['email']).count() > 0:
                 user = MainUser.objects.get(email=info['email'])
@@ -291,25 +282,21 @@ class UserViewSet(viewsets.GenericViewSet,
                 user = phone.user
             payload = jwt_payload_handler(user)
             token = jwt_encode_handler(payload)
-            if user.role == constants.ROLE_CLIENT:
-                name = user.client_profile.first_name
-            else:
-                name = user.merchant_profile.first_name
             data = {
                 'register': False,
-                'name': name,
                 'token': token
             }
-            logger.info(f'Social login ({email}, {social_type}): succeeded')
+            logger.info(f'Social login ({social_type}): succeeded')
             return Response(data, status.HTTP_200_OK)
         except:
-            if role == constants.ROLE_CLIENT and info['email'] and info['first_name'] and info['birthday']:
+            role = request.data.get('role')
+            if not role:
+                return Response(response.make_messages(['role: Укажите роль']), status.HTTP_400_BAD_REQUEST)
+            if role == constants.ROLE_CLIENT and info.get('email') and info.get('first_name') and info.get('birthday'):
                 user = {
                     'email': info['email'],
                     'role': int(request.data.get('role'))
                 }
-                role = user.get('role')
-                email = user.get('email')
                 context = {
                     'user': user
                 }
@@ -327,7 +314,7 @@ class UserViewSet(viewsets.GenericViewSet,
                     return Response(data)
                 return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
             info['register'] = True
-            logger.info(f'Social login ({email}, {social_type}): succeeded')
+            logger.info(f'Social login ({social_type}): succeeded')
         return Response(info, status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])

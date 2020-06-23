@@ -174,13 +174,13 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                         merchant_phone = MerchantPhone.objects.get(phone=phone)
                     except MerchantPhone.DoesNotExist:
                         user.delete()
-                        raise serializers.ValidationError(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]))
+                        raise serializers.ValidationError(constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)
                     if merchant_phone.user is not None:
                         user.delete()
-                        raise serializers.ValidationError(response.make_messages([f'{phone} {constants.RESPONSE_PHONE_REGISTERED}']))
+                        raise serializers.ValidationError(f'{phone} {constants.RESPONSE_PHONE_REGISTERED}')
                     if not merchant_phone.is_valid:
                         user.delete()
-                        raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_NOT_VERIFIED]))
+                        raise serializers.ValidationError(constants.VALIDATION_PHONE_NOT_VERIFIED)
                     merchant_phone.user = user
                     merchant_phone.save()
                 else:

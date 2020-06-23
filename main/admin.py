@@ -1,6 +1,6 @@
 from django.contrib import admin
 from main.models import Project, ProjectDocument, ProjectComment, ProjectView, ProjectCommentReply, \
-    ProjectCommentDocument
+    ProjectCommentDocument, Render360
 from users.models import MerchantReview
 
 import constants
@@ -10,11 +10,15 @@ class InlineProjectDocument(admin.StackedInline):
     model = ProjectDocument
 
 
+class InlineRender360(admin.StackedInline):
+    model = Render360
+
+
 @admin.register(Project)
 class CityTagAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'name')
     filter_horizontal = ('tags', )
-    inlines = [InlineProjectDocument, ]
+    inlines = [InlineProjectDocument, InlineRender360]
 
 
 @admin.register(ProjectCommentReply)
