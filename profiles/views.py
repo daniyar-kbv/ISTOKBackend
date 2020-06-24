@@ -25,7 +25,7 @@ from main.tasks import deactivate_user_feature, deactivate_project_feature
 from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
 from datetime import timedelta, datetime
-# from dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta
 import constants
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -161,47 +161,47 @@ class ProfileViewSet(viewsets.GenericViewSet,
         }
         return Response(data)
 
-    # @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
-    # def features(self, request, pk=None):
-    #     type = request.data.get('type')
-    #     if not type:
-    #         return Response(response.make_messages([f'type {constants.RESPONSE_FIELD_REQUIRED}']))
-    #     if request.method == 'GET':
-    #         if not isinstance(type, int) or type < 1 or type > len(constants.PAID_FEATURE_TYPES):
-    #             return Response(response.make_messages([f'Тип {constants.RESPONSE_PAID_TYPE_INVALID}']))
-    #         features = PaidFeatureType.objects.filter(type=type)
-    #         serializer = PaidFeatureTypeListSerializer(features, many=True)
-    #         return Response(serializer.data)
-    #     elif request.method == 'POST':
-    #         try:
-    #             type = PaidFeatureType.objects.get(id=type)
-    #         except:
-    #             return Response(response.make_messages([f'Типа {constants.RESPONSE_DOES_NOT_EXIST}']),
-    #                             status.HTTP_400_BAD_REQUEST)
-    #         if type.type == constants.PAID_FEATURE_PRO:
-    #             features = UsersPaidFeature.objects.filter(user=request.user, is_active=True)
-    #             if features.count() > 0:
-    #                 feature = features.first()
-    #                 unit = feature.type.time_unit
-    #                 amount = feature.type.time_amount
-    #                 if unit == constants.TIME_DAY:
-    #                     delta = timedelta(days=amount)
-    #                 elif unit == constants.TIME_MONTH:
-    #                     delta = relativedelta(months=+amount)
-    #                 elif unit == constants.TIME_YEAR:
-    #                     delta = relativedelta(years=+amount)
-    #                 else:
-    #                     delta = timedelta(seconds=10)
-    #                 feature.expires_at = feature.expires_at + delta
-    #                 feature.refreshed += 1
-    #                 feature.save()
-    #                 deactivate_user_feature.apply_async(args=[feature.id], eta=feature.expires_at)
-    #                 return Response(status=status.HTTP_200_OK)
-    #             else:
-    #                 transaction = Transaction.objects.create(number='test')
-    #                 UsersPaidFeature.objects.create(user=request.user, type=type, transaction=transaction, is_active=True)
-    #             return Response(status=status.HTTP_200_OK)
-    #         return Response(response.make_messages([f'{constants.RESPONSE_FEATURE_TYPES} Про']))
+    @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
+    def features(self, request, pk=None):
+        type = request.data.get('type')
+        if not type:
+            return Response(response.make_messages([f'type {constants.RESPONSE_FIELD_REQUIRED}']))
+        if request.method == 'GET':
+            if not isinstance(type, int) or type < 1 or type > len(constants.PAID_FEATURE_TYPES):
+                return Response(response.make_messages([f'Тип {constants.RESPONSE_PAID_TYPE_INVALID}']))
+            features = PaidFeatureType.objects.filter(type=type)
+            serializer = PaidFeatureTypeListSerializer(features, many=True)
+            return Response(serializer.data)
+        elif request.method == 'POST':
+            try:
+                type = PaidFeatureType.objects.get(id=type)
+            except:
+                return Response(response.make_messages([f'Типа {constants.RESPONSE_DOES_NOT_EXIST}']),
+                                status.HTTP_400_BAD_REQUEST)
+            if type.type == constants.PAID_FEATURE_PRO:
+                features = UsersPaidFeature.objects.filter(user=request.user, is_active=True)
+                if features.count() > 0:
+                    feature = features.first()
+                    unit = feature.type.time_unit
+                    amount = feature.type.time_amount
+                    if unit == constants.TIME_DAY:
+                        delta = timedelta(days=amount)
+                    elif unit == constants.TIME_MONTH:
+                        delta = relativedelta(months=+amount)
+                    elif unit == constants.TIME_YEAR:
+                        delta = relativedelta(years=+amount)
+                    else:
+                        delta = timedelta(seconds=10)
+                    feature.expires_at = feature.expires_at + delta
+                    feature.refreshed += 1
+                    feature.save()
+                    deactivate_user_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                    return Response(status=status.HTTP_200_OK)
+                else:
+                    transaction = Transaction.objects.create(number='test')
+                    UsersPaidFeature.objects.create(user=request.user, type=type, transaction=transaction, is_active=True)
+                return Response(status=status.HTTP_200_OK)
+            return Response(response.make_messages([f'{constants.RESPONSE_FEATURE_TYPES} Про']))
 
     @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
     def projects(self, request, pk=None):
@@ -313,116 +313,116 @@ class ProfileViewSet(viewsets.GenericViewSet,
             data.append(serializer.data)
         return Response(data)
 
-    # @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
-    # def project_for_promotion(self, request, pk=None):
-    #     if pk != 'none':
-    #         try:
-    #             project = Project.objects.get(id=pk)
-    #         except:
-    #             return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
-    #                             status.HTTP_400_BAD_REQUEST)
-    #     else:
-    #         projects = Project.objects.filter(user=request.user)
-    #         if projects.count() > 0:
-    #             project = projects.first()
-    #         else:
-    #             return Response(constants.RESPONSE_NO_PROJECTS, status.HTTP_400_BAD_REQUEST)
-    #     if project.user != request.user:
-    #         return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
-    #                         status.HTTP_400_BAD_REQUEST)
-    #     if request.method == 'GET':
-    #         project_serializer = ProjectSearchSerializer(project, context=request)
-    #         projects = Project.objects.filter(user=request.user)
-    #         projects_serializer = ProjectShortSerializer(projects, many=True)
-    #         data = {
-    #             'current_project': project_serializer.data,
-    #             'projects': projects_serializer.data
-    #         }
-    #         return Response(data)
-    #     elif request.method == 'POST':
-    #         serializer = ProjectForPromotionSerialzier(data=request.data)
-    #         if serializer.is_valid():
-    #             type = PaidFeatureType.objects.get(id=serializer.data.get('type'))
-    #             if type.type != constants.PAID_FEATURE_TOP_DETAILED:
-    #                 features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
-    #                                                              type__type=type.type)
-    #                 if features.count() > 0:
-    #                     feature = features.first()
-    #                     unit = feature.type.time_unit
-    #                     amount = feature.type.time_amount
-    #                     if unit == constants.TIME_DAY:
-    #                         delta = timedelta(days=amount)
-    #                     elif unit == constants.TIME_MONTH:
-    #                         delta = relativedelta(months=+amount)
-    #                     elif unit == constants.TIME_YEAR:
-    #                         delta = relativedelta(years=+amount)
-    #                     else:
-    #                         delta = timedelta(seconds=10)
-    #                     feature.expires_at = feature.expires_at + delta
-    #                     feature.refresh_count += 1
-    #                     feature.save()
-    #                     deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
-    #                     return Response(status=status.HTTP_200_OK)
-    #                 transaction = Transaction.objects.create(number='test')
-    #                 ProjectPaidFeature.objects.create(project=project, type_id=serializer.data.get('type'),
-    #                                                   transaction=transaction,
-    #                                                   is_active=True)
-    #                 return Response(status=status.HTTP_200_OK)
-    #             top_type = PaidFeatureType.objects.filter(type=constants.PAID_FEATURE_TOP, position=type.position).first()
-    #             if top_type:
-    #                 features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
-    #                                                              type__type=top_type.type)
-    #                 if features.count() > 0:
-    #                     feature = features.first()
-    #                     unit = feature.type.time_unit
-    #                     amount = feature.type.time_amount
-    #                     if unit == constants.TIME_DAY:
-    #                         delta = timedelta(days=amount)
-    #                     elif unit == constants.TIME_MONTH:
-    #                         delta = relativedelta(months=+amount)
-    #                     elif unit == constants.TIME_YEAR:
-    #                         delta = relativedelta(years=+amount)
-    #                     else:
-    #                         delta = timedelta(seconds=10)
-    #                     feature.expires_at = feature.expires_at + delta
-    #                     feature.refresh_count += 1
-    #                     feature.save()
-    #                     deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
-    #                 else:
-    #                     transaction = Transaction.objects.create(number='test')
-    #                     ProjectPaidFeature.objects.create(project=project, type=top_type,
-    #                                                       transaction=transaction,
-    #                                                       is_active=True)
-    #             detailed_type = PaidFeatureType.objects.filter(type=constants.PAID_FEATURE_DETAILED,
-    #                                                            position=type.position).first()
-    #             if detailed_type:
-    #                 features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
-    #                                                              type__type=detailed_type.type)
-    #                 if features.count() > 0:
-    #                     feature = features.first()
-    #                     unit = feature.type.time_unit
-    #                     amount = feature.type.time_amount
-    #                     if unit == constants.TIME_DAY:
-    #                         delta = timedelta(days=amount)
-    #                     elif unit == constants.TIME_MONTH:
-    #                         delta = relativedelta(months=+amount)
-    #                     elif unit == constants.TIME_YEAR:
-    #                         delta = relativedelta(years=+amount)
-    #                     else:
-    #                         delta = timedelta(seconds=10)
-    #                     feature.expires_at = feature.expires_at + delta
-    #                     feature.refresh_count += 1
-    #                     feature.save()
-    #                     deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
-    #                     return Response(status=status.HTTP_200_OK)
-    #                 else:
-    #                     transaction = Transaction.objects.create(number='test')
-    #                     ProjectPaidFeature.objects.create(project=project, type=detailed_type,
-    #                                                       transaction=transaction,
-    #                                                       is_active=True)
-    #                 return Response(status=status.HTTP_200_OK)
-    #             return Response(status=status.HTTP_200_OK)
-    #         return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
+    def project_for_promotion(self, request, pk=None):
+        if pk != 'none':
+            try:
+                project = Project.objects.get(id=pk)
+            except:
+                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                                status.HTTP_400_BAD_REQUEST)
+        else:
+            projects = Project.objects.filter(user=request.user)
+            if projects.count() > 0:
+                project = projects.first()
+            else:
+                return Response(constants.RESPONSE_NO_PROJECTS, status.HTTP_400_BAD_REQUEST)
+        if project.user != request.user:
+            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
+                            status.HTTP_400_BAD_REQUEST)
+        if request.method == 'GET':
+            project_serializer = ProjectSearchSerializer(project, context=request)
+            projects = Project.objects.filter(user=request.user)
+            projects_serializer = ProjectShortSerializer(projects, many=True)
+            data = {
+                'current_project': project_serializer.data,
+                'projects': projects_serializer.data
+            }
+            return Response(data)
+        elif request.method == 'POST':
+            serializer = ProjectForPromotionSerialzier(data=request.data)
+            if serializer.is_valid():
+                type = PaidFeatureType.objects.get(id=serializer.data.get('type'))
+                if type.type != constants.PAID_FEATURE_TOP_DETAILED:
+                    features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
+                                                                 type__type=type.type)
+                    if features.count() > 0:
+                        feature = features.first()
+                        unit = feature.type.time_unit
+                        amount = feature.type.time_amount
+                        if unit == constants.TIME_DAY:
+                            delta = timedelta(days=amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
+                        else:
+                            delta = timedelta(seconds=10)
+                        feature.expires_at = feature.expires_at + delta
+                        feature.refresh_count += 1
+                        feature.save()
+                        deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                        return Response(status=status.HTTP_200_OK)
+                    transaction = Transaction.objects.create(number='test')
+                    ProjectPaidFeature.objects.create(project=project, type_id=serializer.data.get('type'),
+                                                      transaction=transaction,
+                                                      is_active=True)
+                    return Response(status=status.HTTP_200_OK)
+                top_type = PaidFeatureType.objects.filter(type=constants.PAID_FEATURE_TOP, position=type.position).first()
+                if top_type:
+                    features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
+                                                                 type__type=top_type.type)
+                    if features.count() > 0:
+                        feature = features.first()
+                        unit = feature.type.time_unit
+                        amount = feature.type.time_amount
+                        if unit == constants.TIME_DAY:
+                            delta = timedelta(days=amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
+                        else:
+                            delta = timedelta(seconds=10)
+                        feature.expires_at = feature.expires_at + delta
+                        feature.refresh_count += 1
+                        feature.save()
+                        deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                    else:
+                        transaction = Transaction.objects.create(number='test')
+                        ProjectPaidFeature.objects.create(project=project, type=top_type,
+                                                          transaction=transaction,
+                                                          is_active=True)
+                detailed_type = PaidFeatureType.objects.filter(type=constants.PAID_FEATURE_DETAILED,
+                                                               position=type.position).first()
+                if detailed_type:
+                    features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
+                                                                 type__type=detailed_type.type)
+                    if features.count() > 0:
+                        feature = features.first()
+                        unit = feature.type.time_unit
+                        amount = feature.type.time_amount
+                        if unit == constants.TIME_DAY:
+                            delta = timedelta(days=amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
+                        else:
+                            delta = timedelta(seconds=10)
+                        feature.expires_at = feature.expires_at + delta
+                        feature.refresh_count += 1
+                        feature.save()
+                        deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                        return Response(status=status.HTTP_200_OK)
+                    else:
+                        transaction = Transaction.objects.create(number='test')
+                        ProjectPaidFeature.objects.create(project=project, type=detailed_type,
+                                                          transaction=transaction,
+                                                          is_active=True)
+                    return Response(status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
+            return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
     def statistics(self, request, pk=None):
