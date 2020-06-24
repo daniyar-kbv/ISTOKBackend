@@ -3,8 +3,8 @@ from django.dispatch import receiver
 from profiles.models import Application, ApplicationDocument, UsersPaidFeature, ProjectPaidFeature
 from main.tasks import deactivate_user_feature, deactivate_project_feature
 from utils import upload
-# from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+from datetime import datetime, timedelta
+# from dateutil.relativedelta import relativedelta
 import constants
 
 
