@@ -32,6 +32,7 @@ services:
   web:
     build: .
     command: sh -c "/wait &&
+      pip install python-dateutil
       ./manage.py compilemessages --locale=ru &&
       ./manage.py migrate &&
       ./manage.py runserver 0.0.0.0:8990"
