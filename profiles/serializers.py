@@ -3,7 +3,8 @@ from users.models import MainUser, ClientProfile, MerchantReview, ProjectCategor
 from users.serializers import PhoneSerializer, MerchantPhone, UserShortRatingSerializer, MerchantProfile, \
     ProfileDocumentCreateSerializer, SpecializationWithCategorySerializer
 from profiles.models import FormAnswer, FormQuestion, FormQuestionGroup, FormUserAnswer, Application, \
-    ApplicationDocument, PaidFeatureType, UsersPaidFeature
+    ApplicationDocument, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature
+from main.models import ProjectUserFavorite
 from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagSerializer
 from utils import response, upload, validators, general
 from datetime import datetime
@@ -604,3 +605,80 @@ class PaidFeatureTypeListSerializer(serializers.ModelSerializer):
     def get_time_unit(self, obj):
         return general.format_time_period(obj.time_amount, obj.time_unit)
 
+
+class ProjectForPromotionSerialzier(serializers.Serializer):
+    type = serializers.IntegerField(required=True)
+
+    def validate_type(self, value):
+        try:
+            type = PaidFeatureType.objects.get(id=value)
+        except:
+            raise serializers.ValidationError(f'{constants.VALIDATION_FEATURE_NOT_EXIST} или яваляется Про продвижением')
+        return value
+
+
+class GetStatiscticsInSerialzier(serializers.Serializer):
+    time_period = serializers.IntegerField(required=True)
+    type = serializers.IntegerField(required=True)
+
+    def validate_time_period(self, value):
+        if value < 1 or value > len(constants.STATISTICS_TIME_PERIODS):
+            raise serializers.ValidationError(constants.VALIDATION_TIME_PERIODS)
+        return value
+
+    def validate_type(self, value):
+        if value < 1 or value > len(constants.STATISTICS_TYPES):
+            raise serializers.ValidationError(constants.VALIDATION_STATISTICS_TYPES)
+        return value
+
+
+class GetStatiscticsOutSerialzier(serializers.ModelSerializer):
+    project_id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    creation_date = serializers.SerializerMethodField()
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    to_profile_count = serializers.SerializerMethodField()
+    to_favorites_count = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    is_top = serializers.SerializerMethodField()
+    is_detailed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectPaidFeature
+        fields = ('id', 'project_id', 'name', 'creation_date', 'start_date', 'end_date', 'rating', 'to_profile_count',
+                  'to_favorites_count', 'price', 'is_top', 'is_detailed')
+
+    def get_project_id(self, obj):
+        return obj.project.id
+
+    def get_name(self, obj):
+        return obj.project.name
+
+    def get_creation_date(self, obj):
+        return obj.project.creation_date.strftime(constants.DATE_FORMAT)
+
+    def get_start_date(self, obj):
+        return obj.created_at.strftime(constants.DATE_FORMAT)
+
+    def get_end_date(self, obj):
+        return obj.expires_at.strftime(constants.DATE_FORMAT)
+
+    def get_rating(self, obj):
+        return obj.project.rating
+
+    def get_to_profile_count(self, obj):
+        return obj.project.to_profile_count
+
+    def get_to_favorites_count(self, obj):
+        return ProjectUserFavorite.objects.filter(project=obj.project).count()
+
+    def get_price(self, obj):
+        return obj.type.price
+
+    def get_is_top(self, obj):
+        return obj.type.type == constants.PAID_FEATURE_TOP
+
+    def get_is_detailed(self, obj):
+        return obj.type.type == constants.PAID_FEATURE_DETAILED

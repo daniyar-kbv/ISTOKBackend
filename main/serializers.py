@@ -3,9 +3,11 @@ from django.contrib.auth.models import AnonymousUser
 from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView, ProjectCommentReply, \
     ProjectCommentDocument, Render360, ProjectType
 from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurpose, ProjectPurposeSubType, ProjectTag, \
-    ProjectPurposeType, MerchantProfile
+    ProjectPurposeType, MerchantProfile, Specialization
 from users.models import Country, City
-from users.serializers import UserShortSerializer, UserMediumSerializer, UserShortAvatarSerializer
+from users.serializers import UserShortSerializer, UserMediumSerializer, UserShortAvatarSerializer, \
+    SpecializationSerializer
+from profiles.models import ProjectPaidFeature, Application
 from utils import response, upload
 import constants, math
 
@@ -35,6 +37,19 @@ class ProjectCategoryShortSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
+class ProjectCategorySpecializationSerializer(serializers.ModelSerializer):
+    specializations = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectCategory
+        fields = ('id', 'name', 'specializations')
+
+    def get_specializations(self, obj):
+        specializations = Specialization.objects.filter(category=obj)
+        serializer = SpecializationSerializer(specializations, many=True)
+        return serializer.data
+
+
 class ProjectCategorySerializer(serializers.ModelSerializer):
     photo = serializers.SerializerMethodField()
 
@@ -60,6 +75,12 @@ class ProjectPurposeTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ProjectPurposeShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectPurpose
+        fields = ('id', 'name')
+
+
 class ProjectPurposeSerializer(serializers.ModelSerializer):
     type = ProjectPurposeTypeSerializer()
     subtype = ProjectPurposeSubtypeSerializer()
@@ -79,6 +100,12 @@ class ProjectStyleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectStyle
         fields = '__all__'
+
+
+class ProjectTagShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTag
+        fields = ('id', 'name')
 
 
 class ProjectTagSerializer(serializers.ModelSerializer):
@@ -223,8 +250,14 @@ class Render360CreateSerializer(serializers.ModelSerializer):
         fields = ('document', )
 
 
+class ProjectShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = ('id', 'name')
+
+
 class ProjectSearchSerializer(serializers.ModelSerializer):
-    user = UserShortSerializer()
+    user = UserShortAvatarSerializer()
     is_favorite = serializers.SerializerMethodField()
     photo = serializers.SerializerMethodField()
     price_from_full = serializers.SerializerMethodField()
@@ -233,12 +266,6 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         model = Project
         fields = ('id', 'user', 'name', 'price_from_full', 'rating', 'is_favorite', 'is_top', 'is_detailed',
                   'photo')
-
-    def get_user_id(self, obj):
-        return obj.user.id
-
-    def get_user_name(self, obj):
-        return f'{obj.user.get_full_name()}'
 
     def get_is_favorite(self, obj):
         user = self.context.user
@@ -276,8 +303,71 @@ class ProjectProfileGetSerializer(ProjectSearchSerializer):
         fields = tuple(fields_)
 
 
-# class ProjectPromotionSerializer(serializers.ModelSerializer):
-#     class Meta:
+class ProjectPromotionSerializer(serializers.ModelSerializer):
+    photo = serializers.SerializerMethodField()
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    views_count = serializers.SerializerMethodField()
+    applications_count = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    favorite_count = serializers.SerializerMethodField()
+    paid_feature_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = ('id', 'name', 'photo', 'start_date', 'end_date', 'views_count', 'applications_count', 'price',
+                  'favorite_count', 'rating', 'is_top', 'is_detailed', 'paid_feature_id')
+
+    def get_photo(self, obj):
+        photo = ProjectDocument.objects.filter(project=obj).first()
+        if photo:
+            return self.context.get('request').build_absolute_uri(photo.document.url)
+        return None
+
+    def get_start_date(self, obj):
+        queryset = ProjectPaidFeature.objects.filter(project=obj, is_active=True)
+        if self.context.get('type') == constants.PAID_FEATURE_TOP:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_TOP)
+        elif self.context.get('type') == constants.PAID_FEATURE_DETAILED:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_DETAILED)
+        feature = queryset.first()
+        return feature.created_at.strftime(constants.DATE_FORMAT)
+
+    def get_end_date(self, obj):
+        queryset = ProjectPaidFeature.objects.filter(project=obj, is_active=True)
+        if self.context.get('type') == constants.PAID_FEATURE_TOP:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_TOP)
+        elif self.context.get('type') == constants.PAID_FEATURE_DETAILED:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_DETAILED)
+        feature = queryset.first()
+        return feature.expires_at.strftime(constants.DATE_FORMAT)
+
+    def get_views_count(self, obj):
+        return ProjectView.objects.filter(project=obj).count()
+
+    def get_applications_count(self, obj):
+        return Application.objects.filter(project=obj).count()
+
+    def get_price(self, obj):
+        queryset = ProjectPaidFeature.objects.filter(project=obj, is_active=True)
+        if self.context.get('type') == constants.PAID_FEATURE_TOP:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_TOP)
+        elif self.context.get('type') == constants.PAID_FEATURE_DETAILED:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_DETAILED)
+        feature = queryset.first()
+        return feature.type.price
+
+    def get_favorite_count(self, obj):
+        return ProjectUserFavorite.objects.filter(project=obj).count()
+
+    def get_paid_feature_id(self, obj):
+        queryset = ProjectPaidFeature.objects.filter(project=obj, is_active=True)
+        if self.context.get('type') == constants.PAID_FEATURE_TOP:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_TOP)
+        elif self.context.get('type') == constants.PAID_FEATURE_DETAILED:
+            queryset = queryset.filter(type__type=constants.PAID_FEATURE_DETAILED)
+        feature = queryset.first()
+        return feature.id
 
 
 class ProjectCreateSerializer(serializers.ModelSerializer):
@@ -467,6 +557,39 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
                 instance.tags.add(tag)
         instance.save()
         return instance
+
+
+class ProjectForUpdateSerializer(serializers.ModelSerializer):
+    category = ProjectCategoryShortSerializer()
+    purpose = ProjectPurposeShortSerializer()
+    type = ProjectTypeSerializer()
+    style = ProjectStyleSerializer()
+    tags = serializers.SerializerMethodField()
+    documents = serializers.SerializerMethodField()
+    render = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = ('name', 'name', 'category', 'purpose', 'type', 'style', 'area', 'price_from', 'price_to', 'description',
+                  'tags', 'documents', 'render')
+
+    def get_documents(self, obj):
+        urls = []
+        project_documents = ProjectDocument.objects.filter(project=obj)
+        for doc in project_documents:
+            urls.append(self.context.build_absolute_uri(doc.document.url))
+        return urls
+
+    def get_render(self, obj):
+        try:
+            render = Render360.objects.get(project=obj)
+            return self.context.build_absolute_uri(render.document.url)
+        except:
+            return None
+
+    def get_tags(self, obj):
+        serializer = ProjectTagShortSerializer(obj.tags.all(), many=True)
+        return serializer.data
 
 
 class ProjectCommentDetailSerializer(serializers.ModelSerializer):

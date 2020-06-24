@@ -328,6 +328,14 @@ class UserViewSet(viewsets.GenericViewSet,
         context = {
             'request': request
         }
+        from_project = request.data.get('from_project')
+        if from_project:
+            try:
+                project = Project.objects.get(id=from_project)
+            except:
+                return Response(f'Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+            project.to_profile_count += 1
+            project.save()
         serializer = UserTopDetailSerializer(user, context=context)
         return Response(serializer.data, status.HTTP_200_OK)
 

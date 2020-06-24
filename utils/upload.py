@@ -13,6 +13,10 @@ def review_document_path(instance, filename):
     return f'review_documents/{instance.review.id}/{filename}'
 
 
+def review_reply_document_path(instance, filename):
+    return f'review_reply_documents/{instance.reply.id}/{filename}'
+
+
 def project_category_image_path(instance, filename):
     return f'project_category_images/{filename}'
 

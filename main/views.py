@@ -191,17 +191,8 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['get', 'post'])
     def tests(self, request, pk=None):
-        cities_ = City.objects.all()
-        cities = cities_
-        print(cities)
-
-        c = City.objects.create(name='asd', country_id=1)
-
-        print(cities)
-
-        c.delete()
-
-        print(cities)
+        from celery import current_app
+        print(current_app.tasks.keys())
 
         return Response()
 

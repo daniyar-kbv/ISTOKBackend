@@ -186,18 +186,20 @@ class PaidFeatureType(models.Model):
                                                  default=constants.TIME_DAY,
                                                  verbose_name='Еденицы измерения времени')
     beneficial = models.BooleanField(null=False, blank=True, default=False, verbose_name='Выгодный')
+    position = models.IntegerField(default=0, null=False, blank=False, verbose_name='Позиция')
 
     class Meta:
         verbose_name = 'Тип платной услуги'
         verbose_name_plural = 'Типы платных услуг'
+        ordering = ('position', )
 
     def __str__(self):
-        return f'{self.id}: {self.type}, {self.price}'
+        return f'{self.id}: {constants.PAID_FEATURE_TYPES[self.type-1][1]}, {self.price}'
 
 
 class PaidFeature(models.Model):
     type = models.ForeignKey(PaidFeatureType,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.CASCADE,
                              null=True,
                              blank=False,
                              verbose_name='Тип')
@@ -206,6 +208,7 @@ class PaidFeature(models.Model):
                                     null=False,
                                     blank=False,
                                     verbose_name='Транзакция')
+    refresh_count = models.PositiveSmallIntegerField(null=False, blank=True, default=0, verbose_name='Количество продлений')
     is_active = models.BooleanField(null=False, blank=True, default=False, verbose_name='Активный')
     created_at = models.DateTimeField(auto_now=True, blank=True, null=False, verbose_name='Дата создание')
     expires_at = models.DateTimeField(null=True, blank=True, verbose_name='Дата истечения')
@@ -227,7 +230,7 @@ class UsersPaidFeature(PaidFeature):
         verbose_name_plural = 'Платные услуги пользователей'
 
     def __str__(self):
-        return f'{self.id}: {self.user}, {self.type}'
+        return f'{self.id}: {self.user}, {self.type.type}'
 
 
 class ProjectPaidFeature(PaidFeature):
@@ -243,6 +246,6 @@ class ProjectPaidFeature(PaidFeature):
         verbose_name_plural = 'Платные услуги проектов'
 
     def __str__(self):
-        return f'{self.id}: {self.project}, {self.type}'
+        return f'{self.id}: {self.project}, {self.type.type}'
 
 

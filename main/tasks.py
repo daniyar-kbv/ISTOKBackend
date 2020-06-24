@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 from celery import shared_task
 from django.core.mail import EmailMessage
-from profiles.models import UsersPaidFeature
+from profiles.models import UsersPaidFeature, ProjectPaidFeature
 import os
 import logging
 
@@ -33,8 +33,23 @@ def send_email(subject, body, to, attachments=None, count=0):
 def deactivate_user_feature(id):
     try:
         feature = UsersPaidFeature.objects.get(id=id)
-        feature.is_active = False
+        if feature.refresh_count == 0:
+            feature.is_active = False
+        else:
+            feature.refresh_count -= 1
         feature.save()
     except:
         pass
 
+
+@shared_task
+def deactivate_project_feature(id):
+    try:
+        feature = ProjectPaidFeature.objects.get(id=id)
+        if feature.refresh_count == 0:
+            feature.is_active = False
+        else:
+            feature.refresh_count -= 1
+        feature.save()
+    except:
+        pass

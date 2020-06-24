@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from users.models import UserActivation, MainUser, ProfileDocument, ProjectCategory, MerchantReview, ClientRating, \
-    ReviewDocument
+    ReviewDocument, ReviewReply, ReviewReplyDocument
 from main.tasks import send_email
 from utils import emails, upload
 import constants
@@ -84,7 +84,7 @@ def client_rating_post_save(sender, instance, created=True, **kwargs):
 
 
 @receiver(pre_delete, sender=ClientRating)
-def client_rating_post_save(sender, instance, created=True, **kwargs):
+def client_rating_pre_delete(sender, instance, created=True, **kwargs):
     rating_sum = 0
     rating_count = 0
     client = instance.client
@@ -95,3 +95,10 @@ def client_rating_post_save(sender, instance, created=True, **kwargs):
     profile = client.profile
     profile.rating = rating_sum / rating_count
     profile.save()
+
+
+@receiver(pre_delete, sender=ReviewReply)
+def review_reply_pre_delete(sender, instance, created=True, **kwargs):
+    doc = ReviewReplyDocument.objects.filter(reply=instance).first()
+    if doc:
+        upload.delete_folder(doc.document)

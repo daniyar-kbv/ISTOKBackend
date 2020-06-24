@@ -9,17 +9,23 @@ from profiles.serializers import ClientProfileGetSerializer, ClientProfileUpdate
     ApplicationClientConfirmedSerializer, ApplicationClientFinishedSerializer, ApplicationDeclinedSerializer, \
     ApplicationMerchantConfirmedDeclinedWaitingSerializer, ApplicationDeclineSerializer, ApplicationDetailSerializer, \
     ApplicationCreateSerializer, MerchantProfileTopSerializer, MerchantProfileGetSerializer, MerchantProfileForUpdate, \
-    MerchantProfileUpdate, PaidFeatureTypeListSerializer
-from users.serializers import PhoneSerializer, ClientRatingCreateSerializer, MerchantReviewCreateSerializer
-from users.models import MainUser, MerchantPhone
+    MerchantProfileUpdate, PaidFeatureTypeListSerializer, GetStatiscticsInSerialzier, GetStatiscticsOutSerialzier
+from users.serializers import PhoneSerializer, ClientRatingCreateSerializer, MerchantReviewCreateSerializer, \
+    MerchantReviewDetailList
+from users.models import MainUser, MerchantPhone, MerchantReview
 from profiles.models import FormQuestionGroup, Application, ApplicationDocument, PaidFeatureType, Transaction, \
-    UsersPaidFeature
-from profiles.serializers import FormQuestionGroupSerializer
-from main.models import Project
+    UsersPaidFeature, ProjectPaidFeature
+from profiles.serializers import FormQuestionGroupSerializer, ProjectForPromotionSerialzier
+from main.models import Project, ProjectType, ProjectStyle, ProjectPurpose, ProjectCategory, ProjectView
 from main.serializers import ProjectProfileGetSerializer, ProjectCreateSerializer, ProjectDetailSerializer, \
-    ProjectUpdateSerializer
+    ProjectUpdateSerializer, ProjectPromotionSerializer, ProjectForUpdateSerializer, ProjectCategoryShortSerializer, \
+    ProjectPurposeShortSerializer, ProjectTypeSerializer, ProjectStyleSerializer, \
+    ProjectCategorySpecializationSerializer, ProjectSearchSerializer, ProjectShortSerializer
+from main.tasks import deactivate_user_feature, deactivate_project_feature
 from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
+from datetime import timedelta, datetime
+from dateutil.relativedelta import relativedelta
 import constants
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -147,7 +153,13 @@ class ProfileViewSet(viewsets.GenericViewSet,
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
     def for_update(self, request, pk=None):
         serializer = MerchantProfileForUpdate(request.user.profile, context=request)
-        return Response(serializer.data)
+        categories = ProjectCategory.objects.all()
+        categories_serializer = ProjectCategorySpecializationSerializer(categories, many=True)
+        data = {
+            'profile': serializer.data,
+            'categories': categories_serializer.data
+        }
+        return Response(data)
 
     @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
     def features(self, request, pk=None):
@@ -166,12 +178,30 @@ class ProfileViewSet(viewsets.GenericViewSet,
             except:
                 return Response(response.make_messages([f'Типа {constants.RESPONSE_DOES_NOT_EXIST}']),
                                 status.HTTP_400_BAD_REQUEST)
-            transaction = Transaction.objects.create(number='test')
             if type.type == constants.PAID_FEATURE_PRO:
-                UsersPaidFeature.objects.create(user=request.user, type=type, transaction=transaction, is_active=True)
+                features = UsersPaidFeature.objects.filter(user=request.user, is_active=True)
+                if features.count() > 0:
+                    feature = features.first()
+                    unit = feature.type.time_unit
+                    amount = feature.type.time_amount
+                    if unit == constants.TIME_DAY:
+                        delta = timedelta(days=amount)
+                    elif unit == constants.TIME_MONTH:
+                        delta = relativedelta(months=+amount)
+                    elif unit == constants.TIME_YEAR:
+                        delta = relativedelta(years=+amount)
+                    else:
+                        delta = timedelta(seconds=10)
+                    feature.expires_at = feature.expires_at + delta
+                    feature.refreshed += 1
+                    feature.save()
+                    deactivate_user_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                    return Response(status=status.HTTP_200_OK)
+                else:
+                    transaction = Transaction.objects.create(number='test')
+                    UsersPaidFeature.objects.create(user=request.user, type=type, transaction=transaction, is_active=True)
                 return Response(status=status.HTTP_200_OK)
-            else:
-                return Response()
+            return Response(response.make_messages([f'{constants.RESPONSE_FEATURE_TYPES} Про']))
 
     @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
     def projects(self, request, pk=None):
@@ -185,11 +215,13 @@ class ProfileViewSet(viewsets.GenericViewSet,
             }
             if request.data.get('documents'):
                 context['documents'] = request.data.pop('documents')
+                if context['documents'] > 12:
+                    return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 12']))
             serializer = ProjectCreateSerializer(data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save(user=request.user)
                 return Response(serializer.data)
-            return Response(response.make_errors(serializer))
+            return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get', 'put', 'delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def project(self, request, pk=None):
@@ -214,8 +246,8 @@ class ProfileViewSet(viewsets.GenericViewSet,
             total_documents = request.data.get('total_documents')
             if total_documents:
                 try:
-                    if int(total_documents) > 6:
-                        return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 6']),
+                    if int(total_documents) > 12:
+                        return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 12']),
                                         status.HTTP_400_BAD_REQUEST)
                 except:
                     return Response(
@@ -238,6 +270,249 @@ class ProfileViewSet(viewsets.GenericViewSet,
         elif request.method == 'DELETE':
             project.delete()
             return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
+    def project_for_update(self, request, pk=None):
+        try:
+            project = Project.objects.get(id=pk)
+        except:
+            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        if project.user != request.user:
+            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
+                            status.HTTP_400_BAD_REQUEST)
+        project_serializer = ProjectForUpdateSerializer(project, context=request)
+        categories = ProjectCategory.objects.all()
+        category_serialzier = ProjectCategoryShortSerializer(categories, many=True)
+        purposes = ProjectPurpose.objects.all()
+        purpose_serialzier = ProjectPurposeShortSerializer(purposes, many=True)
+        types = ProjectType.objects.all()
+        type_serialzier = ProjectTypeSerializer(types, many=True)
+        styles = ProjectStyle.objects.all()
+        style_serialzier = ProjectStyleSerializer(styles, many=True)
+        data = {
+            'project': project_serializer.data,
+            'categories': category_serialzier.data,
+            'purposes': purpose_serialzier.data,
+            'styles': style_serialzier.data,
+            'types': type_serialzier.data
+        }
+        return Response(data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
+    def promoted(self, request, pk=None):
+        user = request.user
+        features = ProjectPaidFeature.objects.filter(project__user=user)
+        data = []
+        for feature in features:
+            context = {
+                'type': feature.type.type,
+                'request': request
+            }
+            serializer = ProjectPromotionSerializer(feature.project, context=context)
+            data.append(serializer.data)
+        return Response(data)
+
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
+    def project_for_promotion(self, request, pk=None):
+        if pk != 'none':
+            try:
+                project = Project.objects.get(id=pk)
+            except:
+                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                                status.HTTP_400_BAD_REQUEST)
+        else:
+            projects = Project.objects.filter(user=request.user)
+            if projects.count() > 0:
+                project = projects.first()
+            else:
+                return Response(constants.RESPONSE_NO_PROJECTS, status.HTTP_400_BAD_REQUEST)
+        if project.user != request.user:
+            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
+                            status.HTTP_400_BAD_REQUEST)
+        if request.method == 'GET':
+            project_serializer = ProjectSearchSerializer(project, context=request)
+            projects = Project.objects.filter(user=request.user)
+            projects_serializer = ProjectShortSerializer(projects, many=True)
+            data = {
+                'current_project': project_serializer.data,
+                'projects': projects_serializer.data
+            }
+            return Response(data)
+        elif request.method == 'POST':
+            serializer = ProjectForPromotionSerialzier(data=request.data)
+            if serializer.is_valid():
+                type = PaidFeatureType.objects.get(id=serializer.data.get('type'))
+                if type.type != constants.PAID_FEATURE_TOP_DETAILED:
+                    features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
+                                                                 type__type=type.type)
+                    if features.count() > 0:
+                        feature = features.first()
+                        unit = feature.type.time_unit
+                        amount = feature.type.time_amount
+                        if unit == constants.TIME_DAY:
+                            delta = timedelta(days=amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
+                        else:
+                            delta = timedelta(seconds=10)
+                        feature.expires_at = feature.expires_at + delta
+                        feature.refresh_count += 1
+                        feature.save()
+                        deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                        return Response(status=status.HTTP_200_OK)
+                    transaction = Transaction.objects.create(number='test')
+                    ProjectPaidFeature.objects.create(project=project, type_id=serializer.data.get('type'),
+                                                      transaction=transaction,
+                                                      is_active=True)
+                    return Response(status=status.HTTP_200_OK)
+                top_type = PaidFeatureType.objects.filter(type=constants.PAID_FEATURE_TOP, position=type.position).first()
+                if top_type:
+                    features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
+                                                                 type__type=top_type.type)
+                    if features.count() > 0:
+                        feature = features.first()
+                        unit = feature.type.time_unit
+                        amount = feature.type.time_amount
+                        if unit == constants.TIME_DAY:
+                            delta = timedelta(days=amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
+                        else:
+                            delta = timedelta(seconds=10)
+                        feature.expires_at = feature.expires_at + delta
+                        feature.refresh_count += 1
+                        feature.save()
+                        deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                    else:
+                        transaction = Transaction.objects.create(number='test')
+                        ProjectPaidFeature.objects.create(project=project, type=top_type,
+                                                          transaction=transaction,
+                                                          is_active=True)
+                detailed_type = PaidFeatureType.objects.filter(type=constants.PAID_FEATURE_DETAILED,
+                                                               position=type.position).first()
+                if detailed_type:
+                    features = ProjectPaidFeature.objects.filter(project=project, is_active=True,
+                                                                 type__type=detailed_type.type)
+                    if features.count() > 0:
+                        feature = features.first()
+                        unit = feature.type.time_unit
+                        amount = feature.type.time_amount
+                        if unit == constants.TIME_DAY:
+                            delta = timedelta(days=amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
+                        else:
+                            delta = timedelta(seconds=10)
+                        feature.expires_at = feature.expires_at + delta
+                        feature.refresh_count += 1
+                        feature.save()
+                        deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
+                        return Response(status=status.HTTP_200_OK)
+                    else:
+                        transaction = Transaction.objects.create(number='test')
+                        ProjectPaidFeature.objects.create(project=project, type=detailed_type,
+                                                          transaction=transaction,
+                                                          is_active=True)
+                    return Response(status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
+            return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
+    def statistics(self, request, pk=None):
+        try:
+            feature = ProjectPaidFeature.objects.get(id=pk)
+        except:
+            return Response(response.make_messages([f'Прдвиженияе прооекта {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        if feature.project.user != request.user:
+            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} продвижением проекта']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = GetStatiscticsInSerialzier(data=request.data)
+        if serializer.is_valid():
+            type = serializer.data.get('type')
+            time_period = serializer.data.get('time_period')
+            if time_period == constants.STATISTICS_TIME_7_DAYS:
+                days = 7
+            elif time_period == constants.STATISTICS_TIME_30_DAYS:
+                days = 30
+            today = datetime.today()
+            statistics_data = []
+            for day in range(days):
+                with_delta = today - timedelta(days=day)
+                if type == constants.STATISTICS_TYPE_VIEWS:
+                    statistics_data.append({
+                        "date": with_delta.strftime(constants.DATE_FORMAT),
+                        "count": ProjectView.objects.filter(project=feature.project, creation_date__day=with_delta.day,
+                                                            creation_date__month=with_delta.month).count()
+                    })
+                if type == constants.STATISTICS_TYPE_APPS:
+                    statistics_data.append({
+                        "date": with_delta.strftime(constants.DATE_FORMAT),
+                        "count": Application.objects.filter(project=feature.project,
+                                                            creation_date__day=with_delta.day,
+                                                            creation_date__month=with_delta.month).count()
+                    })
+            project_serializer = GetStatiscticsOutSerialzier(feature)
+            data = {
+                'project_data': project_serializer.data,
+                'statistics_data': statistics_data
+            }
+            return Response(data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
+    def get_reviews(self, request, pk=None):
+        user = request.user
+        if user.role == constants.ROLE_CLIENT:
+            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+        reviews = MerchantReview.objects.filter(merchant=user)
+        if request.data.get('order_by'):
+            order_by = request.data.get('order_by')
+        else:
+            order_by = '-creation_date'
+        reviews = reviews.order_by(order_by)
+        paginator = pagination.CustomPagination()
+        paginator.page_size = 8
+        page = paginator.paginate_queryset(reviews, request)
+        if page is not None:
+            serializer = MerchantReviewDetailList(reviews, many=True, context=request)
+            data = {
+                'total_found': reviews.count()
+            }
+            return paginator.get_paginated_response(serializer.data, additional_data=data)
+        serializer = MerchantReviewDetailList(reviews, many=True, context=request)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    def reply(self, request, pk=None):
+        try:
+            review = MerchantReview.objects.get(id=pk)
+        except:
+            return Response(response.make_messages([f'Отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        if review.merchant != user:
+            return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
+        context = {
+            'user': user
+        }
+        if request.data.get('documents'):
+            documents = request.data.pop('documents')
+            context['documents'] = documents
+        serialzier = MerchantReviewCreateSerializer(data=request.data, context=context)
+        if serialzier.is_valid():
+            serialzier.save(merchant=application.merchant, user=user)
+            application.status = constants.APPLICATION_FINISHED
+            application.save()
+            return Response(serialzier.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serialzier), status.HTTP_400_BAD_REQUEST)
 
 
 class IsPhoneValidView(views.APIView):

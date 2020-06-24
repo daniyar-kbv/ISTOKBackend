@@ -1,7 +1,8 @@
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser, PermissionsMixin
-from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path
+from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path, \
+    review_reply_document_path
 from utils.validators import validate_file_size, basic_validate_images
 from constants import ROLES, ROLE_CLIENT, ROLE_MERCHANT
 import os
@@ -526,6 +527,25 @@ class ReviewReply(models.Model):
 
     def __str__(self):
         return f'{self.id}: отзыв ({self.review.id})'
+
+
+class ReviewReplyDocument(models.Model):
+    reply = models.ForeignKey(ReviewReply,
+                               on_delete=models.CASCADE,
+                               null=False,
+                               blank=False,
+                               related_name='documents',
+                               verbose_name='Ответ на отзыв')
+    document = models.FileField(upload_to=review_reply_document_path,
+                                validators=[validate_file_size, basic_validate_images],
+                                verbose_name='Документ')
+
+    class Meta:
+        verbose_name = 'Фото ответа на отзыв'
+        verbose_name_plural = 'Фото ответов на отзывы'
+
+    def __str__(self):
+        return f'Документ ({self.id}) ответа на отзыв ({self.review.id})'
 
 
 class ClientRating(models.Model):

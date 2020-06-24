@@ -45,21 +45,40 @@ APPLICATION_STATUSES_STRING = [APPLICATION_CREATED_STRING, APPLICATION_CONFIRMED
 PAID_FEATURE_PRO = 1
 PAID_FEATURE_TOP = 2
 PAID_FEATURE_DETAILED = 3
+PAID_FEATURE_TOP_DETAILED = 4
 
 PAID_FEATURE_TYPES = (
     (PAID_FEATURE_PRO, 'Про аккаунт'),
     (PAID_FEATURE_TOP, 'Топ проект'),
-    (PAID_FEATURE_DETAILED, 'Выделеный проект')
+    (PAID_FEATURE_DETAILED, 'Выделеный проект'),
+    (PAID_FEATURE_TOP_DETAILED, 'Топ и Выделеный проект')
 )
 
 TIME_DAY = 1
 TIME_MONTH = 2
 TIME_YEAR = 3
+TIME_TEST = 4
 
 TIME_TYPES = (
     (TIME_DAY, 'Дни'),
     (TIME_MONTH, 'Месяца'),
     (TIME_YEAR, 'Года')
+)
+
+STATISTICS_TIME_7_DAYS = 1
+STATISTICS_TIME_30_DAYS = 2
+
+STATISTICS_TIME_PERIODS = (
+    (STATISTICS_TIME_7_DAYS, '7 Дней'),
+    (STATISTICS_TIME_30_DAYS, '30 Дней')
+)
+
+STATISTICS_TYPE_VIEWS = 1
+STATISTICS_TYPE_APPS = 2
+
+STATISTICS_TYPES = (
+    (STATISTICS_TYPE_VIEWS, 'Просмотры'),
+    (STATISTICS_TYPE_APPS, 'Заявки')
 )
 
 ACTIVATION_EMAIL_SUBJECT = 'test'
@@ -94,6 +113,8 @@ RESPONSE_MAX_FILES = 'Максимальное количество файлов
 RESPONSE_RIGHT_ONLY_DIGITS = 'Только цифровые значения'
 RESPONSE_PAID_TYPE_INVALID = 'Типы платной услуги: 1 - Про, 2 - Топ, 3 - Выделеный'
 RESPONSE_NOT_OWNER = 'Вы не являетесь владельцем'
+RESPONSE_FEATURE_TYPES = 'Типы платных услуг:'
+RESPONSE_NO_PROJECTS = 'У вас нет ниодного проекта'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'
@@ -110,6 +131,9 @@ VALIDATION_FORM_NOT_COMPLETE = 'Вы не ответили на все вопр�
 VALIDATION_RATING_RANGE = 'Рейтинг может быть от 0 до 10'
 VALIDATION_EMAIL_EXISTS = 'Email заянт другим пользователем'
 VALIDATION_PRICE_INVALID = 'Цена от должна быть меньше цены до'
+VALIDATION_FEATURE_NOT_EXIST = 'Платная услуга не существует'
+VALIDATION_TIME_PERIODS = 'Варианты временных отрезков: 1 - 7 дней, 2 - 30 дней'
+VALIDATION_STATISTICS_TYPES = 'Виды статистики: 1 - Просмотры, 2- Заявки'
 
 PHONE = 'Номер телефона'
 EMAIL = 'Email'

@@ -78,6 +78,8 @@ class Project(models.Model):
     is_detailed = models.BooleanField(default=False, verbose_name='Выделенный')
     creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
     rating = models.FloatField(null=False, blank=True, default=0, verbose_name='Рейтинг')
+    to_profile_count = models.PositiveSmallIntegerField(null=False, blank=True, default=0,
+                                                        verbose_name='Переходы в профиль')
 
     objects = ProjectManager()
 
