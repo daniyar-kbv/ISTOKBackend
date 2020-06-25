@@ -1,9 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 from celery import shared_task
 from django.core.mail import EmailMessage
-from profiles.models import UsersPaidFeature, ProjectPaidFeature
+from profiles.models import UsersPaidFeature, ProjectPaidFeature, Notification
+from users.models import MainUser
 import os
-import logging
+import logging, constants
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ def deactivate_user_feature(id):
         feature = UsersPaidFeature.objects.get(id=id)
         if feature.refresh_count == 0:
             feature.is_active = False
+            Notification.objects.create(text=f'Статус "PRO аккаунта" истек', user=feature.user)
         else:
             feature.refresh_count -= 1
         feature.save()
@@ -48,8 +50,31 @@ def deactivate_project_feature(id):
         feature = ProjectPaidFeature.objects.get(id=id)
         if feature.refresh_count == 0:
             feature.is_active = False
+            Notification.objects.create(text=f'Продвижение "{constants.PAID_FEATURE_TYPES[feature.type.type][1]}" проекта "{feature.project.name}" истекло',
+                                        user=feature.project.user)
         else:
             feature.refresh_count -= 1
         feature.save()
+    except:
+        pass
+
+
+@shared_task
+def notify_user_feature(text, user_id):
+    try:
+        feature = UsersPaidFeature.objects.get(id=id)
+        if feature.refresh_count == 0:
+            Notification.objects.create(text=f'Статус "PRO аккаунта" истечет завтра', user=feature.user)
+    except:
+        pass
+
+
+@shared_task
+def notify_project_feature(id):
+    try:
+        feature = ProjectPaidFeature.objects.get(id=id)
+        if feature.refresh_count == 0:
+            Notification.objects.create(text=f'Продвижение "{constants.PAID_FEATURE_TYPES[feature.type.type][1]}" проекта "{feature.project.name}" истечет завтра',
+                                        user=feature.project.user)
     except:
         pass

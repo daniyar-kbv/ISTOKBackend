@@ -1,6 +1,6 @@
 from django.contrib import admin
 from profiles.models import FormQuestionGroup, FormQuestion, FormAnswer, FormUserAnswer, ApplicationDocument, \
-    Application, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature
+    Application, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature, Notification
 
 
 class InlineFormAnswer(admin.StackedInline):
@@ -52,3 +52,7 @@ class UsersPaidFeatureAdmin(admin.ModelAdmin):
 class ProjectPaidFeatureAdmin(admin.ModelAdmin):
     list_display = ('id', 'project', 'type')
 
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'text', 'creation_date')

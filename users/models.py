@@ -545,7 +545,7 @@ class ReviewReplyDocument(models.Model):
         verbose_name_plural = 'Фото ответов на отзывы'
 
     def __str__(self):
-        return f'Документ ({self.id}) ответа на отзыв ({self.review.id})'
+        return f'Документ ({self.id}) ответа на отзыв ({self.reply.id})'
 
 
 class ClientRating(models.Model):

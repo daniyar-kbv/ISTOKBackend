@@ -41,3 +41,20 @@ def format_time_period(amount, unit):
         elif unit == constants.TIME_YEAR:
             return 'года'
     return ''
+
+
+def get_status_name(user, obj):
+    if obj.status == constants.APPLICATION_CONFIRMED:
+        return 'В процессе'
+    if obj.status == constants.APPLICATION_FINISHED_CONFIRMED:
+        return 'Завершена'
+    if obj.status == constants.APPLICATION_DECLINED_MERCHANT or obj.status == constants.APPLICATION_DECLINED_CLIENT:
+        return 'Отклонена'
+    if user.role == constants.ROLE_CLIENT:
+        if obj.status == constants.APPLICATION_CREATED or obj.status == constants.APPLICATION_FINISHED:
+            return 'Ожидает ответа'
+    elif user.role == constants.ROLE_MERCHANT:
+        if obj.status == constants.APPLICATION_CREATED:
+            return 'Новая'
+        elif obj.status == constants.APPLICATION_FINISHED:
+            return 'Ожидает завершения'

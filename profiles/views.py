@@ -11,8 +11,8 @@ from profiles.serializers import ClientProfileGetSerializer, ClientProfileUpdate
     ApplicationCreateSerializer, MerchantProfileTopSerializer, MerchantProfileGetSerializer, MerchantProfileForUpdate, \
     MerchantProfileUpdate, PaidFeatureTypeListSerializer, GetStatiscticsInSerialzier, GetStatiscticsOutSerialzier
 from users.serializers import PhoneSerializer, ClientRatingCreateSerializer, MerchantReviewCreateSerializer, \
-    MerchantReviewDetailList
-from users.models import MainUser, MerchantPhone, MerchantReview
+    MerchantReviewDetailList, MerchantReviewReplyCreateSerializer
+from users.models import MainUser, MerchantPhone, MerchantReview, ReviewReply
 from profiles.models import FormQuestionGroup, Application, ApplicationDocument, PaidFeatureType, Transaction, \
     UsersPaidFeature, ProjectPaidFeature
 from profiles.serializers import FormQuestionGroupSerializer, ProjectForPromotionSerialzier
@@ -21,7 +21,7 @@ from main.serializers import ProjectProfileGetSerializer, ProjectCreateSerialize
     ProjectUpdateSerializer, ProjectPromotionSerializer, ProjectForUpdateSerializer, ProjectCategoryShortSerializer, \
     ProjectPurposeShortSerializer, ProjectTypeSerializer, ProjectStyleSerializer, \
     ProjectCategorySpecializationSerializer, ProjectSearchSerializer, ProjectShortSerializer
-from main.tasks import deactivate_user_feature, deactivate_project_feature
+from main.tasks import deactivate_user_feature, deactivate_project_feature, notify_user_feature, notify_project_feature
 from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
 from datetime import timedelta, datetime
@@ -195,6 +195,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                     feature.expires_at = feature.expires_at + delta
                     feature.refreshed += 1
                     feature.save()
+                    notify_user_feature.apply_async(args=[feature.id], eta=(feature.expires_at - timedelta(days=1)))
                     deactivate_user_feature.apply_async(args=[feature.id], eta=feature.expires_at)
                     return Response(status=status.HTTP_200_OK)
                 else:
@@ -361,6 +362,8 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         feature.expires_at = feature.expires_at + delta
                         feature.refresh_count += 1
                         feature.save()
+                        notify_project_feature.apply_async(args=[feature.id],
+                                                        eta=(feature.expires_at - timedelta(days=1)))
                         deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
                         return Response(status=status.HTTP_200_OK)
                     transaction = Transaction.objects.create(number='test')
@@ -387,6 +390,8 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         feature.expires_at = feature.expires_at + delta
                         feature.refresh_count += 1
                         feature.save()
+                        notify_project_feature.apply_async(args=[feature.id],
+                                                           eta=(feature.expires_at - timedelta(days=1)))
                         deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
                     else:
                         transaction = Transaction.objects.create(number='test')
@@ -413,6 +418,8 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         feature.expires_at = feature.expires_at + delta
                         feature.refresh_count += 1
                         feature.save()
+                        notify_project_feature.apply_async(args=[feature.id],
+                                                           eta=(feature.expires_at - timedelta(days=1)))
                         deactivate_project_feature.apply_async(args=[feature.id], eta=feature.expires_at)
                         return Response(status=status.HTTP_200_OK)
                     else:
@@ -490,13 +497,31 @@ class ProfileViewSet(viewsets.GenericViewSet,
         serializer = MerchantReviewDetailList(reviews, many=True, context=request)
         return Response(serializer.data, status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    def delete_review(self, request, pk=None):
+        try:
+            review = MerchantReview.objects.get(id=pk)
+        except:
+            return Response(response.make_messages([f'Отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        if review.merchant != user:
+            return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
+        review.delete()
+        return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsMerchant])
     def reply(self, request, pk=None):
         try:
             review = MerchantReview.objects.get(id=pk)
         except:
             return Response(response.make_messages([f'Отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
                             status.HTTP_400_BAD_REQUEST)
+        try:
+            ReviewReply.objects.get(review=review)
+            return Response(response.make_messages([constants.RESPONSE_REPLY_EXISTS]))
+        except:
+            pass
         user = request.user
         if review.merchant != user:
             return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
@@ -506,13 +531,24 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if request.data.get('documents'):
             documents = request.data.pop('documents')
             context['documents'] = documents
-        serialzier = MerchantReviewCreateSerializer(data=request.data, context=context)
+        serialzier = MerchantReviewReplyCreateSerializer(data=request.data, context=context)
         if serialzier.is_valid():
-            serialzier.save(merchant=application.merchant, user=user)
-            application.status = constants.APPLICATION_FINISHED
-            application.save()
+            serialzier.save(review=review, user=user)
             return Response(serialzier.data, status.HTTP_200_OK)
         return Response(response.make_errors(serialzier), status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    def delete_reply(self, request, pk=None):
+        try:
+            reply = ReviewReply.objects.get(id=pk)
+        except:
+            return Response(response.make_messages([f'Ответ на отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        if reply.user != user:
+            return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
+        reply.delete()
+        return Response(status=status.HTTP_200_OK)
 
 
 class IsPhoneValidView(views.APIView):

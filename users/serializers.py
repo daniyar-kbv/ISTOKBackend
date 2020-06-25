@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
-    MerchantReview, ReviewReply, ReviewDocument, Specialization, ClientRating
+    MerchantReview, ReviewReply, ReviewDocument, Specialization, ClientRating, ReviewReplyDocument
 from main.models import Project, ProjectDocument, ProjectTag, ProjectCategory
 from utils import response, validators
 
@@ -325,7 +325,7 @@ class ReviewMainPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MerchantReview
-        fields = ('user', 'creation_date', 'likes_count', 'is_liked', 'text', 'rating')
+        fields = ('id', 'user', 'creation_date', 'likes_count', 'is_liked', 'text', 'rating')
 
     def get_is_liked(self, obj):
         user = self.context.user
@@ -344,10 +344,11 @@ class MerchantReviewReplyDetailListSerializer(serializers.ModelSerializer):
     user = UserShortAvatarSerializer()
     creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
     is_liked = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
 
     class Meta:
         model = ReviewReply
-        fields = ('user', 'creation_date', 'likes_count', 'is_liked', 'text')
+        fields = ('id', 'user', 'creation_date', 'likes_count', 'is_liked', 'text', 'photos')
 
     def get_is_liked(self, obj):
         user = self.context.user
@@ -360,6 +361,13 @@ class MerchantReviewReplyDetailListSerializer(serializers.ModelSerializer):
 
     def get_likes_count(self, obj):
         return obj.user_likes.count()
+
+    def get_photos(self, obj):
+        urls = []
+        comment_documents = ReviewReplyDocument.objects.filter(reply=obj)
+        for doc in comment_documents:
+            urls.append(self.context.build_absolute_uri(doc.document.url))
+        return urls
 
 
 class MerchantReviewDetailList(ReviewMainPageSerializer):
@@ -497,6 +505,12 @@ class MerchantReviewDocumentCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class MerchantReviewReplyDocumentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewReplyDocument
+        fields = '__all__'
+
+
 class MerchantReviewCreateSerializer(serializers.ModelSerializer):
     rating = serializers.FloatField(required=True)
 
@@ -527,6 +541,34 @@ class MerchantReviewCreateSerializer(serializers.ModelSerializer):
         if value < 0 or value > 10:
             raise serializers.ValidationError(response.make_messages([constants.VALIDATION_RATING_RANGE]))
         return value
+
+
+class MerchantReviewReplyCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewReply
+        fields = ('text', )
+
+    def create(self, validated_data):
+        reply = ReviewReply.objects.create(**validated_data)
+
+        documents = self.context.get('documents')
+        doc_serializers = []
+        if documents:
+            for document in documents:
+                doc_data = {
+                    'reply': reply.id,
+                    'document': document,
+                    'user': self.context.get('user').id
+                }
+                serializer = MerchantReviewReplyDocumentCreateSerializer(data=doc_data)
+                if serializer.is_valid():
+                    doc_serializers.append(serializer)
+                else:
+                    reply.delete()
+                    raise serializers.ValidationError(response.make_errors(serializer))
+        for serializer in doc_serializers:
+            serializer.save()
+        return reply
 
 
 class ClientRatingCreateSerializer(serializers.ModelSerializer):

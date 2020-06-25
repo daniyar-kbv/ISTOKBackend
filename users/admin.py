@@ -1,7 +1,7 @@
 from django.contrib import admin
 from users.models import MainUser, ClientProfile, MerchantProfile, UserActivation, ProjectPurposeType, ProjectPurpose, \
     ProjectTag, ProjectPurposeSubType, ProjectStyle, ProjectType, ProjectCategory, ProfileDocument, City, Country, \
-    Specialization, MerchantPhone, CodeVerification, MerchantReview, ReviewReply, ReviewDocument
+    Specialization, MerchantPhone, CodeVerification, MerchantReview, ReviewReply, ReviewDocument, ReviewReplyDocument
 
 import constants
 
@@ -114,7 +114,12 @@ class MerchantReviewAdmin(admin.ModelAdmin):
     inlines = [InlineReviewDocument, ]
 
 
+class InlineReviewReplyDocument(admin.StackedInline):
+    model = ReviewReplyDocument
+
+
 @admin.register(ReviewReply)
 class ReviewReplyAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'review')
     filter_horizontal = ('user_likes', )
+    inlines = [InlineReviewReplyDocument, ]
