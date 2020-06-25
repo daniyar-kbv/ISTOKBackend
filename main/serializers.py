@@ -728,7 +728,7 @@ class ProjectCommentCreateSerializer(serializers.ModelSerializer):
 
 class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProjectComment
+        model = ProjectCommentReply
         fields = '__all__'
         read_only_fields = ['comment', 'user']
 
@@ -745,7 +745,7 @@ class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
                 }
                 serializer = ProjectCommentReplyDocumentSerializer(data=data)
                 if serializer.is_valid():
-                    doc_serializers.append(serializers)
+                    doc_serializers.append(serializer)
                 else:
                     reply.delete()
                     raise serializers.ValidationError(response.make_errors(serializer))

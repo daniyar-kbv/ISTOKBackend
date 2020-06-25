@@ -3,7 +3,7 @@ from users.models import MainUser, ClientProfile, MerchantReview, ProjectCategor
 from users.serializers import PhoneSerializer, MerchantPhone, UserShortRatingSerializer, MerchantProfile, \
     ProfileDocumentCreateSerializer, SpecializationWithCategorySerializer
 from profiles.models import FormAnswer, FormQuestion, FormQuestionGroup, FormUserAnswer, Application, \
-    ApplicationDocument, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature
+    ApplicationDocument, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature, Notification
 from main.models import ProjectUserFavorite
 from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagSerializer
 from utils import response, upload, validators, general
@@ -682,3 +682,11 @@ class GetStatiscticsOutSerialzier(serializers.ModelSerializer):
 
     def get_is_detailed(self, obj):
         return obj.type.type == constants.PAID_FEATURE_DETAILED
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
+
+    class Meta:
+        model = Notification
+        fields = ('text', 'creation_date', 'read')

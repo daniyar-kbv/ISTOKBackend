@@ -14,13 +14,15 @@ from users.serializers import PhoneSerializer, ClientRatingCreateSerializer, Mer
     MerchantReviewDetailList, MerchantReviewReplyCreateSerializer
 from users.models import MainUser, MerchantPhone, MerchantReview, ReviewReply
 from profiles.models import FormQuestionGroup, Application, ApplicationDocument, PaidFeatureType, Transaction, \
-    UsersPaidFeature, ProjectPaidFeature
-from profiles.serializers import FormQuestionGroupSerializer, ProjectForPromotionSerialzier
-from main.models import Project, ProjectType, ProjectStyle, ProjectPurpose, ProjectCategory, ProjectView
+    UsersPaidFeature, ProjectPaidFeature, Notification
+from profiles.serializers import FormQuestionGroupSerializer, ProjectForPromotionSerialzier, NotificationSerializer
+from main.models import Project, ProjectType, ProjectStyle, ProjectPurpose, ProjectCategory, ProjectView, ProjectComment, \
+    ProjectCommentReply
 from main.serializers import ProjectProfileGetSerializer, ProjectCreateSerializer, ProjectDetailSerializer, \
     ProjectUpdateSerializer, ProjectPromotionSerializer, ProjectForUpdateSerializer, ProjectCategoryShortSerializer, \
     ProjectPurposeShortSerializer, ProjectTypeSerializer, ProjectStyleSerializer, \
-    ProjectCategorySpecializationSerializer, ProjectSearchSerializer, ProjectShortSerializer
+    ProjectCategorySpecializationSerializer, ProjectSearchSerializer, ProjectShortSerializer, \
+    ProjectCommentReplyCreateSerializer
 from main.tasks import deactivate_user_feature, deactivate_project_feature, notify_user_feature, notify_project_feature
 from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
@@ -538,7 +540,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         return Response(response.make_errors(serialzier), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
-    def delete_reply(self, request, pk=None):
+    def delete_review_reply(self, request, pk=None):
         try:
             reply = ReviewReply.objects.get(id=pk)
         except:
@@ -550,23 +552,78 @@ class ProfileViewSet(viewsets.GenericViewSet,
         reply.delete()
         return Response(status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsMerchant])
     def comment_reply(self, request, pk=None):
         try:
-            project = self.queryset.get(id=pk)
+            comment = ProjectComment.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages([f'Комментарий {constants.RESPONSE_DOES_NOT_EXIST}']),
                             status.HTTP_400_BAD_REQUEST)
+        if comment.project.user != request.user:
+            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+        try:
+            ProjectCommentReply.objects.get(comment=comment)
+            return Response(response.make_messages([constants.RESPONSE_COMMENT_REPLY_EXISTS]))
+        except:
+            pass
         context = {}
         if request.data.get('documents'):
             documents = request.data.pop('documents')
             context['documents'] = documents
-        serializer = ProjectCommentCreateSerializer(data=request.data, context=context)
+        serializer = ProjectCommentReplyCreateSerializer(data=request.data, context=context)
         if serializer.is_valid():
-            serializer.save(project=project, user=request.user)
+            serializer.save(comment=comment, user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    def delete_comment(self, request, pk=None):
+        try:
+            comment = ProjectComment.objects.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Комментарий {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        if comment.project.user != request.user:
+            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+        comment.delete()
+        return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    def delete_comment_reply(self, request, pk=None):
+        try:
+            reply = ProjectCommentReply.objects.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Комментарий {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        if reply.user != request.user:
+            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+        reply.delete()
+        return Response(status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def notifications(self, request, pk=None):
+        user = request.user
+        notifications = Notification.objects.filter(user=user)
+        paginator = pagination.CustomPagination()
+        paginator.page_size = 13
+        page = paginator.paginate_queryset(notifications, request)
+        if page is not None:
+            serializer = NotificationSerializer(notifications, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def read_notification(self, request, pk=None):
+        try:
+            notification = Notification.objects.get(id=pk)
+        except:
+            return Response(response.make_messages([f'Уведомление {constants.RESPONSE_DOES_NOT_EXIST}']))
+        if notification.user != request.user:
+            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+        notification.read = True
+        notification.save()
+        return Response(status=status.HTTP_200_OK)
 
 
 class IsPhoneValidView(views.APIView):
