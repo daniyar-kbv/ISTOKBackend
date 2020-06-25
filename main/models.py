@@ -253,6 +253,25 @@ class ProjectCommentDocument(models.Model):
         return f'{self.id}: коммент({self.comment.id}), документ({self.document.name})'
 
 
+class ProjectCommentReplyDocument(models.Model):
+    reply = models.ForeignKey(ProjectCommentReply,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name='documents',
+                                verbose_name='Ответ на комментарий')
+    document = models.FileField(upload_to=upload.project_comment_reply_document_path,
+                                validators=[validators.validate_file_size, validators.basic_validate_images],
+                                verbose_name='Документ')
+
+    class Meta:
+        verbose_name = 'Документ ответа на комментарий'
+        verbose_name_plural = 'Документы ответов на комментарии'
+
+    def __str__(self):
+        return f'{self.id}: ответ на коммент({self.comment.id}), документ({self.document.name})'
+
+
 class ProjectComplaint(models.Model):
     user = models.ForeignKey(MainUser,
                              on_delete=models.CASCADE,

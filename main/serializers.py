@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView, ProjectCommentReply, \
-    ProjectCommentDocument, Render360, ProjectType
+    ProjectCommentDocument, Render360, ProjectType, ProjectCommentReplyDocument
 from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurpose, ProjectPurposeSubType, ProjectTag, \
     ProjectPurposeType, MerchantProfile, Specialization
 from users.models import Country, City
@@ -640,10 +640,11 @@ class ProjectCommentReplyListSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
     likes_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectCommentReply
-        fields = ('id', 'user', 'text', 'creation_date', 'likes_count', 'is_liked')
+        fields = ('id', 'user', 'text', 'creation_date', 'likes_count', 'is_liked', 'photos')
 
     def get_likes_count(self, obj):
         return obj.likes_count
@@ -656,6 +657,13 @@ class ProjectCommentReplyListSerializer(serializers.ModelSerializer):
             else:
                 return False
         return None
+
+    def get_photos(self, obj):
+        urls = []
+        comment_documents = ProjectCommentReplyDocument.objects.filter(reply=obj)
+        for doc in comment_documents:
+            urls.append(self.context.build_absolute_uri(doc.document.url))
+        return urls
 
 
 class ProjectCommentWithReplySerializer(ProjectCommentDetailSerializer):
@@ -687,6 +695,12 @@ class ProjectCommentDocumentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ProjectCommentReplyDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectCommentReplyDocument
+        fields = '__all__'
+
+
 class ProjectCommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectComment
@@ -710,3 +724,31 @@ class ProjectCommentCreateSerializer(serializers.ModelSerializer):
                     comment.delete()
                     raise serializers.ValidationError(response.make_errors(serializer))
         return comment
+
+
+class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectComment
+        fields = '__all__'
+        read_only_fields = ['comment', 'user']
+
+    def create(self, validated_data):
+        validated_data.pop('user_likes')
+        reply = ProjectCommentReply.objects.create(**validated_data)
+        documents = self.context.get('documents')
+        doc_serializers = []
+        if documents:
+            for doc in documents:
+                data = {
+                    'document': doc,
+                    'reply': reply.id
+                }
+                serializer = ProjectCommentReplyDocumentSerializer(data=data)
+                if serializer.is_valid():
+                    doc_serializers.append(serializers)
+                else:
+                    reply.delete()
+                    raise serializers.ValidationError(response.make_errors(serializer))
+        for serializer in doc_serializers:
+            serializer.save()
+        return reply

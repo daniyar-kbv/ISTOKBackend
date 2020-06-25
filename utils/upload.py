@@ -37,6 +37,10 @@ def project_comment_document_path(instance, filename):
     return f'project_comment_documents/{instance.comment.id}/{filename}'
 
 
+def project_comment_reply_document_path(instance, filename):
+    return f'project_comment_documents/{instance.reply.id}/{filename}'
+
+
 def application_document_path(instance, filename):
     return f'application_documents/{instance.application.id}/{filename}'
 

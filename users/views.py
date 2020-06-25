@@ -134,7 +134,11 @@ class UserViewSet(viewsets.GenericViewSet,
                     )
             elif phone:
                 try:
-                    user = MainUser.objects.get(phone=phone)
+                    phone = MerchantPhone.objects.get(phone=phone)
+                    if phone.is_valid:
+                        user = phone.user
+                    else:
+                        raise Exception()
                 except MainUser.DoesNotExist:
                     logger.error(
                         f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_USER_PHONE_NOT_EXIST}')

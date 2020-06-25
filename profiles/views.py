@@ -511,7 +511,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsMerchant])
-    def reply(self, request, pk=None):
+    def review_reply(self, request, pk=None):
         try:
             review = MerchantReview.objects.get(id=pk)
         except:
@@ -549,6 +549,24 @@ class ProfileViewSet(viewsets.GenericViewSet,
             return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
         reply.delete()
         return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
+    def comment_reply(self, request, pk=None):
+        try:
+            project = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        context = {}
+        if request.data.get('documents'):
+            documents = request.data.pop('documents')
+            context['documents'] = documents
+        serializer = ProjectCommentCreateSerializer(data=request.data, context=context)
+        if serializer.is_valid():
+            serializer.save(project=project, user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class IsPhoneValidView(views.APIView):
