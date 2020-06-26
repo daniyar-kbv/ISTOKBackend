@@ -181,17 +181,13 @@ class UserViewSet(viewsets.GenericViewSet,
                 logger.info(f'Activation email sending ({email}): succeeded')
                 return Response(status.HTTP_200_OK)
             else:
-                try:
-                    activation = UserActivation.objects.get(email=email)
-                except UserActivation.DoesNotExist:
-                    logger.error(f'Activation email sending ({email}): failed {constants.RESPONSE_SERVER_ERROR}')
-                    return Response(response.make_messages([constants.RESPONSE_SERVER_ERROR]),
-                                    status.HTTP_500_INTERNAL_SERVER_ERROR)
-                if activation.user:
-                    logger.error(f'Activation email sending ({email}): failed {constants.RESPONSE_USER_EXISTS}')
-                    return Response(response.make_messages([constants.RESPONSE_USER_EXISTS]),
-                                    status.HTTP_400_BAD_REQUEST)
-                activation.delete()
+                activation = UserActivation.objects.filter(email=email, is_active=True).first()
+                if activation:
+                    if activation.user:
+                        logger.error(f'Activation email sending ({email}): failed {constants.RESPONSE_USER_EXISTS}')
+                        return Response(response.make_messages([constants.RESPONSE_USER_EXISTS]),
+                                        status.HTTP_400_BAD_REQUEST)
+                    activation.delete()
                 activation = UserActivation.objects.create(email=email, role=role)
                 activation._request = request
                 activation._created = True
@@ -215,7 +211,7 @@ class UserViewSet(viewsets.GenericViewSet,
         logger.info(f'Email verification ({email}): started')
         try:
             activation = UserActivation.objects.get(email=email)
-        except UserActivation.DoesNotExist:
+        except:
             logger.error(f'Email verification ({email}): failed')
             return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
         if activation.is_active:

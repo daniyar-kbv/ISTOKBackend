@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser, PermissionsMixin
+from django.db.models.query_utils import DeferredAttribute
 from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path, \
     review_reply_document_path
 from utils.validators import validate_file_size, basic_validate_images
@@ -210,10 +211,20 @@ class MainUserManager(BaseUserManager):
                 Q(client_profile__last_name__icontains=arg)
             )
         if request:
-            for filter in request.GET:
-                if filter != 'q':
-                    merchant_queryset = merchant_queryset.filter(filter=request.GET[filter])
-                    client_queryset = client_queryset.filter(filter=request.GET[filter])
+            filters = dict(request.GET)
+            try:
+                del filters['q']
+            except KeyError:
+                pass
+            for key in filters:
+                attribute = key.split('__')[0]
+                attr_type = type(getattr(MainUser, attribute))
+                if attr_type == bool:
+                    filters[key] = True if attribute == '1' else False
+                    # print(filters[key])
+            # print(filters)
+            merchant_queryset = merchant_queryset.filter(**filters)
+            client_queryset = client_queryset.filter(**filters)
         queryset = client_queryset.union(merchant_queryset)
         return queryset, True
 
