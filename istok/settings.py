@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django_celery_results',
     'phone_field',
     'corsheaders',
-    'admin_reorder',
+    # 'admin_reorder',
     'nested_inline',
     'admin_numeric_filter',
 
