@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'phone_field',
     'corsheaders',
     # 'admin_reorder',
-    'nested_inline',
+    # 'nested_inline',
     'admin_numeric_filter',
 
     'users',
