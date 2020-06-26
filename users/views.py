@@ -173,6 +173,11 @@ class UserViewSet(viewsets.GenericViewSet,
         name = request.data.get('name')
         logger.info(f'Activation email sending ({email}): started')
         if email and role:
+            try:
+                MainUser.objects.get(email=email)
+                return Response(response.make_messages([constants.RESPONSE_USER_EXISTS]), status.HTTP_400_BAD_REQUEST)
+            except:
+                pass
             if UserActivation.objects.filter(email=email).count() == 0:
                 activation = UserActivation.objects.create(email=email, role=role, name=name)
                 activation._request = request

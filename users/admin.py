@@ -1,11 +1,14 @@
 from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
+from django.forms import TextInput, Textarea
+from django.db import models
 from users.models import MainUser, ClientProfile, MerchantProfile, UserActivation, ProjectPurposeType, ProjectPurpose, \
     ProjectTag, ProjectPurposeSubType, ProjectStyle, ProjectType, ProjectCategory, ProfileDocument, City, Country, \
     Specialization, MerchantPhone, CodeVerification, MerchantReview, ReviewReply, ReviewDocument, ReviewReplyDocument, \
     ClientRating
 from profiles.models import FormUserAnswer, Notification, UsersPaidFeature
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
+from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
 
 import constants
 
@@ -192,14 +195,24 @@ class InlineReviewReply(NestedStackedInline):
     extra = 0
     inlines = [InlineReviewReplyDocument, ]
     readonly_fields = ['user_likes', 'likes_count']
+    autocomplete_fields = ['user', ]
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
 
 
 @admin.register(MerchantReview)
-class MerchantReviewAdmin(NestedModelAdmin):
-    list_display = ('id', 'user', 'merchant')
+class MerchantReviewAdmin(NumericFilterModelAdmin):
+    list_display = ('id', 'user', 'merchant', 'rating', 'text', 'creation_date')
     filter_horizontal = ('user_likes', )
     inlines = [InlineReviewDocument, InlineReviewReply]
     readonly_fields = ['user_likes', 'likes_count', 'rating']
+    ordering = ['-creation_date', ]
+    list_filter = [('rating', RangeNumericFilter), 'creation_date', ('likes_count', RangeNumericFilter)]
+    autocomplete_fields = ['user', 'merchant']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
 
 
 @admin.register(ReviewReply)

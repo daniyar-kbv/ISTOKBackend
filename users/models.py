@@ -219,10 +219,10 @@ class MainUserManager(BaseUserManager):
             for key in filters:
                 attribute = key.split('__')[0]
                 attr_type = type(getattr(MainUser, attribute))
-                if attr_type == bool or attribute == 'is_active' or attribute == 'is_staff':
-                    filters[key] = True if attribute == '1' else False
-                elif isinstance(filters[key], list) and len(filters[key]) == 1:
+                if isinstance(filters[key], list) and len(filters[key]) == 1:
                     filters[key] = filters[key][0]
+                if attr_type == bool or attribute == 'is_active' or attribute == 'is_staff' or attribute == 'role':
+                    filters[key] = int(filters[key])
             print(filters)
             merchant_queryset = merchant_queryset.filter(**filters)
             client_queryset = client_queryset.filter(**filters)
@@ -508,7 +508,7 @@ class MerchantReview(models.Model):
                             null=False,
                             blank=False,
                             verbose_name='Основной текст')
-    creation_date = models.DateTimeField(auto_now=True)
+    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Отзыв'
