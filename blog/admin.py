@@ -4,6 +4,7 @@ from blog.models import BlogPost, BlogPostCategory, MainPageBlogPost, PostDocume
 
 class InlinePostDocument(admin.StackedInline):
     model = PostDocument
+    extra = 0
 
 
 @admin.register(BlogPost)

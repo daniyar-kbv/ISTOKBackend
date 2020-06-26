@@ -1,18 +1,22 @@
 from django.contrib import admin
 from profiles.models import FormQuestionGroup, FormQuestion, FormAnswer, FormUserAnswer, ApplicationDocument, \
     Application, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature, Notification
+from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 
 
-class InlineFormAnswer(admin.StackedInline):
+class InlineFormAnswer(NestedStackedInline):
     model = FormAnswer
+    extra = 0
 
 
-class InlineFormQuestion(admin.StackedInline):
+class InlineFormQuestion(NestedStackedInline):
     model = FormQuestion
+    extra = 0
+    inlines = [InlineFormAnswer, ]
 
 
 @admin.register(FormQuestionGroup)
-class FormQuestionGroupAdmin(admin.ModelAdmin):
+class FormQuestionGroupAdmin(NestedModelAdmin):
     list_display = ('id', 'name', 'position')
     inlines = [InlineFormQuestion, ]
 
@@ -30,6 +34,7 @@ class FormUserAnswerAdmin(admin.ModelAdmin):
 
 class InlineApplicationDocument(admin.StackedInline):
     model = ApplicationDocument
+    extra = 0
 
 
 @admin.register(Application)

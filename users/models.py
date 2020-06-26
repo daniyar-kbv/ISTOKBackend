@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBa
 from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path, \
     review_reply_document_path
 from utils.validators import validate_file_size, basic_validate_images
+from itertools import chain
 from constants import ROLES, ROLE_CLIENT, ROLE_MERCHANT
 import os
 
@@ -191,6 +192,28 @@ class MainUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self._create_user(email, password, **extra_fields)
+
+    def search(self, arg=None, request=None):
+        client_queryset = self.filter(role=ROLE_CLIENT)
+        merchant_queryset = self.filter(role=ROLE_MERCHANT)
+        if arg:
+            merchant_queryset = merchant_queryset.filter(
+                Q(email__icontains=arg) |
+                Q(merchant_profile__first_name__icontains=arg) |
+                Q(merchant_profile__last_name__icontains=arg) |
+                Q(merchant_profile__company_name__icontains=arg) |
+                Q(merchant_profile__description_full__icontains=arg) |
+                Q(merchant_profile__description_short__icontains=arg))
+            client_queryset = client_queryset.filter(
+                Q(email=arg) |
+                Q(client_profile__first_name__icontains=arg) |
+                Q(client_profile__last_name__icontains=arg)
+            )
+        if request:
+            for a in request.GET:
+                print(f'{a}: {request.GET[a]}')
+        queryset = client_queryset.union(merchant_queryset)
+        return queryset, True
 
     def merchant_search(self, arg=None, request=None):
         queryset = self.filter(role=ROLE_MERCHANT)
@@ -402,7 +425,7 @@ class UserActivation(models.Model):
         verbose_name_plural = 'Активации'
 
     def __str__(self):
-        return f'{self.id}: {self.user.email}'
+        return f'{self.id}: {self.user.email if self.user else ""}'
 
 
 class MerchantPhone(models.Model):
@@ -465,7 +488,7 @@ class MerchantReview(models.Model):
     likes_count = models.IntegerField(default=0, null=False, blank=True, verbose_name='Количество лайков')
     rating = models.FloatField(default=0,
                                null=False,
-                               blank=False,
+                               blank=True,
                                verbose_name='Рейтинг')
     text = models.CharField(max_length=500,
                             null=False,

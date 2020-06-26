@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'django_celery_results',
     'phone_field',
     'corsheaders',
+    'admin_reorder',
+    'nested_inline',
+    'admin_numeric_filter',
 
     'users',
     'main',
@@ -63,6 +66,7 @@ MIDDLEWARE = [
     'django.middleware.locale.LocaleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
 ]
 
 ROOT_URLCONF = 'istok.urls'
@@ -70,7 +74,9 @@ ROOT_URLCONF = 'istok.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -273,4 +279,51 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+ADMIN_REORDER = (
+    {
+        'app': 'main',
+        'label': 'Основной',
+        'models': (
+            'main.Project',
+            'main.ProjectComplaint'
+        )
+    },
+    {
+        'app': 'users',
+        'models': (
+            'users.MainUser',
+            'users.MerchantReview',
+            'users.ClientRating'
+        )
+    },
+    {
+        'app': 'profiles',
+        'models': (
+            {'model': 'profiles.FormQuestionGroup', 'label': 'Анкета'},
+            'profiles.Application',
+            'profiles.PaidFeatureType'
+        )
+    },
+    {
+        'app': 'other',
+        'label': 'Другое',
+        'models': (
+            'users.ProjectCategory',
+            {'model': 'users.ProjectPurposeType', 'label': 'Назначения'},
+            'users.ProjectType',
+            'users.ProjectStyle',
+            {'model': 'users.Country', 'label': 'Города и Страны'},
+            'other.FAQ'
+        )
+    },
+    {
+        'app': 'blog',
+        'models': (
+            'blog.BlogPostCategory',
+            'blog.BlogPost',
+            'blog.MainPageBlogPost'
+        )
+    },
+)
 

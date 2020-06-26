@@ -31,6 +31,12 @@ def user_pre_delete(sender, instance, created=True, **kwargs):
         upload.delete_folder(doc.document)
 
 
+@receiver(pre_delete, sender=ProfileDocument)
+def profile_document_pre_delete(sender, instance, created=True, **kwargs):
+    if instance.document:
+        upload.delete_file(instance.document)
+
+
 @receiver(pre_delete, sender=ProjectCategory)
 def category_pre_delete(sender, instance, created=True, **kwargs):
     upload.delete_file(instance.image)
