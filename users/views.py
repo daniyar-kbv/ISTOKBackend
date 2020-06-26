@@ -96,7 +96,7 @@ class UserViewSet(viewsets.GenericViewSet,
             token = jwt_encode_handler(payload)
             data = {
                 'token': token,
-                'role': user.ro
+                'role': user.role
             }
             logger.info(
                 f'Registration with email: {email} ({constants.ROLES[0]}) succeeded')
