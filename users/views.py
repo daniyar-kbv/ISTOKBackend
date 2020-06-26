@@ -216,17 +216,15 @@ class UserViewSet(viewsets.GenericViewSet,
         try:
             activation = UserActivation.objects.get(email=email)
         except UserActivation.DoesNotExist:
-            #  TODO: if no activation
             logger.error(f'Email verification ({email}): failed')
             return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
         if activation.is_active:
-            # TODO: if active
+            activation.is_active = False
             logger.error(f'Email verification ({email}): success')
             if activation.role == constants.ROLE_CLIENT:
-                return redirect(f'http://localhost:3000/registration-users?email={email}')
+                return redirect(f'https://localhost:3000/registration-users?email={email}')
             elif activation.role == constants.ROLE_MERCHANT:
-                return redirect(f'http://localhost:3000/registration-specials?email={email}')
-        # TODO: if not active
+                return redirect(f'https://localhost:3000/registration-specials?email={email}')
         logger.error(f'Email verification ({email}): failed')
         return redirect(f'https://istokhome.com/registration-specials?role={activation.role}&email={email}')
 

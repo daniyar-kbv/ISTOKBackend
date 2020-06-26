@@ -60,7 +60,7 @@ class MainUserAdmin(admin.ModelAdmin):
     inlines = [InlineClientProfile, InlineMerchantProfile, InlineMerchantPhone, InlineProfileDocument,
                InlineFormUserAnswer, InlineNotification, InlineUsersPaidFeature]
     list_filter = ['role', 'is_staff', 'is_active']
-    search_fields = ['email', ]
+    search_fields = ['email', 'merchant_profile__first_name']
     readonly_fields = ['role', 'password', 'email']
 
     def get_changelist(self, request, **kwargs):

@@ -210,8 +210,10 @@ class MainUserManager(BaseUserManager):
                 Q(client_profile__last_name__icontains=arg)
             )
         if request:
-            for a in request.GET:
-                print(f'{a}: {request.GET[a]}')
+            for filter in request.GET:
+                if filter != 'a':
+                    if filter.__contains__('merchant_profile'):
+                        merchant_queryset = merchant_queryset.filter(filter=request.GET[filter])
         queryset = client_queryset.union(merchant_queryset)
         return queryset, True
 
