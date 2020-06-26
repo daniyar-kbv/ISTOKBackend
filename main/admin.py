@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.forms import Textarea
+from django.db import models
 from main.models import Project, ProjectDocument, ProjectComment, ProjectView, ProjectCommentReply, \
     ProjectCommentDocument, Render360, ProjectCommentReplyDocument, ProjectComplaint
 from users.models import MerchantReview
@@ -28,7 +30,12 @@ class InlineProjectCommentReplyDocument(NestedStackedInline):
 class InlineProjectCommentReply(NestedStackedInline):
     model = ProjectCommentReply
     extra = 0
-    inlines = [InlineProjectCommentReplyDocument, ]
+    # inlines = [InlineProjectCommentReplyDocument, ]
+    readonly_fields = ['user_likes', 'likes_count']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+    autocomplete_fields = ['user', ]
 
 
 class InlineProjectCommentDocument(NestedStackedInline):
@@ -41,21 +48,30 @@ class InlineProjectComment(NestedStackedInline):
     extra = 0
     inlines = [InlineProjectCommentDocument, InlineProjectCommentReply, ]
     readonly_fields = ['rating', 'likes_count', 'user_likes']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+    autocomplete_fields = ['user', ]
 
 
 class InlineProjectComplaint(NestedStackedInline):
     model = ProjectComplaint
     extra = 0
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+    autocomplete_fields = ['user', ]
 
 
 class InlineProjectPaidFeature(NestedStackedInline):
     model = ProjectPaidFeature
     extra = 0
     readonly_fields = ['refresh_count', ]
+    autocomplete_fields = ['type', ]
 
 
 @admin.register(Project)
-class CityTagAdmin(NestedModelAdmin, NumericFilterModelAdmin):
+class ProjectAdmin(NestedModelAdmin, NumericFilterModelAdmin):
     list_display = ('id', 'user', 'name', 'price_from', 'price_to', 'creation_date', 'rating')
     filter_horizontal = ('tags', )
     inlines = [InlineProjectDocument, InlineRender360, InlineProjectComment, InlineProjectComplaint,
@@ -64,6 +80,11 @@ class CityTagAdmin(NestedModelAdmin, NumericFilterModelAdmin):
                    ('price_to', LteNumericFilter), ('area', RangeNumericFilter), 'is_top', 'is_detailed',
                    'creation_date', ('rating', RangeNumericFilter)]
     readonly_fields = ['rating', 'to_profile_count']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+    autocomplete_fields = ['user', 'category', 'purpose', 'type', 'style']
+    search_fields = ['name', 'description']
 
 
 @admin.register(ProjectCommentReply)
@@ -87,3 +108,7 @@ class ProjectViewAdmin(admin.ModelAdmin):
 @admin.register(ProjectComplaint)
 class ProjectComplaintAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'project', 'text', 'creation_date', )
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+    autocomplete_fields = ['user', 'project']

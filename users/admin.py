@@ -22,6 +22,9 @@ class InlineClientProfile(admin.StackedInline):
     model = ClientProfile
     extra = 0
     readonly_fields = ['rating', ]
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
 
 
 class InlineMerchantProfile(admin.StackedInline):
@@ -29,6 +32,9 @@ class InlineMerchantProfile(admin.StackedInline):
     extra = 0
     filter_horizontal = ('categories', 'specializations', 'tags')
     readonly_fields = ['rating']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
 
 
 class InlineMerchantPhone(admin.StackedInline):
@@ -44,17 +50,22 @@ class InlineProfileDocument(admin.StackedInline):
 class InlineFormUserAnswer(admin.StackedInline):
     model = FormUserAnswer
     extra = 0
+    autocomplete_fields = ['answer', ]
 
 
 class InlineNotification(admin.StackedInline):
     model = Notification
     extra = 0
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
 
 
 class InlineUsersPaidFeature(admin.StackedInline):
     model = UsersPaidFeature
     extra = 0
     readonly_fields = ['refresh_count', ]
+    autocomplete_fields = ['type', ]
 
 
 @admin.register(MainUser)
@@ -100,53 +111,84 @@ class UserActivationAdmin(admin.ModelAdmin):
 class InlineProjectTag(admin.StackedInline):
     model = ProjectTag
     extra = 0
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
 
 
 class InlineSpecialization(admin.StackedInline):
     model = Specialization
     extra = 0
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
 
 
 @admin.register(ProjectCategory)
 class ProjectCategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'description', 'image')
     inlines = [InlineProjectTag, InlineSpecialization]
+    search_fields = ['name']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
 
 
 class InlineProjectPurposeSubType(admin.StackedInline):
     model = ProjectPurposeSubType
     extra = 0
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
 
 
 class InlineProjectPurpose(admin.StackedInline):
     model = ProjectPurpose
     extra = 0
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
+    autocomplete_fields = ['subtype', ]
 
 
 @admin.register(ProjectPurposeType)
 class ProjectPurposeTypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     inlines = [InlineProjectPurposeSubType, InlineProjectPurpose]
+    search_fields = ['name', ]
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
 
 
 @admin.register(ProjectPurposeSubType)
 class ProjectPurposeSubTypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
+    search_fields = ['name', ]
 
 
 @admin.register(ProjectType)
 class ProjectTypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
+    search_fields = ['name', ]
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
 
 
 @admin.register(ProjectStyle)
 class ProjectStyleAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
+    search_fields = ['name', ]
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
 
 
 @admin.register(ProjectPurpose)
 class ProjectPurposeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
+    search_fields = ['name', ]
 
 
 @admin.register(ProjectTag)
@@ -157,17 +199,25 @@ class ProjectTagAdmin(admin.ModelAdmin):
 class InlineCity(admin.StackedInline):
     model = City
     extra = 0
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
 
 
 @admin.register(Country)
 class CountryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     inlines = [InlineCity, ]
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 1, 'cols': 150})},
+    }
+    search_fields = ['name', ]
 
 
 @admin.register(City)
 class CityTagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
+    search_fields = ['name', ]
 
 
 class InlineCodeVerification(admin.StackedInline):
@@ -175,7 +225,7 @@ class InlineCodeVerification(admin.StackedInline):
 
 
 @admin.register(MerchantPhone)
-class CityTagAdmin(admin.ModelAdmin):
+class MerchantPhoneAdmin(admin.ModelAdmin):
     list_display = ('id', 'phone', 'is_valid')
     inlines = [InlineCodeVerification]
 
@@ -213,6 +263,7 @@ class MerchantReviewAdmin(NumericFilterModelAdmin):
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
+    search_fields = ['text', ]
 
 
 @admin.register(ReviewReply)
@@ -224,6 +275,8 @@ class ReviewReplyAdmin(admin.ModelAdmin):
 
 @admin.register(ClientRating)
 class ClientRatingAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'client', 'rating']
+    list_display = ['id', 'user', 'client', 'rating', 'creation_date']
     ordering = ['-creation_date', ]
     readonly_fields = ['rating', ]
+    list_filter = [('rating', RangeNumericFilter), 'creation_date']
+    autocomplete_fields = ['user', 'client']
