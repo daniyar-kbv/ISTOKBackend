@@ -211,9 +211,9 @@ class MainUserManager(BaseUserManager):
             )
         if request:
             for filter in request.GET:
-                if filter != 'a':
-                    if filter.__contains__('merchant_profile'):
-                        merchant_queryset = merchant_queryset.filter(filter=request.GET[filter])
+                if filter != 'q':
+                    merchant_queryset = merchant_queryset.filter(filter=request.GET[filter])
+                    client_queryset = client_queryset.filter(filter=request.GET[filter])
         queryset = client_queryset.union(merchant_queryset)
         return queryset, True
 
