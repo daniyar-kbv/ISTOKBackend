@@ -27,7 +27,7 @@ from main.tasks import deactivate_user_feature, deactivate_project_feature, noti
 from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
 from datetime import timedelta, datetime
-# from dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta
 import constants
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -188,10 +188,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
                     amount = feature.type.time_amount
                     if unit == constants.TIME_DAY:
                         delta = timedelta(days=amount)
-                    # elif unit == constants.TIME_MONTH:
-                    #     delta = relativedelta(months=+amount)
-                    # elif unit == constants.TIME_YEAR:
-                    #     delta = relativedelta(years=+amount)
+                    elif unit == constants.TIME_MONTH:
+                        delta = relativedelta(months=+amount)
+                    elif unit == constants.TIME_YEAR:
+                        delta = relativedelta(years=+amount)
                     else:
                         delta = timedelta(seconds=10)
                     feature.expires_at = feature.expires_at + delta
@@ -355,10 +355,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         amount = feature.type.time_amount
                         if unit == constants.TIME_DAY:
                             delta = timedelta(days=amount)
-                        # elif unit == constants.TIME_MONTH:
-                        #     delta = relativedelta(months=+amount)
-                        # elif unit == constants.TIME_YEAR:
-                        #     delta = relativedelta(years=+amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
                         else:
                             delta = timedelta(seconds=10)
                         feature.expires_at = feature.expires_at + delta
@@ -383,10 +383,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         amount = feature.type.time_amount
                         if unit == constants.TIME_DAY:
                             delta = timedelta(days=amount)
-                        # elif unit == constants.TIME_MONTH:
-                        #     delta = relativedelta(months=+amount)
-                        # elif unit == constants.TIME_YEAR:
-                        #     delta = relativedelta(years=+amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
                         else:
                             delta = timedelta(seconds=10)
                         feature.expires_at = feature.expires_at + delta
@@ -411,10 +411,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         amount = feature.type.time_amount
                         if unit == constants.TIME_DAY:
                             delta = timedelta(days=amount)
-                        # elif unit == constants.TIME_MONTH:
-                        #     delta = relativedelta(months=+amount)
-                        # elif unit == constants.TIME_YEAR:
-                        #     delta = relativedelta(years=+amount)
+                        elif unit == constants.TIME_MONTH:
+                            delta = relativedelta(months=+amount)
+                        elif unit == constants.TIME_YEAR:
+                            delta = relativedelta(years=+amount)
                         else:
                             delta = timedelta(seconds=10)
                         feature.expires_at = feature.expires_at + delta
