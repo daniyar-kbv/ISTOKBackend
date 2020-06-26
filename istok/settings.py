@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'corsheaders',
     # 'admin_reorder',
     # 'nested_inline',
-    'admin_numeric_filter',
+    # 'admin_numeric_filter',
 
     'users',
     'main',
