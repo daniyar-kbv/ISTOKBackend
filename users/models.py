@@ -219,10 +219,11 @@ class MainUserManager(BaseUserManager):
             for key in filters:
                 attribute = key.split('__')[0]
                 attr_type = type(getattr(MainUser, attribute))
-                if attr_type == bool:
+                if attr_type == bool or attribute == 'is_active' or attribute == 'is_staff':
                     filters[key] = True if attribute == '1' else False
-                    # print(filters[key])
-            # print(filters)
+                elif isinstance(filters[key], list) and len(filters[key]) == 1:
+                    filters[key] = filters[key][0]
+            print(filters)
             merchant_queryset = merchant_queryset.filter(**filters)
             client_queryset = client_queryset.filter(**filters)
         queryset = client_queryset.union(merchant_queryset)

@@ -209,9 +209,8 @@ class UserViewSet(viewsets.GenericViewSet,
     def verify_email(self, request, pk=None):
         email = encryption.decrypt(pk)
         logger.info(f'Email verification ({email}): started')
-        try:
-            activation = UserActivation.objects.get(email=email)
-        except:
+        activation = UserActivation.objects.filter(email=email).first()
+        if not activation:
             logger.error(f'Email verification ({email}): failed')
             return redirect('https://docs.djangoproject.com/en/3.0/topics/http/shortcuts/')
         if activation.is_active:
