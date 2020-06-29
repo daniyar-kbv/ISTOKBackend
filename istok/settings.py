@@ -149,6 +149,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_URL = '/api/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+ADDITIONAL_URL = 'api/additional/'
+ADDITIONAL_ROOT = os.path.join(BASE_DIR, 'additional')
+
 AUTH_USER_MODEL = 'users.MainUser'
 
 REST_FRAMEWORK = {
@@ -294,7 +297,8 @@ ADMIN_REORDER = (
         'models': (
             'users.MainUser',
             'users.MerchantReview',
-            'users.ClientRating'
+            'users.ClientRating',
+            'users.MerchantPhone'
         )
     },
     {

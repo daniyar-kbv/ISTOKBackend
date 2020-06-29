@@ -579,6 +579,8 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         documents = self.context.get('documents')
         doc_objects = []
         if documents:
+            if len(documents) > 6:
+                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
                 doc_data = {
                     'application': application.id,

@@ -4,9 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework_jwt.settings import api_settings
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
-
 from django.shortcuts import redirect
-
 from users.models import MainUser, UserActivation, CodeVerification, MerchantReview, ProjectTag, ProjectCategory, City, \
     Specialization, Country, MerchantPhone
 from users.serializers import ClientProfileCreateSerializer, MerchantProfileCreateSerializer, UserLoginSerializer, \
@@ -17,9 +15,9 @@ from main.serializers import ProjectDetailListSerializer, ProjectCategoryShortSe
     CountrySerializer
 from utils import encryption, response, oauth, permissions, pagination, general
 from random import randrange
-
-import constants
-import logging
+from datetime import datetime
+from django.utils import timezone
+import constants, logging
 
 logger = logging.getLogger(__name__)
 
@@ -238,9 +236,21 @@ class UserViewSet(viewsets.GenericViewSet,
         data['code'] = f'{code}'
         serializer = CodeVerificationSerializer(data=data)
         if serializer.is_valid():
+            try:
+                phone = MerchantPhone.objects.get(phone=serializer.validated_data.get('phone').get('phone'))
+                if phone.is_valid:
+                    return Response(response.make_messages([constants.RESPONSE_PHONE_ALREADY_REGISTERED]),
+                                    status=status.HTTP_400_BAD_REQUEST)
+            except:
+                pass
+            try:
+                verification = CodeVerification.objects.get(phone__phone=serializer.validated_data.get('phone').get('phone'))
+                verification.delete()
+            except:
+                pass
             serializer.save()
             logger.info(f'Code verification ({request.data.get("phone").get("phone")}): succeeded')
-            return Response(serializer.validated_data, status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
         logger.error(
             f'Code verification ({request.data.get("phone").get("phone")}): failed {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
@@ -254,17 +264,22 @@ class UserViewSet(viewsets.GenericViewSet,
                 verification = CodeVerification.objects.get(phone__phone=serializer.validated_data.get('phone').get('phone'))
                 if verification.code != serializer.validated_data.get('code'):
                     logger.error(f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_INVALID_CODE}')
-                    return Response(constants.RESPONSE_VERIFICATION_INVALID_CODE, status.HTTP_400_BAD_REQUEST)
+                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_INVALID_CODE]), status.HTTP_400_BAD_REQUEST)
+                to_tz = timezone.get_default_timezone()
+                time_diff = verification.creation_date.astimezone(to_tz) - datetime.now().astimezone(to_tz)
+                if (time_diff.days * 24 * 60) > 15:
+                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]), status.HTTP_400_BAD_REQUEST)
             except CodeVerification.DoesNotExist:
                 logger.error(
                     f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST}')
-                return Response(constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST, status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]), status.HTTP_400_BAD_REQUEST)
+            verification.delete()
             merchant_phone = verification.phone
             merchant_phone.is_valid = True
             merchant_phone.save()
             logger.error(
                 f'Send code ({request.data.get("phone").get("phone")}): succeeded')
-            return Response(status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
         logger.error(
             f'Send code ({request.data.get("phone").get("phone")}): failed {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)

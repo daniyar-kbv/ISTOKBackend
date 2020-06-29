@@ -1,8 +1,8 @@
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from users.models import UserActivation, MainUser, ProfileDocument, ProjectCategory, MerchantReview, ClientRating, \
-    ReviewDocument, ReviewReply, ReviewReplyDocument
-from main.tasks import send_email
+    ReviewDocument, ReviewReply, ReviewReplyDocument, CodeVerification
+from main.tasks import send_email, send_sms
 from utils import emails, upload
 import constants
 
@@ -20,8 +20,9 @@ def activation_created(sender, instance, created=True, **kwargs):
 
 @receiver(pre_delete, sender=MainUser)
 def user_pre_delete(sender, instance, created=True, **kwargs):
-    if instance.profile.avatar:
-        upload.delete_folder(instance.profile.avatar)
+    if instance.profile:
+        if instance.profile.avatar:
+            upload.delete_folder(instance.profile.avatar)
     doc = ProfileDocument.objects.filter(user=instance).first()
     if doc:
         upload.delete_folder(doc.document)
@@ -104,3 +105,9 @@ def review_reply_pre_delete(sender, instance, created=True, **kwargs):
     doc = ReviewReplyDocument.objects.filter(reply=instance).first()
     if doc:
         upload.delete_folder(doc.document)
+
+
+# @receiver(post_save, sender=CodeVerification)
+# def code_verification_saved(sender, instance, created=True, **kwargs):
+#     if created:
+        # send_sms.delay(instance.phone.phone, instance.code)

@@ -194,7 +194,7 @@ class MainUserManager(BaseUserManager):
 
         return self._create_user(email, password, **extra_fields)
 
-    def search(self, arg=None, request=None):
+    def search(self, model_admin, arg=None, request=None):
         client_queryset = self.filter(role=ROLE_CLIENT)
         merchant_queryset = self.filter(role=ROLE_MERCHANT)
         if arg:
@@ -216,6 +216,10 @@ class MainUserManager(BaseUserManager):
                 del filters['q']
             except KeyError:
                 pass
+            try:
+                del filters['o']
+            except KeyError:
+                pass
             for key in filters:
                 attribute = key.split('__')[0]
                 attr_type = type(getattr(MainUser, attribute))
@@ -223,14 +227,28 @@ class MainUserManager(BaseUserManager):
                     filters[key] = filters[key][0]
                 if attr_type == bool or attribute == 'is_active' or attribute == 'is_staff' or attribute == 'role':
                     filters[key] = int(filters[key])
-            print(filters)
             merchant_queryset = merchant_queryset.filter(**filters)
             client_queryset = client_queryset.filter(**filters)
-        queryset = client_queryset.union(merchant_queryset)
+        queryset = client_queryset | merchant_queryset
+        if request:
+            filters = dict(request.GET)
+            if filters.__contains__('o'):
+                fields = model_admin.list_display
+                ordering = []
+                o = filters.pop('o')
+                if len(o[0]) > 0:
+                    field_nums = o[0].split('.')
+                    for num in field_nums:
+                        operator = ''
+                        number = int(num[-1])
+                        if len(num) > 1:
+                            operator = num[0]
+                        ordering.append(f'{operator}{fields[number-1]}')
+                    queryset = queryset.order_by(*ordering)
         return queryset, True
 
     def merchant_search(self, arg=None, request=None):
-        queryset = self.filter(role=ROLE_MERCHANT)
+        queryset = self.filter(role=ROLE_MERCHANT, is_active=True)
         if arg:
             queryset = queryset.filter(
                                 Q(merchant_profile__first_name__icontains=arg) |
@@ -305,12 +323,12 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
             try:
                 return self.client_profile
             except:
-                return self.merchant_profile
+                return None
         elif self.role == ROLE_MERCHANT:
             try:
                 return self.merchant_profile
             except:
-                return self.client_profile
+                return None
 
 
 class ProfileDocument(models.Model):

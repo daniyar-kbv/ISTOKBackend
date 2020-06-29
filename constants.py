@@ -99,8 +99,10 @@ RESPONSE_INVALID_ROLE = 'Введенной роли не существует'
 RESPONSE_ENTER_EMAIL_OR_PHONE = 'Введите имейл или номер телефона'
 RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE = 'Введите только имейл или номер телефона'
 RESPONSE_VERIFICATION_DOES_NOT_EXIST = 'Подтверждение с таким номером не найдено'
+RESPONSE_VERIFICATION_EXPIRED = 'Код уже не действителен'
 RESPONSE_VERIFICATION_INVALID_CODE = 'Код подтверждения не верный'
 RESPONSE_PHONE_REGISTERED = 'Зарегестрирован на другого пользователя'
+RESPONSE_PHONE_ALREADY_REGISTERED = 'Номер телефона уже зарегестрирован'
 RESPONSE_SOCIAL_TOKEN_INVALID = 'Токен не действителен'
 RESPONSE_DOES_NOT_EXIST = 'не существует'
 RESPONSE_USER_NOT_MERCHANT = 'Пользователь не является специалтстом'
@@ -152,3 +154,5 @@ GOOGLE_INFO_URL_V3 = "https://oauth2.googleapis.com/tokeninfo?id_token={}"
 VK_INFO_URL = "https://api.vk.com/method/users.get?api_id=6714692&access_token={}&v=5.69&fields=photo_200"
 VK_WEB_INFO_URL = "https://api.vk.com/method/users.get?api_id=6781515&access_token={}&v=5.69&fields=photo_200"
 FACEBOOK_AVATAR_URL = "https://graph.facebook.com/{0}/picture?type=large"
+
+SMS_TEXT = 'Код подтверждения для ISTOKHOME.COM:'

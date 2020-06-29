@@ -3,10 +3,29 @@ from celery import shared_task
 from django.core.mail import EmailMessage
 from profiles.models import UsersPaidFeature, ProjectPaidFeature, Notification
 from users.models import MainUser
+from utils import general
 import os
-import logging, constants
+import logging, constants, requests
 
 logger = logging.getLogger(__name__)
+
+
+@shared_task
+def send_sms(phone, code):
+    headers = {
+        'Content-Type': 'application/json',
+        'Token': f'{os.environ.get("KAZINFO_SECRET_KEY")}'
+    }
+    data = {
+        'phone': general.get_phone(phone),
+        'type': 'sms',
+        'msg': f'{constants.SMS_TEXT} {code}'
+    }
+    try:
+        response = requests.post('http://isms.center/v1/validation/request', headers=headers, json=data)
+        print(response.content)
+    except requests.exceptions.ConnectionError:
+        print('Connection refused')
 
 
 @shared_task

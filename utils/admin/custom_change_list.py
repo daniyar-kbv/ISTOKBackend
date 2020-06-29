@@ -455,7 +455,7 @@ class ChangeList:
         qs = qs.order_by(*ordering)
 
         if self.model_admin.model == MainUser:
-            qs, search_use_distinct = MainUser.objects.search(self.query, request)
+            qs, search_use_distinct = MainUser.objects.search(self.model_admin, self.query, request)
         else:
             # Apply search results
             qs, search_use_distinct = self.model_admin.get_search_results(request, qs, self.query)

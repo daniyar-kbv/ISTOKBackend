@@ -712,6 +712,8 @@ class ProjectCommentCreateSerializer(serializers.ModelSerializer):
         comment = ProjectComment.objects.create(**validated_data)
         documents = self.context.get('documents')
         if documents:
+            if len(documents) > 6:
+                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
                 data = {
                     'document': doc,
@@ -738,6 +740,8 @@ class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
         documents = self.context.get('documents')
         doc_serializers = []
         if documents:
+            if len(documents) > 6:
+                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
                 data = {
                     'document': doc,
