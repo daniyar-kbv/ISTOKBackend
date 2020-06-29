@@ -188,6 +188,8 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(response.make_errors(serializer))
         documents = self.context.get('documents')
         if documents:
+            if len(documents) > 6:
+                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for document in documents:
                 doc_data = {
                     'user': user.id,

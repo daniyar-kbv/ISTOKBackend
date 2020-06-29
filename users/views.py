@@ -428,8 +428,8 @@ class ProjectReview(viewsets.GenericViewSet):
 
 class RegisterPage(views.APIView):
     def get(self, request):
-        tags = ProjectTag.objects.all()
-        tags_serializer = ProjectTagShortSerializer(tags, many=True)
+        # tags = ProjectTag.objects.all()
+        # tags_serializer = ProjectTagShortSerializer(tags, many=True)
         countries = Country.objects.all()
         countries_serializer = CountrySerializer(countries, many=True)
         categories = ProjectCategory.objects.all()
@@ -440,6 +440,5 @@ class RegisterPage(views.APIView):
             'categories': categories_serializer.data,
             'locations': countries_serializer.data,
             'specializations': specializations_serializer.data,
-            'tags': tags_serializer.data
         }
         return Response(data)
