@@ -75,7 +75,7 @@ class UserViewSet(viewsets.GenericViewSet,
         if role == constants.ROLE_CLIENT:
             serializer = ClientProfileCreateSerializer(data=request.data, context=context)
         elif role == constants.ROLE_MERCHANT:
-            # print(request.data)
+            print(request.data)
             # request_data = dict(request.data)
             # if request.data.get('tags'):
             #     tags = request.data.pop('tags')
