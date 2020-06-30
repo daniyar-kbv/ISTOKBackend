@@ -19,21 +19,6 @@ import constants
 #     list_display = ('id', 'user', 'document')
 
 
-class RequiredInlineFormSet(BaseInlineFormSet):
-    """
-    Generates an inline formset that is required
-    """
-
-    def _construct_form(self, i, **kwargs):
-        """
-        Override the method to change the form attribute empty_permitted
-        """
-        form = super(RequiredInlineFormSet, self)._construct_form(i, **kwargs)
-        print(form.Meta)
-        form.empty_permitted = False
-        return form
-
-
 class InlineClientProfile(admin.StackedInline):
     model = ClientProfile
     extra = 1
@@ -41,7 +26,6 @@ class InlineClientProfile(admin.StackedInline):
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
-    # formset = RequiredInlineFormSet
 
 
 class InlineMerchantProfile(admin.StackedInline):
@@ -52,7 +36,6 @@ class InlineMerchantProfile(admin.StackedInline):
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
-    # formset = RequiredInlineFormSet
 
 
 class InlineMerchantPhone(admin.StackedInline):
@@ -102,9 +85,6 @@ class UserCreationForm(forms.ModelForm):
             user.save()
         return user
 
-    # def clean(self):
-    #     return self.cleaned_data
-
 
 @admin.register(MainUser)
 class MainUserAdmin(admin.ModelAdmin):
@@ -117,9 +97,6 @@ class MainUserAdmin(admin.ModelAdmin):
     readonly_fields = ['last_login', 'creation_date']
     ordering = ['-creation_date']
     form = UserCreationForm
-
-    class Media:
-        js = ('/api/additional/js/user_creation.js',)
 
     def get_changelist(self, request, **kwargs):
         from utils.admin.custom_change_list import ChangeList
@@ -144,9 +121,6 @@ class MainUserAdmin(admin.ModelAdmin):
                                                                   inline.__class__ == InlineUsersPaidFeature):
                         yield inline.get_formset(request, obj), inline
                 else:
-                    yield inline.get_formset(request, obj), inline
-            else:
-                if inline.__class__ == InlineClientProfile or inline.__class__ == InlineMerchantProfile:
                     yield inline.get_formset(request, obj), inline
 
 

@@ -63,6 +63,12 @@ class ProjectCategorySerializer(serializers.ModelSerializer):
         return None
 
 
+class ProjectPurposeSubtypeShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectPurposeSubType
+        fields = ('id', 'name')
+
+
 class ProjectPurposeSubtypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectPurposeSubType
@@ -88,6 +94,27 @@ class ProjectPurposeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectPurpose
         fields = '__all__'
+
+
+class ProjectPurposeWithTypeSerializer(serializers.ModelSerializer):
+    subtype = ProjectPurposeSubtypeShortSerializer()
+
+    class Meta:
+        model = ProjectPurpose
+        fields = ('id', 'name', 'subtype')
+
+
+class ProjectPurposeTypeFullSerializer(serializers.ModelSerializer):
+    purposes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectPurposeType
+        fields = ('id', 'name', 'purposes')
+
+    def get_purposes(self, obj):
+        purposes = ProjectPurpose.objects.filter(type=obj)
+        serializer = ProjectPurposeWithTypeSerializer(purposes, many=True)
+        return serializer.data
 
 
 class ProjectTypeSerializer(serializers.ModelSerializer):

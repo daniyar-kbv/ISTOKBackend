@@ -2,9 +2,10 @@ from django.shortcuts import render
 from rest_framework import viewsets, mixins, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from blog.models import BlogPost
-from blog.serializers import BlogPostSearchSerializer, BlogPostDetailSerializer
+from blog.models import BlogPost, BlogPostCategory
+from blog.serializers import BlogPostSearchSerializer, BlogPostDetailSerializer, BlogPostCategorySerializer
 from utils import pagination, response
+import constants
 
 
 class BlogViewSet(viewsets.GenericViewSet,
@@ -46,3 +47,10 @@ class BlogViewSet(viewsets.GenericViewSet,
             post.user_likes.add(request.user)
             post.save()
         return Response(status=status.HTTP_200_OK)
+
+
+class BlogPostCategoryViewSet(viewsets.GenericViewSet,
+                              mixins.ListModelMixin):
+    queryset = BlogPostCategory.objects.all()
+    serializer_class = BlogPostCategorySerializer
+    pagination_class = None
