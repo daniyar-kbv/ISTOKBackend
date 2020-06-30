@@ -289,7 +289,9 @@ ADMIN_REORDER = (
         'label': 'Основной',
         'models': (
             'main.Project',
-            'main.ProjectComplaint'
+            'main.ProjectComplain',
+            'main.CommentComplain',
+            'main.CommentReplyComplain'
         )
     },
     {

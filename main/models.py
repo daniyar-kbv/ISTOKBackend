@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Q
-from users.models import MainUser, ProjectCategory, ProjectTag, ProjectStyle, ProjectPurpose, ProjectType, City
+from users.models import MainUser, ProjectCategory, ProjectTag, ProjectStyle, ProjectPurpose, ProjectType, City, \
+    MerchantReview, ReviewReply
 from utils import upload, validators
 
 
@@ -272,21 +273,27 @@ class ProjectCommentReplyDocument(models.Model):
         return f'{self.id}: ответ на коммент({self.comment.id}), документ({self.document.name})'
 
 
-class ProjectComplaint(models.Model):
+class Complain(models.Model):
     user = models.ForeignKey(MainUser,
                              on_delete=models.CASCADE,
                              null=False,
                              blank=False,
-                             related_name='project_complaints',
                              verbose_name='Пользователь')
+    text = models.CharField(max_length=1000, null=False, blank=False, verbose_name='Причина')
+    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата')
+    is_active = models.BooleanField(default=True, null=False, blank=True, verbose_name='Активная')
+
+    class Meta:
+        abstract = True
+
+
+class ProjectComplain(Complain):
     project = models.ForeignKey(Project,
                                 on_delete=models.CASCADE,
                                 null=False,
                                 blank=False,
                                 related_name='complaints',
                                 verbose_name='Проект')
-    text = models.CharField(max_length=1000, null=False, blank=False, verbose_name='Причина')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата')
 
     class Meta:
         verbose_name = 'Жалоба на проект'
@@ -294,3 +301,67 @@ class ProjectComplaint(models.Model):
 
     def __str__(self):
         return f'{self.id}: проект({self.project.id}): {self.text[:15]}...'
+
+
+class CommentComplain(Complain):
+    comment = models.ForeignKey(ProjectComment,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name='complaints',
+                                verbose_name='Комментарий')
+
+    class Meta:
+        verbose_name = 'Жалоба на комментарий'
+        verbose_name_plural = 'Жалобы на комментарии'
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.comment.id}): {self.text[:15]}...'
+
+
+class CommentReplyComplain(Complain):
+    reply = models.ForeignKey(ProjectCommentReply,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name='complaints',
+                                verbose_name='Ответ на комментарий')
+
+    class Meta:
+        verbose_name = 'Жалоба на ответ на комментарий'
+        verbose_name_plural = 'Жалобы на ответы на комментарии'
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.reply.id}): {self.text[:15]}...'
+
+
+class ReviewComplain(Complain):
+    review = models.ForeignKey(MerchantReview,
+                               on_delete=models.CASCADE,
+                               null=False,
+                               blank=False,
+                               related_name='complaints',
+                               verbose_name='Отзыв')
+
+    class Meta:
+        verbose_name = 'Жалоба на отзыв'
+        verbose_name_plural = 'Жалобы на отзывы'
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.review.id}): {self.text[:15]}...'
+
+
+class ReviewReplyComplain(Complain):
+    reply = models.ForeignKey(ReviewReply,
+                              on_delete=models.CASCADE,
+                              null=False,
+                              blank=False,
+                              related_name='complaints',
+                              verbose_name='Ответ на отзыв')
+
+    class Meta:
+        verbose_name = 'Жалоба на ответ на отзыв'
+        verbose_name_plural = 'Жалобы на ответы на отзывы'
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.reply.id}): {self.text[:15]}...'

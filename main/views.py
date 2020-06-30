@@ -9,12 +9,13 @@ from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from django.shortcuts import redirect
 from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
-from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplaint, City, \
-    ProjectCategory
+from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplain, City, \
+    ProjectCategory, CommentReplyComplain, CommentComplain, ProjectCommentReply
 from main.serializers import ProjectMainPageSerializer, ServicesMainPageSerialzier, ProjectModalSerializer, \
     ProjectSearchSerializer, ProjectDetailSerializer, ProjectCommentDetailSerializer, ProjectCommentWithReplySerializer, \
     ProjectCommentCreateSerializer, CitySerializer, ProjectCategoryShortSerializer, CountrySerializer, \
-    ProjectTypeSerializer, ProjectPurposeTypeFullSerializer, ProjectStyleSerializer
+    ProjectTypeSerializer, ProjectPurposeTypeFullSerializer, ProjectStyleSerializer, CommentComplainSerializer, \
+    CommentReplyComplainSerializer, ProjectComplainSerializer
 from blog.models import MainPageBlogPost, BlogPost
 from blog.serializers import BlogPostMainPageSerializer, BlogPostSearchSerializer
 from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser, Specialization, ProjectTag, Country, \
@@ -199,13 +200,18 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
         return Response()
 
-    # @action(detail=True, methods=['post'])
-    # def complain(self, request, pk=None):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            project = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Проект {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = ProjectComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, project=project)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsClient, permissions.HasPhone])
     def submit(self, request, pk=None):
@@ -215,6 +221,8 @@ class ProjectViewSet(viewsets.GenericViewSet,
             return Response(response.make_messages([f'Проект с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
         context = {
         }
+        if request.data.get('documents'):
+            context['documents'] = request.data.pop('documents')
         serializer = ApplicationCreateSerializer(data=request.data, context=context)
         if serializer.is_valid():
             serializer.save(client=request.user, merchant=project.user, project=project)
@@ -316,14 +324,35 @@ class CommentViewSet(viewsets.GenericViewSet):
         logger.info(f'Like of project comment ({pk}) user({request.user.email}) succeeded')
         return Response(status.HTTP_200_OK)
 
-#    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-#    def complain(self, request, pk=None):
-#        user = request.user
-#        try:
-#            comment = ProjectComment.objects.get(id=pk)
-#        except ProjectComment.DoesNotExist:
-#            return Response(response.make_messages([f'Комментарий с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
-#        serializer = ProjectCommentDetailSerializer(comment, context=request)
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            comment = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Комментарий {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = CommentComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, comment=comment)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+
+
+class CommentReplyViewSet(viewsets.GenericViewSet):
+    queryset = ProjectCommentReply.objects.all()
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            reply = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Ответ на омментарий {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = CommentReplyComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, reply=reply)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class CountryViewSet(viewsets.GenericViewSet,

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView, ProjectCommentReply, \
-    ProjectCommentDocument, Render360, ProjectType, ProjectCommentReplyDocument
+    ProjectCommentDocument, Render360, ProjectType, ProjectCommentReplyDocument, CommentComplain, CommentReplyComplain, \
+    ProjectComplain, ReviewComplain, ReviewReplyComplain
 from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurpose, ProjectPurposeSubType, ProjectTag, \
     ProjectPurposeType, MerchantProfile, Specialization
 from users.models import Country, City
@@ -804,3 +805,38 @@ class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
         for serializer in doc_serializers:
             serializer.save()
         return reply
+
+
+class ProjectComplainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectComplain
+        fields = '__all__'
+        read_only_fields = ['user', 'project']
+
+
+class CommentComplainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommentComplain
+        fields = '__all__'
+        read_only_fields = ['user', 'comment']
+
+
+class CommentReplyComplainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommentReplyComplain
+        fields = '__all__'
+        read_only_fields = ['user', 'reply']
+
+
+class ReviewComplainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewComplain
+        fields = '__all__'
+        read_only_fields = ['user', 'review']
+
+
+class ReviewReplyComplainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewReplyComplain
+        fields = '__all__'
+        read_only_fields = ['user', 'reply']

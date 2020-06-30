@@ -6,13 +6,13 @@ from rest_framework_jwt.settings import api_settings
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from django.shortcuts import redirect
 from users.models import MainUser, UserActivation, CodeVerification, MerchantReview, ProjectTag, ProjectCategory, City, \
-    Specialization, Country, MerchantPhone
+    Specialization, Country, MerchantPhone, ReviewReply
 from users.serializers import ClientProfileCreateSerializer, MerchantProfileCreateSerializer, UserLoginSerializer, \
     CodeVerificationSerializer, UserSearchSerializer, UserTopDetailSerializer, MerchantReviewDetailList, \
     MerchantDetailSerializer, ProjectTagShortSerializer, SpecializationSerializer
-from main.models import Project
+from main.models import Project, ReviewComplain, ReviewReplyComplain
 from main.serializers import ProjectDetailListSerializer, ProjectCategoryShortSerializer, CitySerializer, \
-    CountrySerializer
+    CountrySerializer, ReviewComplainSerializer, ReviewReplyComplainSerializer
 from utils import encryption, response, oauth, permissions, pagination, general
 from random import randrange
 from datetime import datetime
@@ -439,6 +439,36 @@ class ProjectReview(viewsets.GenericViewSet):
             review.save()
         logger.info(f'Like of merchant review ({pk}) user({request.user.email}) succeeded')
         return Response(status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            review = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = ReviewComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, review=review)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+
+
+class ReviewReplyViewSet(viewsets.GenericViewSet):
+    queryset = ReviewReply.objects.all()
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            reply = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Ответ на отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = ReviewReplyComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, reply=reply)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterPage(views.APIView):

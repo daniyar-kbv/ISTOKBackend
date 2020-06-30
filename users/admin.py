@@ -7,6 +7,7 @@ from users.models import MainUser, ClientProfile, MerchantProfile, UserActivatio
     ProjectTag, ProjectPurposeSubType, ProjectStyle, ProjectType, ProjectCategory, ProfileDocument, City, Country, \
     Specialization, MerchantPhone, CodeVerification, MerchantReview, ReviewReply, ReviewDocument, ReviewReplyDocument, \
     ClientRating
+from main.models import ReviewComplain, ReviewReplyComplain
 from profiles.models import FormUserAnswer, Notification, UsersPaidFeature
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
@@ -297,6 +298,7 @@ class ReviewReplyAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'review')
     filter_horizontal = ('user_likes', )
     inlines = [InlineReviewReplyDocument, ]
+    search_fields = ['text', ]
 
 
 @admin.register(ClientRating)
@@ -306,3 +308,21 @@ class ClientRatingAdmin(admin.ModelAdmin):
     readonly_fields = ['rating', ]
     list_filter = [('rating', RangeNumericFilter), 'creation_date']
     autocomplete_fields = ['user', 'client']
+
+
+@admin.register(ReviewComplain)
+class CommentReplyComplainAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'review', 'text', 'creation_date', )
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+    autocomplete_fields = ['user', 'review']
+
+
+@admin.register(ReviewReplyComplain)
+class CommentReplyComplainAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'reply', 'text', 'creation_date', )
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+    autocomplete_fields = ['user', 'reply']
