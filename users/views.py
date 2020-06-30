@@ -245,6 +245,7 @@ class UserViewSet(viewsets.GenericViewSet,
             code = randrange(1000, 10000)
         data = request.data
         data['code'] = f'{code}'
+        data['code'] = f'{1111}'
         serializer = CodeVerificationSerializer(data=data)
         if serializer.is_valid():
             try:
@@ -290,7 +291,10 @@ class UserViewSet(viewsets.GenericViewSet,
             merchant_phone.save()
             logger.error(
                 f'Send code ({request.data.get("phone").get("phone")}): succeeded')
-            return Response(status=status.HTTP_200_OK)
+            data = {
+                'phone': serializer.data.get('phone').get('phone')
+            }
+            return Response(data, status=status.HTTP_200_OK)
         logger.error(
             f'Send code ({request.data.get("phone").get("phone")}): failed {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)

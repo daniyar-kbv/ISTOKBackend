@@ -123,7 +123,7 @@ class ProjectViewAdmin(admin.ModelAdmin):
 
 @admin.register(ProjectComplain)
 class ProjectComplaintAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'project', 'text', 'creation_date', )
+    list_display = ('id', 'user', 'project', 'text', 'is_active', 'creation_date', )
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
@@ -132,7 +132,7 @@ class ProjectComplaintAdmin(admin.ModelAdmin):
 
 @admin.register(CommentComplain)
 class CommentComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'comment', 'text', 'creation_date', )
+    list_display = ('id', 'user', 'comment', 'text', 'is_active', 'creation_date', )
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
@@ -141,7 +141,7 @@ class CommentComplainAdmin(admin.ModelAdmin):
 
 @admin.register(CommentReplyComplain)
 class CommentReplyComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'reply', 'text', 'creation_date', )
+    list_display = ('id', 'user', 'reply', 'text', 'is_active', 'creation_date', )
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }

@@ -291,7 +291,9 @@ ADMIN_REORDER = (
             'main.Project',
             'main.ProjectComplain',
             'main.CommentComplain',
-            'main.CommentReplyComplain'
+            'main.CommentReplyComplain',
+            'main.ReviewComplain',
+            'main.ReviewReplyComplain'
         )
     },
     {

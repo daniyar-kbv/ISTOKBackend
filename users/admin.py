@@ -311,8 +311,8 @@ class ClientRatingAdmin(admin.ModelAdmin):
 
 
 @admin.register(ReviewComplain)
-class CommentReplyComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'review', 'text', 'creation_date', )
+class ReviewComplainAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'review', 'text', 'is_active', 'creation_date', )
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
@@ -320,8 +320,8 @@ class CommentReplyComplainAdmin(admin.ModelAdmin):
 
 
 @admin.register(ReviewReplyComplain)
-class CommentReplyComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'reply', 'text', 'creation_date', )
+class ReviewReplyComplainAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'reply', 'text', 'is_active', 'creation_date', )
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }

@@ -298,6 +298,7 @@ class ProjectComplain(Complain):
     class Meta:
         verbose_name = 'Жалоба на проект'
         verbose_name_plural = 'Жалобы на проекты'
+        ordering = ['-creation_date', ]
 
     def __str__(self):
         return f'{self.id}: проект({self.project.id}): {self.text[:15]}...'
@@ -314,6 +315,7 @@ class CommentComplain(Complain):
     class Meta:
         verbose_name = 'Жалоба на комментарий'
         verbose_name_plural = 'Жалобы на комментарии'
+        ordering = ['-creation_date', ]
 
     def __str__(self):
         return f'{self.id}: коммент({self.comment.id}): {self.text[:15]}...'
@@ -330,6 +332,7 @@ class CommentReplyComplain(Complain):
     class Meta:
         verbose_name = 'Жалоба на ответ на комментарий'
         verbose_name_plural = 'Жалобы на ответы на комментарии'
+        ordering = ['-creation_date', ]
 
     def __str__(self):
         return f'{self.id}: коммент({self.reply.id}): {self.text[:15]}...'
@@ -346,6 +349,7 @@ class ReviewComplain(Complain):
     class Meta:
         verbose_name = 'Жалоба на отзыв'
         verbose_name_plural = 'Жалобы на отзывы'
+        ordering = ['-creation_date', ]
 
     def __str__(self):
         return f'{self.id}: коммент({self.review.id}): {self.text[:15]}...'
@@ -362,6 +366,7 @@ class ReviewReplyComplain(Complain):
     class Meta:
         verbose_name = 'Жалоба на ответ на отзыв'
         verbose_name_plural = 'Жалобы на ответы на отзывы'
+        ordering = ['-creation_date', ]
 
     def __str__(self):
         return f'{self.id}: коммент({self.reply.id}): {self.text[:15]}...'
