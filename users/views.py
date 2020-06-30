@@ -262,7 +262,11 @@ class UserViewSet(viewsets.GenericViewSet,
             serializer.save()
             logger.info(f'Code verification ({request.data.get("phone").get("phone")}): succeeded')
             return Response(status=status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        try:
+            message = serializer.errors.get('phone').get('phone').get('messages')[0]
+            return Response(response.make_messages([message]), status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def send_code(self, request, pk=None):
