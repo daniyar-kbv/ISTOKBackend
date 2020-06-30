@@ -45,21 +45,40 @@ APPLICATION_STATUSES_STRING = [APPLICATION_CREATED_STRING, APPLICATION_CONFIRMED
 PAID_FEATURE_PRO = 1
 PAID_FEATURE_TOP = 2
 PAID_FEATURE_DETAILED = 3
+PAID_FEATURE_TOP_DETAILED = 4
 
 PAID_FEATURE_TYPES = (
     (PAID_FEATURE_PRO, 'Про аккаунт'),
     (PAID_FEATURE_TOP, 'Топ проект'),
-    (PAID_FEATURE_DETAILED, 'Выделеный проект')
+    (PAID_FEATURE_DETAILED, 'Выделеный проект'),
+    (PAID_FEATURE_TOP_DETAILED, 'Топ и Выделеный проект')
 )
 
 TIME_DAY = 1
 TIME_MONTH = 2
 TIME_YEAR = 3
+TIME_TEST = 4
 
 TIME_TYPES = (
     (TIME_DAY, 'Дни'),
     (TIME_MONTH, 'Месяца'),
     (TIME_YEAR, 'Года')
+)
+
+STATISTICS_TIME_7_DAYS = 1
+STATISTICS_TIME_30_DAYS = 2
+
+STATISTICS_TIME_PERIODS = (
+    (STATISTICS_TIME_7_DAYS, '7 Дней'),
+    (STATISTICS_TIME_30_DAYS, '30 Дней')
+)
+
+STATISTICS_TYPE_VIEWS = 1
+STATISTICS_TYPE_APPS = 2
+
+STATISTICS_TYPES = (
+    (STATISTICS_TYPE_VIEWS, 'Просмотры'),
+    (STATISTICS_TYPE_APPS, 'Заявки')
 )
 
 ACTIVATION_EMAIL_SUBJECT = 'test'
@@ -80,8 +99,10 @@ RESPONSE_INVALID_ROLE = 'Введенной роли не существует'
 RESPONSE_ENTER_EMAIL_OR_PHONE = 'Введите имейл или номер телефона'
 RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE = 'Введите только имейл или номер телефона'
 RESPONSE_VERIFICATION_DOES_NOT_EXIST = 'Подтверждение с таким номером не найдено'
+RESPONSE_VERIFICATION_EXPIRED = 'Код уже не действителен'
 RESPONSE_VERIFICATION_INVALID_CODE = 'Код подтверждения не верный'
 RESPONSE_PHONE_REGISTERED = 'Зарегестрирован на другого пользователя'
+RESPONSE_PHONE_ALREADY_REGISTERED = 'Номер телефона уже зарегестрирован'
 RESPONSE_SOCIAL_TOKEN_INVALID = 'Токен не действителен'
 RESPONSE_DOES_NOT_EXIST = 'не существует'
 RESPONSE_USER_NOT_MERCHANT = 'Пользователь не является специалтстом'
@@ -93,6 +114,11 @@ RESPONSE_CANT_MODIFY = 'Вы не можете изменять этот обь�
 RESPONSE_MAX_FILES = 'Максимальное количество файлов:'
 RESPONSE_RIGHT_ONLY_DIGITS = 'Только цифровые значения'
 RESPONSE_PAID_TYPE_INVALID = 'Типы платной услуги: 1 - Про, 2 - Топ, 3 - Выделеный'
+RESPONSE_NOT_OWNER = 'Вы не являетесь владельцем'
+RESPONSE_FEATURE_TYPES = 'Типы платных услуг:'
+RESPONSE_NO_PROJECTS = 'У вас нет ниодного проекта'
+RESPONSE_REPLY_EXISTS = 'На этот отзыв уже существует ответ'
+RESPONSE_COMMENT_REPLY_EXISTS = 'На этот комментарий уже существует ответ'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'
@@ -108,6 +134,10 @@ VALIDATION_PASSWORD_LENGTH = 'Пароль должен состоять мин�
 VALIDATION_FORM_NOT_COMPLETE = 'Вы не ответили на все вопросы анкеты'
 VALIDATION_RATING_RANGE = 'Рейтинг может быть от 0 до 10'
 VALIDATION_EMAIL_EXISTS = 'Email заянт другим пользователем'
+VALIDATION_PRICE_INVALID = 'Цена от должна быть меньше цены до'
+VALIDATION_FEATURE_NOT_EXIST = 'Платная услуга не существует'
+VALIDATION_TIME_PERIODS = 'Варианты временных отрезков: 1 - 7 дней, 2 - 30 дней'
+VALIDATION_STATISTICS_TYPES = 'Виды статистики: 1 - Просмотры, 2- Заявки'
 
 PHONE = 'Номер телефона'
 EMAIL = 'Email'
@@ -120,6 +150,9 @@ GOOGLE = 'google'
 VK_WEB = 'vk_web'
 
 FACEBOOK_INFO_URL = "https://graph.facebook.com/me?access_token={0}&fields=id,name,email,first_name,last_name&format=json"
-GOOGLE_INFO_URL_V3 = "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={}"
+GOOGLE_INFO_URL_V3 = "https://oauth2.googleapis.com/tokeninfo?id_token={}"
+VK_INFO_URL = "https://api.vk.com/method/users.get?api_id=6714692&access_token={}&v=5.69&fields=photo_200"
 VK_WEB_INFO_URL = "https://api.vk.com/method/users.get?api_id=6781515&access_token={}&v=5.69&fields=photo_200"
 FACEBOOK_AVATAR_URL = "https://graph.facebook.com/{0}/picture?type=large"
+
+SMS_TEXT = 'Код подтверждения для ISTOKHOME.COM:'

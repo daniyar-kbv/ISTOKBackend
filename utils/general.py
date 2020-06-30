@@ -1,10 +1,19 @@
 import constants
 
+
 def is_digits(str):
     for char in str:
         if not ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].__contains__(char):
             return False
     return True
+
+
+def get_phone(str):
+    phone = ''
+    for char in str:
+        if char in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+']:
+            phone += char
+    return phone
 
 
 def format_time_period(amount, unit):
@@ -41,3 +50,20 @@ def format_time_period(amount, unit):
         elif unit == constants.TIME_YEAR:
             return 'года'
     return ''
+
+
+def get_status_name(user, obj):
+    if obj.status == constants.APPLICATION_CONFIRMED:
+        return 'В процессе'
+    if obj.status == constants.APPLICATION_FINISHED_CONFIRMED:
+        return 'Завершена'
+    if obj.status == constants.APPLICATION_DECLINED_MERCHANT or obj.status == constants.APPLICATION_DECLINED_CLIENT:
+        return 'Отклонена'
+    if user.role == constants.ROLE_CLIENT:
+        if obj.status == constants.APPLICATION_CREATED or obj.status == constants.APPLICATION_FINISHED:
+            return 'Ожидает ответа'
+    elif user.role == constants.ROLE_MERCHANT:
+        if obj.status == constants.APPLICATION_CREATED:
+            return 'Новая'
+        elif obj.status == constants.APPLICATION_FINISHED:
+            return 'Ожидает завершения'

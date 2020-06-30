@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import serializers
-from blog.models import BlogPost, PostDocument
+from blog.models import BlogPost, PostDocument, BlogPostCategory
 from users.serializers import UserShortSerializer, UserShortAvatarSerializer
 
 
@@ -125,3 +125,9 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
                     posts.append(post)
         serializer = BlogPostSideBarSerializer(posts, many=True, context=self.context)
         return serializer.data
+
+
+class BlogPostCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogPostCategory
+        fields = ('id', 'name')

@@ -1,5 +1,6 @@
 from rest_framework.views import exception_handler
 from django.http import Http404
+from utils import response as res
 
 
 def custom_exception_handler(exc, context):
@@ -8,9 +9,14 @@ def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     if hasattr(exc, 'detail'):
-        custom_response_data = {
-            'messages': [exc.detail]
-        }
+        if isinstance(exc.detail, dict) and exc.detail.get('messages'):
+            custom_response_data = {
+                'messages': exc.detail.get('messages')
+            }
+        else:
+            custom_response_data = {
+                'messages': exc.detail
+            }
         response.data = custom_response_data
 
     return response

@@ -100,10 +100,12 @@ class MainPageBlogPost(models.Model):
                                 blank=False,
                                 related_name='main_page',
                                 verbose_name='Пост')
+    position = models.PositiveSmallIntegerField(null=False, blank=False, default=0, verbose_name='Позиция')
 
     class Meta:
         verbose_name = 'Пост на главной странице'
         verbose_name_plural = 'Посты на главной странице'
+        ordering = ('position', )
 
     def __str__(self):
         return f'{self.id}: {self.post.title[0:15]}'

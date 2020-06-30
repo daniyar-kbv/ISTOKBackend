@@ -13,10 +13,12 @@ from main.models import Project, ProjectUserFavorite, ProjectView, ProjectCommen
     ProjectCategory
 from main.serializers import ProjectMainPageSerializer, ServicesMainPageSerialzier, ProjectModalSerializer, \
     ProjectSearchSerializer, ProjectDetailSerializer, ProjectCommentDetailSerializer, ProjectCommentWithReplySerializer, \
-    ProjectCommentCreateSerializer, CitySerializer, ProjectCategoryShortSerializer
+    ProjectCommentCreateSerializer, CitySerializer, ProjectCategoryShortSerializer, CountrySerializer, \
+    ProjectTypeSerializer, ProjectPurposeTypeFullSerializer, ProjectStyleSerializer
 from blog.models import MainPageBlogPost, BlogPost
 from blog.serializers import BlogPostMainPageSerializer, BlogPostSearchSerializer
-from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser, Specialization, ProjectTag
+from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser, Specialization, ProjectTag, Country, \
+    ProjectType, ProjectPurposeType, ProjectStyle
 from users.serializers import MerchantMainPageSerializer, ReviewMainPageSerializer, UserSearchSerializer, \
     SpecializationSerializer, ProjectTagShortSerializer
 from other.models import FAQ
@@ -192,17 +194,8 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['get', 'post'])
     def tests(self, request, pk=None):
-        cities_ = City.objects.all()
-        cities = cities_
-        print(cities)
-
-        c = City.objects.create(name='asd', country_id=1)
-
-        print(cities)
-
-        c.delete()
-
-        print(cities)
+        from celery import current_app
+        print(current_app.tasks.keys())
 
         return Response()
 
@@ -333,6 +326,13 @@ class CommentViewSet(viewsets.GenericViewSet):
 #        serializer = ProjectCommentDetailSerializer(comment, context=request)
 
 
+class CountryViewSet(viewsets.GenericViewSet,
+                     mixins.ListModelMixin):
+    queryset = Country.objects.all()
+    serializer_class = CountrySerializer
+    pagination_class = None
+
+
 class CityViewSet(viewsets.GenericViewSet,
                   mixins.ListModelMixin):
     queryset = City.objects.all()
@@ -368,3 +368,24 @@ class ProjectTagViewSet(viewsets.GenericViewSet,
         queryset = ProjectTag.objects.search(search)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
+
+
+class ProjectTypeViewSet(viewsets.GenericViewSet,
+                         mixins.ListModelMixin):
+    queryset = ProjectType.objects.all()
+    serializer_class = ProjectTypeSerializer
+    pagination_class = None
+
+
+class ProjectPurposeTypeViewSet(viewsets.GenericViewSet,
+                                mixins.ListModelMixin):
+    queryset = ProjectPurposeType.objects.all()
+    serializer_class = ProjectPurposeTypeFullSerializer
+    pagination_class = None
+
+
+class ProjectStyleViewSet(viewsets.GenericViewSet,
+                          mixins.ListModelMixin):
+    queryset = ProjectStyle.objects.all()
+    serializer_class = ProjectStyleSerializer
+    pagination_class = None
