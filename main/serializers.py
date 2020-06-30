@@ -624,10 +624,11 @@ class ProjectCommentDetailSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
     likes_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    is_author = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectComment
-        fields = ('id', 'user', 'creation_date', 'rating', 'text', 'likes_count', 'is_liked')
+        fields = ('id', 'user', 'creation_date', 'rating', 'text', 'likes_count', 'is_liked', 'is_author')
 
     def get_likes_count(self, obj):
         return obj.likes_count
@@ -641,6 +642,15 @@ class ProjectCommentDetailSerializer(serializers.ModelSerializer):
                 return False
         return None
 
+    def get_is_author(self, obj):
+        user = self.context.user
+        if not isinstance(user, AnonymousUser):
+            if user == obj.user:
+                return True
+            else:
+                return False
+        return None
+
 
 class ProjectDetailSerializer(ProjectModalSerializer):
     user = UserMediumSerializer()
@@ -649,8 +659,9 @@ class ProjectDetailSerializer(ProjectModalSerializer):
     favorites_count = serializers.SerializerMethodField()
 
     class Meta(ProjectModalSerializer.Meta):
-        fields = ProjectModalSerializer.Meta.fields + ('name', 'user', 'views_count', 'comments_count', 'favorites_count',
-                                                       'description', )
+        fields = ProjectModalSerializer.Meta.fields + (
+            'name', 'user', 'views_count', 'comments_count', 'favorites_count',
+            'description',)
 
     def get_views_count(self, obj):
         return obj.views.count()
@@ -667,11 +678,12 @@ class ProjectCommentReplyListSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
     likes_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    is_author = serializers.SerializerMethodField()
     photos = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = ProjectCommentReply
-        fields = ('id', 'user', 'text', 'creation_date', 'likes_count', 'is_liked', 'photos')
+        fields = ('id', 'user', 'text', 'creation_date', 'likes_count', 'is_liked', 'photos', 'is_author')
 
     def get_likes_count(self, obj):
         return obj.likes_count
@@ -685,6 +697,15 @@ class ProjectCommentReplyListSerializer(serializers.ModelSerializer):
                 return False
         return None
 
+    def get_is_author(self, obj):
+        user = self.context.user
+        if not isinstance(user, AnonymousUser):
+            if user == obj.user:
+                return True
+            else:
+                return False
+        return None
+      
     def get_photos(self, obj):
         urls = []
         comment_documents = ProjectCommentReplyDocument.objects.filter(reply=obj)
