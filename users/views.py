@@ -109,6 +109,9 @@ class UserViewSet(viewsets.GenericViewSet,
             }
             logger.info(
                 f'Registration with email: {email} ({constants.ROLES[0]}) succeeded')
+            activation = UserActivation.objects.filter(email=email).first()
+            if activation:
+                activation.delete()
             return Response(data, status=status.HTTP_200_OK, headers=headers)
         logger.error(
             f'Registration with email: {email} ({constants.ROLES[0]}) failed: {response.make_errors(serializer)}')
