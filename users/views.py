@@ -239,7 +239,6 @@ class UserViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['post'])
     def verify_phone(self, request, pk=None):
-        logger.info(f'Code verification ({request.data.get("phone").get("phone")}): started')
         code = randrange(1000, 10000)
         while CodeVerification.objects.filter(code=code, phone__is_valid=True).count() > 0:
             code = randrange(1000, 10000)
@@ -263,8 +262,6 @@ class UserViewSet(viewsets.GenericViewSet,
             serializer.save()
             logger.info(f'Code verification ({request.data.get("phone").get("phone")}): succeeded')
             return Response(status=status.HTTP_200_OK)
-        logger.error(
-            f'Code verification ({request.data.get("phone").get("phone")}): failed {response.make_errors(serializer)}')
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
