@@ -23,6 +23,7 @@ from other.models import FAQ
 from other.serializers import FAQSerializer
 from utils import permissions, response, pagination, projects
 from random import randrange
+from profiles.serializers import ApplicationCreateSerializer
 
 import constants
 import logging, math
@@ -213,6 +214,20 @@ class ProjectViewSet(viewsets.GenericViewSet,
     #     headers = self.get_success_headers(serializer.data)
     #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsClient, permissions.HasPhone])
+    def submit(self, request, pk=None):
+        try:
+            project = Project.objects.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Проект с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
+        context = {
+        }
+        serializer = ApplicationCreateSerializer(data=request.data, context=context)
+        if serializer.is_valid():
+            serializer.save(client=request.user, merchant=project.user, project=project)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+
 
 class ProjectsSearch(views.APIView):
     def get(self, request):
@@ -307,6 +322,15 @@ class CommentViewSet(viewsets.GenericViewSet):
             comment.save()
         logger.info(f'Like of project comment ({pk}) user({request.user.email}) succeeded')
         return Response(status.HTTP_200_OK)
+
+#    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+#    def complain(self, request, pk=None):
+#        user = request.user
+#        try:
+#            comment = ProjectComment.objects.get(id=pk)
+#        except ProjectComment.DoesNotExist:
+#            return Response(response.make_messages([f'Комментарий с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
+#        serializer = ProjectCommentDetailSerializer(comment, context=request)
 
 
 class CityViewSet(viewsets.GenericViewSet,

@@ -571,7 +571,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         try:
             category = ProjectCategory.objects.get(id=validated_data.pop('category'))
         except:
-            raise serializers.ValidationError(response.make_messages([f'Катерия {constants.RESPONSE_DOES_NOT_EXIST}']))
+            raise serializers.ValidationError(response.make_messages([f'Категория {constants.RESPONSE_DOES_NOT_EXIST}']))
 
         application = Application.objects.create(**validated_data, category=category)
 
@@ -582,7 +582,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
                 doc_data = {
                     'application': application.id,
                     'document': doc
-                }
+                    }
                 serializer = ApplicationDocumentSerializer(data=doc_data)
                 if serializer.is_valid():
                     doc_objects.append(serializer.save())

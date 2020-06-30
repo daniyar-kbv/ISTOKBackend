@@ -32,9 +32,9 @@ services:
   web:
     build: .
     command: sh -c "/wait &&
-      ./manage.py compilemessages --locale=ru &&
-      ./manage.py migrate &&
-      ./manage.py runserver 0.0.0.0:8990"
+      python manage.py compilemessages --locale=ru &&
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8990"
     volumes:
       - .:/istok
     ports:
