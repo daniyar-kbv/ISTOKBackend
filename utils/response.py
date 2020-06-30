@@ -15,13 +15,16 @@ def make_messages_args(args):
 
 def make_errors(serializer):
     messages = []
-    for key, value in serializer.errors.items():
-        if isinstance(value, dict):
-            for key2, value2 in value.items():
-                messages.append(f'{key2.capitalize()}: {value2[0]}')
-        else:
-            messages.append(f'{key.capitalize()}: {value[0]}')
-    return make_messages(messages)
+    try:
+        for key, value in serializer.errors.items():
+            if isinstance(value, dict):
+                for key2, value2 in value.items():
+                    messages.append(f'{key2.capitalize()}: {value2[0]}')
+            else:
+                messages.append(f'{key.capitalize()}: {value[0]}')
+        return make_messages(messages)
+    except:
+        return serializer.errors
 
 
 def missing_field(field):
