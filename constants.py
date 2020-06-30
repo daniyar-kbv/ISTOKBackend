@@ -119,6 +119,7 @@ RESPONSE_FEATURE_TYPES = 'Типы платных услуг:'
 RESPONSE_NO_PROJECTS = 'У вас нет ниодного проекта'
 RESPONSE_REPLY_EXISTS = 'На этот отзыв уже существует ответ'
 RESPONSE_COMMENT_REPLY_EXISTS = 'На этот комментарий уже существует ответ'
+RESPONSE_DATA_TYPES_DIGITS = 'Должен быть числовым'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'

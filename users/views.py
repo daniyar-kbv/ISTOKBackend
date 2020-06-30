@@ -75,7 +75,17 @@ class UserViewSet(viewsets.GenericViewSet,
         if role == constants.ROLE_CLIENT:
             serializer = ClientProfileCreateSerializer(data=request.data, context=context)
         elif role == constants.ROLE_MERCHANT:
-            serializer = MerchantProfileCreateSerializer(data=request.data, context=context)
+            request_data = dict(request.data)
+            if request.data.get('tags'):
+                tags = request.data.pop('tags')
+                int_tags = []
+                for tag in tags:
+                    if not general.is_digits(tag):
+                        return Response(response.make_messages([f'Тэги: {constants.RESPONSE_DATA_TYPES_DIGITS}']),
+                                        status.HTTP_400_BAD_REQUEST)
+                    int_tags.append(int(tag))
+                request_data['tags'] = int_tags
+            serializer = MerchantProfileCreateSerializer(data=request_data, context=context)
         else:
             logger.error(
                 f'Registration with email: {email} ({constants.ROLES[0]}) failed: {constants.RESPONSE_INVALID_ROLE}')

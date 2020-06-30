@@ -210,11 +210,7 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
         for specialization in specializations:
             profile.specializations.add(specialization)
         for tag in tags:
-            try:
-                int_tag = int(tag)
-                profile.tags.add(int_tag)
-            except:
-                pass
+            profile.tags.add(tag)
         if settings.DEBUG:
             if self.context['avatar']:
                 profile.avatar = self.context['avatar']
