@@ -24,7 +24,7 @@ from users.serializers import MerchantMainPageSerializer, ReviewMainPageSerializ
     SpecializationSerializer, ProjectTagShortSerializer
 from other.models import FAQ
 from other.serializers import FAQSerializer
-from utils import permissions, response, pagination, projects
+from utils import permissions, response, pagination, projects, general
 from random import randrange
 from profiles.serializers import ApplicationCreateSerializer
 
@@ -192,13 +192,6 @@ class ProjectViewSet(viewsets.GenericViewSet,
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             logger.error(f'Project({pk}) comment create failed: {response.make_errors(serializer)}')
             return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['get', 'post'])
-    def tests(self, request, pk=None):
-        from celery import current_app
-        print(current_app.tasks.keys())
-
-        return Response()
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def complain(self, request, pk=None):

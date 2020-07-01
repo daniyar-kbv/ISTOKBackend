@@ -1,4 +1,4 @@
-import constants
+import constants, base64
 
 
 def is_digits(str):
@@ -67,3 +67,19 @@ def get_status_name(user, obj):
             return 'Новая'
         elif obj.status == constants.APPLICATION_FINISHED:
             return 'Ожидает завершения'
+
+
+def encode_base64(str):
+    message_bytes = str.encode('ascii')
+    base64_bytes = base64.b64encode(message_bytes)
+    base64_message = base64_bytes.decode('ascii')
+    return base64_message
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

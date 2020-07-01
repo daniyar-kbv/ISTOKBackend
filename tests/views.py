@@ -1,10 +1,14 @@
+from django.shortcuts import render
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from tests.serializers import ProjectCreateSerializer, BlogPostCreateSerializer, MerchantReviewCreateSerialzier, \
     MerchantReviewReplyCreateSerializer, ProjectCommentCreateSerialzier, ProjectCommentReplyCreateSerializer
 from main.models import Project, ProjectComment, ProjectCommentReply
 from blog.models import BlogPost
 from users.models import MerchantReview, ReviewReply
+from utils import general
+import requests, os, json
 
 
 class ProjectViewSet(viewsets.GenericViewSet,
@@ -22,6 +26,29 @@ class ProjectViewSet(viewsets.GenericViewSet,
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=False, methods=['get', 'post'])
+    def tests(self, request, pk=None):
+        credentials = general.encode_base64(
+            f'{os.environ.get("PAYMENTS_PUBLIC_ID")}:{os.environ.get("PAYMENTS_API_SECRET")}'
+        )
+        headers = {
+            'Authorization': f'Basic {credentials}'
+        }
+        data = {
+            'Amount': 10000,
+            'Currency': 'KZT',
+            'IpAddress': general.get_client_ip(request),
+            'Name': 'name name',
+            'CardCryptogramPacket': '014000055556201202WxuQlpD6kHM5BVvYmqS8lJh4lmgNaxNH6+hrj3MC5OPSG/mPSEbUTBr5Rj2N+KDNB9CI18poQtIWge6ig3l4i2/QN35yydjaUb57QDocOnG7tjkk6jzaL+VTulG0sWDt9BSitp8GzOCEpTGgu1TyG4lVXLMKtMWEJejuNcZSWD56Q2g0+tV/XckcOMfj8zV41EAps3IFU5sDcndgPMTD6P56x8P2fuXHBRO0MUdDHxXyYQP+eQb7jz+TWZyLuH6uX2+J7AVsuJz0v7j5boh9LBi3JqMWMy9DfT1RmK5/SPkho8eMGQzO8imKaylajalsaKvkE9c8knDEB/mWB5LJww=='
+        }
+        response = requests.post('https://api.cloudpayments.ru/payments/cards/charge', headers=headers, json=data)
+        return Response(response.json())
+
+    @action(detail=False, methods=['get', 'post'])
+    def pay_template(self, request, pk=None):
+        return render(request, 'pay_template.html')
+
 
 
 class BlogPostViewSet(viewsets.GenericViewSet,
@@ -117,3 +144,5 @@ class ProjectCommentReplyViewSet(viewsets.GenericViewSet,
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+

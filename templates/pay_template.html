@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <form id="paymentFormSample" autocomplete="off">
+        <input type="text" data-cp="cardNumber" placeholder="cardNumber" value="5200 8282 8282 8210">
+        <input type="text" data-cp="expDateMonth" placeholder="expDateMonth" value="12">
+        <input type="text" data-cp="expDateYear" placeholder="expDateYear" value="20">
+        <input type="text" data-cp="cvv" placeholder="cvv" value="123">
+        <input type="text" data-cp="name" placeholder="name" value="name name">
+        <button type="submit">submit</button>
+    </form>
+    <script src="https://widget.cloudpayments.ru/bundles/checkout"></script>
+    <script>
+        var createCryptogram = function (checkout) {
+            var result = checkout.createCryptogramPacket();
+
+            if (result.success) {
+                // сформирована криптограмма
+                alert(result.packet);
+            }
+            else {
+                // найдены ошибки в введённых данных, объект `result.messages` формата:
+                // { name: "В имени держателя карты слишком много символов", cardNumber: "Неправильный номер карты" }
+                // где `name`, `cardNumber` соответствуют значениям атрибутов `<input ... data-cp="cardNumber">`
+               for (var msgName in result.messages) {
+                   alert(result.messages[msgName]);
+               }
+            }
+        };
+
+        $(document).on("submit", "#paymentFormSample", function (e) {
+
+            /* Создание checkout */
+            checkout = new cp.Checkout(
+            // public id из личного кабинета
+            "test_api_00000000000000000000001",
+            // тег, содержащий поля данных карты
+            document.getElementById("paymentFormSample"));
+            createCryptogram(checkout)
+        });
+    </script>
+</body>
+</html>
