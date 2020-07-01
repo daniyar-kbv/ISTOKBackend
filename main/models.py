@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Q
 from users.models import MainUser, ProjectCategory, ProjectTag, ProjectStyle, ProjectPurpose, ProjectType, City, \
     MerchantReview, ReviewReply
+
 from utils import upload, validators
 
 

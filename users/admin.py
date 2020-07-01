@@ -8,6 +8,7 @@ from users.models import MainUser, ClientProfile, MerchantProfile, UserActivatio
     Specialization, MerchantPhone, CodeVerification, MerchantReview, ReviewReply, ReviewDocument, ReviewReplyDocument, \
     ClientRating
 from main.models import ReviewComplain, ReviewReplyComplain
+from main.admin import ComplainAdmin
 from profiles.models import FormUserAnswer, Notification, UsersPaidFeature
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
@@ -15,9 +16,64 @@ from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdm
 import constants
 
 
-# @admin.register(ProfileDocument)
-# class CityTagAdmin(admin.ModelAdmin):
-#     list_display = ('id', 'user', 'document')
+class InlineReviewDocument(admin.StackedInline):
+    model = ReviewDocument
+    extra = 0
+
+
+class InlineReviewReplyDocument(NestedStackedInline):
+    model = ReviewReplyDocument
+    extra = 0
+
+
+class InlineReviewReplyComplain(NestedStackedInline):
+    model = ReviewReplyComplain
+    extra = 0
+    autocomplete_fields = ['user']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+
+
+class InlineReviewReply(NestedStackedInline):
+    model = ReviewReply
+    extra = 0
+    inlines = [InlineReviewReplyDocument, InlineReviewReplyComplain]
+    readonly_fields = ['user_likes', 'likes_count']
+    autocomplete_fields = ['user', ]
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+
+
+class InlineReviewComplain(NestedStackedInline):
+    model = ReviewComplain
+    extra = 0
+    autocomplete_fields = ['user']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+
+
+class InlineReview(NestedStackedInline):
+    model = MerchantReview
+    extra = 1
+    inlines = [InlineReviewDocument, InlineReviewComplain, InlineReviewReply]
+    readonly_fields = ['user_likes', 'likes_count', 'rating']
+    autocomplete_fields = ['user', 'merchant']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+
+
+class InlineClientReview(InlineReview):
+    fk_name = 'user'
+    readonly_fields = InlineReview.readonly_fields + ['user', ]
+
+
+class InlineMerchantReview(InlineReview):
+    fk_name = 'merchant'
+    readonly_fields = InlineReview.readonly_fields + ['merchant', ]
 
 
 class InlineClientProfile(admin.StackedInline):
@@ -92,7 +148,8 @@ class MainUserAdmin(admin.ModelAdmin):
     fields = ['email', 'password', 'role', 'is_superuser', 'is_staff', 'is_active', 'groups', 'user_permissions']
     list_display = ('id', 'email', 'role', 'is_active', 'is_staff', 'creation_date')
     inlines = [InlineClientProfile, InlineMerchantProfile, InlineMerchantPhone, InlineProfileDocument,
-               InlineFormUserAnswer, InlineNotification, InlineUsersPaidFeature]
+               InlineFormUserAnswer, InlineNotification, InlineUsersPaidFeature, InlineClientReview,
+               InlineMerchantReview]
     list_filter = ['role', 'is_staff', 'is_active']
     search_fields = ['email', 'merchant_profile__first_name']
     readonly_fields = ['last_login', 'creation_date']
@@ -113,13 +170,16 @@ class MainUserAdmin(admin.ModelAdmin):
             if obj:
                 if inline.__class__ == InlineClientProfile or inline.__class__ == InlineMerchantProfile or \
                         inline.__class__ == InlineProfileDocument or inline.__class__ == InlineFormUserAnswer or \
-                        InlineUsersPaidFeature:
+                        InlineUsersPaidFeature or inline.__class__ == InlineClientReview or \
+                        inline.__class__ == InlineMerchantReview:
                     if obj.role == constants.ROLE_CLIENT and (inline.__class__ == InlineClientProfile or
-                                                              inline.__class__ == InlineFormUserAnswer):
+                                                              inline.__class__ == InlineFormUserAnswer or
+                                                              inline.__class__ == InlineClientReview):
                         yield inline.get_formset(request, obj), inline
                     elif obj.role == constants.ROLE_MERCHANT and (inline.__class__ == InlineMerchantProfile or
                                                                   inline.__class__ == InlineProfileDocument or
-                                                                  inline.__class__ == InlineUsersPaidFeature):
+                                                                  inline.__class__ == InlineUsersPaidFeature or
+                                                                  inline.__class__ == InlineMerchantReview):
                         yield inline.get_formset(request, obj), inline
                 else:
                     yield inline.get_formset(request, obj), inline
@@ -257,32 +317,11 @@ class MerchantPhoneAdmin(admin.ModelAdmin):
     inlines = [InlineCodeVerification]
 
 
-class InlineReviewDocument(admin.StackedInline):
-    model = ReviewDocument
-    extra = 0
-
-
-class InlineReviewReplyDocument(NestedStackedInline):
-    model = ReviewReplyDocument
-    extra = 0
-
-
-class InlineReviewReply(NestedStackedInline):
-    model = ReviewReply
-    extra = 0
-    inlines = [InlineReviewReplyDocument, ]
-    readonly_fields = ['user_likes', 'likes_count']
-    autocomplete_fields = ['user', ]
-    formfield_overrides = {
-        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
-    }
-
-
 @admin.register(MerchantReview)
-class MerchantReviewAdmin(NumericFilterModelAdmin):
+class MerchantReviewAdmin(NumericFilterModelAdmin, NestedModelAdmin):
     list_display = ('id', 'user', 'merchant', 'rating', 'text', 'creation_date')
     filter_horizontal = ('user_likes', )
-    inlines = [InlineReviewDocument, InlineReviewReply]
+    inlines = [InlineReviewDocument, InlineReviewComplain, InlineReviewReply]
     readonly_fields = ['user_likes', 'likes_count', 'rating']
     ordering = ['-creation_date', ]
     list_filter = [('rating', RangeNumericFilter), 'creation_date', ('likes_count', RangeNumericFilter)]
@@ -311,18 +350,12 @@ class ClientRatingAdmin(admin.ModelAdmin):
 
 
 @admin.register(ReviewComplain)
-class ReviewComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'review', 'text', 'is_active', 'creation_date', )
-    formfield_overrides = {
-        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
-    }
-    autocomplete_fields = ['user', 'review']
+class ReviewComplainAdmin(ComplainAdmin):
+    list_display = ComplainAdmin.list_display[:2] + ('review', ) + ComplainAdmin.list_display[2:]
+    autocomplete_fields = ComplainAdmin.autocomplete_fields + ['review', ]
 
 
 @admin.register(ReviewReplyComplain)
-class ReviewReplyComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'reply', 'text', 'is_active', 'creation_date', )
-    formfield_overrides = {
-        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
-    }
-    autocomplete_fields = ['user', 'reply']
+class ReviewReplyComplainAdmin(ComplainAdmin):
+    list_display = ComplainAdmin.list_display[:2] + ('reply', ) + ComplainAdmin.list_display[2:]
+    autocomplete_fields = ComplainAdmin.autocomplete_fields + ['reply', ]

@@ -30,18 +30,17 @@ class ProjectViewSet(viewsets.GenericViewSet,
     @action(detail=False, methods=['get', 'post'])
     def tests(self, request, pk=None):
         credentials = general.encode_base64(
-            f'{os.environ.get("PAYMENTS_PUBLIC_ID")}:{os.environ.get("PAYMENTS_API_SECRET")}'
+            # f'{os.environ.get("PAYMENTS_PUBLIC_ID")}:{os.environ.get("PAYMENTS_API_SECRET")}'
+            f'{"pk_b826aa0af00e5286511d54e746fda"}:{"c40a0ba72b7ed318e713d71cb9153204"}'
         )
         headers = {
-            'Authorization': f'Basic {credentials}'
+            'Authorization': f'Basic {credentials}',
+            'Content-Type': 'application/json'
         }
-        data = {
-            'Amount': 10000,
-            'Currency': 'KZT',
-            'IpAddress': general.get_client_ip(request),
-            'Name': 'name name',
-            'CardCryptogramPacket': '014000055556201202WxuQlpD6kHM5BVvYmqS8lJh4lmgNaxNH6+hrj3MC5OPSG/mPSEbUTBr5Rj2N+KDNB9CI18poQtIWge6ig3l4i2/QN35yydjaUb57QDocOnG7tjkk6jzaL+VTulG0sWDt9BSitp8GzOCEpTGgu1TyG4lVXLMKtMWEJejuNcZSWD56Q2g0+tV/XckcOMfj8zV41EAps3IFU5sDcndgPMTD6P56x8P2fuXHBRO0MUdDHxXyYQP+eQb7jz+TWZyLuH6uX2+J7AVsuJz0v7j5boh9LBi3JqMWMy9DfT1RmK5/SPkho8eMGQzO8imKaylajalsaKvkE9c8knDEB/mWB5LJww=='
-        }
+        data = request.data
+        data['IpAddress'] = general.get_client_ip(request)
+        print(headers)
+        print(data)
         response = requests.post('https://api.cloudpayments.ru/payments/cards/charge', headers=headers, json=data)
         return Response(response.json())
 

@@ -41,7 +41,6 @@ class ProfileViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['get', 'put'], permission_classes=[permissions.IsAuthenticated])
     def my_profile(self, request, pk=None):
-        request.data._mutable = True
         user = request.user
         if request.method == 'GET':
             if user.role == constants.ROLE_CLIENT:
@@ -71,6 +70,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                     return Response(serializer.data, status.HTTP_200_OK)
                 return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
             elif user.role == constants.ROLE_MERCHANT:
+                request.data._mutable = True
                 phones = []
                 if request.data.get('phones'):
                     phones = request.data.pop('phones')

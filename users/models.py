@@ -437,6 +437,34 @@ class MerchantProfile(Profile):
         else:
             return f'{self.id}: {self.company_name}'
 
+    def fullness(self):
+        sum = 3
+        if (self.first_name and self.last_name) or self.company_name:
+            sum += 3
+        if self.city:
+            sum += 2
+        if self.address:
+            sum += 2
+        if self.categories.all().count() > 0 and self.specializations.all().count() > 0:
+            sum += 5
+        if self.tags.all().count() > 0:
+            sum += 5
+        if self.description_short:
+            sum += 5
+        if self.description_full:
+            sum += 10
+        if self.url:
+            sum += 5
+        if MerchantPhone.objects.filter(user=self.user, is_valid=True).count() > 0:
+            sum += 20
+        if ProfileDocument.objects.filter(user=self.user).count() > 0:
+            sum += 10
+        if self.avatar:
+            sum += 10
+        if self.user.projects.count() > 0:
+            sum += 20
+        return sum
+
 
 class UserActivation(models.Model):
     user = models.OneToOneField(MainUser,

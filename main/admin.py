@@ -13,12 +13,12 @@ from utils.admin.custom_filters import GteNumericFilter, LteNumericFilter
 import constants
 
 
-class InlineProjectDocument(admin.StackedInline):
+class InlineProjectDocument(NestedStackedInline):
     model = ProjectDocument
     extra = 0
 
 
-class InlineRender360(admin.StackedInline):
+class InlineRender360(NestedStackedInline):
     model = Render360
     extra = 0
 
@@ -28,15 +28,33 @@ class InlineProjectCommentReplyDocument(NestedStackedInline):
     extra = 0
 
 
+class InlineCommentReplyComplain(NestedStackedInline):
+    model = CommentReplyComplain
+    extra = 0
+    autocomplete_fields = ['user']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
+
+
 class InlineProjectCommentReply(NestedStackedInline):
     model = ProjectCommentReply
     extra = 0
-    # inlines = [InlineProjectCommentReplyDocument, ]
+    inlines = [InlineProjectCommentReplyDocument, InlineCommentReplyComplain]
     readonly_fields = ['user_likes', 'likes_count']
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
     autocomplete_fields = ['user', ]
+
+
+class InlineCommentComplain(NestedStackedInline):
+    model = CommentComplain
+    extra = 0
+    autocomplete_fields = ['user']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
 
 
 class InlineProjectCommentDocument(NestedStackedInline):
@@ -47,7 +65,7 @@ class InlineProjectCommentDocument(NestedStackedInline):
 class InlineProjectComment(NestedStackedInline):
     model = ProjectComment
     extra = 0
-    inlines = [InlineProjectCommentDocument, InlineProjectCommentReply, ]
+    inlines = [InlineProjectCommentDocument, InlineCommentComplain, InlineProjectCommentReply, ]
     readonly_fields = ['rating', 'likes_count', 'user_likes']
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
@@ -88,8 +106,8 @@ class InlineApplication(NestedStackedInline):
 class ProjectAdmin(NestedModelAdmin, NumericFilterModelAdmin):
     list_display = ('id', 'user', 'name', 'price_from', 'price_to', 'creation_date', 'rating')
     filter_horizontal = ('tags', )
-    inlines = [InlineProjectDocument, InlineRender360, InlineProjectComment, InlineProjectComplaint,
-               InlineProjectPaidFeature, InlineApplication]
+    inlines = [InlineProjectDocument, InlineRender360, InlineProjectComment,
+               InlineProjectPaidFeature, InlineApplication, InlineProjectComplaint]
     list_filter = ['category', 'purpose', 'type', 'style', 'tags', ('price_from', GteNumericFilter),
                    ('price_to', LteNumericFilter), ('area', RangeNumericFilter), 'is_top', 'is_detailed',
                    'creation_date', ('rating', RangeNumericFilter)]
@@ -121,28 +139,29 @@ class ProjectViewAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'project', 'creation_date')
 
 
-@admin.register(ProjectComplain)
-class ProjectComplaintAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'project', 'text', 'is_active', 'creation_date', )
+class ComplainAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'text', 'is_active', 'creation_date', )
+    list_filter = ['is_active', 'creation_date']
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
-    autocomplete_fields = ['user', 'project']
+    autocomplete_fields = ['user', ]
+    search_fields = ['text', ]
+
+
+@admin.register(ProjectComplain)
+class ProjectComplaintAdmin(ComplainAdmin):
+    list_display = ComplainAdmin.list_display[:2] + ('project', ) + ComplainAdmin.list_display[2:]
+    autocomplete_fields = ComplainAdmin.autocomplete_fields + ['project', ]
 
 
 @admin.register(CommentComplain)
-class CommentComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'comment', 'text', 'is_active', 'creation_date', )
-    formfield_overrides = {
-        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
-    }
-    autocomplete_fields = ['user', 'comment']
+class CommentComplainAdmin(ComplainAdmin):
+    list_display = ComplainAdmin.list_display[:2] + ('comment', ) + ComplainAdmin.list_display[2:]
+    autocomplete_fields = ComplainAdmin.autocomplete_fields + ['comment', ]
 
 
 @admin.register(CommentReplyComplain)
-class CommentReplyComplainAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'reply', 'text', 'is_active', 'creation_date', )
-    formfield_overrides = {
-        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
-    }
-    autocomplete_fields = ['user', 'reply']
+class CommentReplyComplainAdmin(ComplainAdmin):
+    list_display = ComplainAdmin.list_display[:2] + ('reply', ) + ComplainAdmin.list_display[2:]
+    autocomplete_fields = ComplainAdmin.autocomplete_fields + ['reply', ]

@@ -138,7 +138,7 @@ class ClientProfileUpdateSerializer(serializers.ModelSerializer):
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         avatar = validated_data.get('avatar')
-        if avatar:
+        if instance.avatar and avatar:
             upload.delete_folder(instance.avatar)
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
@@ -191,10 +191,11 @@ class MerchantProfileGetSerializer(serializers.ModelSerializer):
     description_full = serializers.SerializerMethodField()
     documents = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    profile_fullness = serializers.SerializerMethodField()
 
     class Meta:
         model = MainUser
-        fields = ('description_full', 'documents', 'tags')
+        fields = ('profile_fullness', 'description_full', 'documents', 'tags')
 
     def get_description_full(self, obj):
         return obj.profile.description_full
@@ -203,7 +204,7 @@ class MerchantProfileGetSerializer(serializers.ModelSerializer):
         urls = []
         documents = ProfileDocument.objects.filter(user=obj)
         for doc in documents:
-            urls.append(self.context.build_absolute_uri(doc.url))
+            urls.append(self.context.build_absolute_uri(doc.document.url))
         return urls
 
     def get_tags(self, obj):
@@ -212,6 +213,12 @@ class MerchantProfileGetSerializer(serializers.ModelSerializer):
         for tag in tags:
             names.append(tag.name)
         return names
+
+    def get_profile_fullness(self, obj):
+        profile = obj.profile
+        if isinstance(profile, MerchantProfile):
+            return profile.fullness()
+        return None
 
 
 class MerchantProfileForUpdate(serializers.ModelSerializer):
@@ -325,7 +332,6 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
             doc_objects = ProfileDocument.objects.filter(user=user)
             for doc in doc_objects:
                 if doc.filename() == name:
-                    upload.delete_file(doc.document)
                     doc.delete()
         for serializer in doc_serializers:
             serializer.save()
