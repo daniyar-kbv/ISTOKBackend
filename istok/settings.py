@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'blog',
     'other',
     'profiles',
+    'payments',
     'tests',
 ]
 
@@ -310,7 +311,16 @@ ADMIN_REORDER = (
         'models': (
             {'model': 'profiles.FormQuestionGroup', 'label': 'Анкета'},
             'profiles.Application',
-            'profiles.PaidFeatureType'
+        )
+    },
+    {
+        'app': 'payments',
+        'models': (
+            'payments.PaidFeatureType',
+            'payments.UsersPaidFeature',
+            'payments.ProjectPaidFeature',
+            'payments.ProjectLinkedPaidFeatures',
+            'payments.Transaction'
         )
     },
     {

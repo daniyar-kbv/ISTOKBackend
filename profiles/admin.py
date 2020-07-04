@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.forms import Textarea
 from django.db import models
 from profiles.models import FormQuestionGroup, FormQuestion, FormAnswer, FormUserAnswer, ApplicationDocument, \
-    Application, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature, Notification
+    Application, Notification
+
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from admin_numeric_filter.admin import NumericFilterModelAdmin, RangeNumericFilter
 
@@ -68,24 +69,6 @@ class ApplicationAdmin(NumericFilterModelAdmin):
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
     }
     autocomplete_fields = ['client', 'merchant', 'category', 'project']
-
-
-@admin.register(PaidFeatureType)
-class PaidFeatureTypeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type', 'price', 'time_amount', 'time_unit', 'position')
-    search_fields = ['text', ]
-    ordering = ['type']
-    list_filter = ['type', ('price', RangeNumericFilter)]
-
-
-@admin.register(UsersPaidFeature)
-class UsersPaidFeatureAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'type')
-
-
-@admin.register(ProjectPaidFeature)
-class ProjectPaidFeatureAdmin(admin.ModelAdmin):
-    list_display = ('id', 'project', 'type')
 
 
 @admin.register(Notification)

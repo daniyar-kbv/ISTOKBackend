@@ -3,7 +3,8 @@ from users.models import MainUser, ClientProfile, MerchantReview, ProjectCategor
 from users.serializers import PhoneSerializer, MerchantPhone, UserShortRatingSerializer, MerchantProfile, \
     ProfileDocumentCreateSerializer, SpecializationWithCategorySerializer
 from profiles.models import FormAnswer, FormQuestion, FormQuestionGroup, FormUserAnswer, Application, \
-    ApplicationDocument, PaidFeatureType, UsersPaidFeature, ProjectPaidFeature, Notification
+    ApplicationDocument, Notification
+from payments.models import PaidFeatureType, UsersPaidFeature, ProjectPaidFeature
 from main.models import ProjectUserFavorite
 from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagSerializer
 from utils import response, upload, validators, general
@@ -601,28 +602,6 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
                         doc_obj.delete()
                     raise serializers.ValidationError(response.make_errors(serializer))
         return application
-
-
-class PaidFeatureTypeListSerializer(serializers.ModelSerializer):
-    time_unit = serializers.SerializerMethodField()
-
-    class Meta:
-        model = PaidFeatureType
-        fields = ('id', 'time_amount', 'time_unit', 'text', 'price', 'beneficial')
-
-    def get_time_unit(self, obj):
-        return general.format_time_period(obj.time_amount, obj.time_unit)
-
-
-class ProjectForPromotionSerialzier(serializers.Serializer):
-    type = serializers.IntegerField(required=True)
-
-    def validate_type(self, value):
-        try:
-            type = PaidFeatureType.objects.get(id=value)
-        except:
-            raise serializers.ValidationError(f'{constants.VALIDATION_FEATURE_NOT_EXIST} или яваляется Про продвижением')
-        return value
 
 
 class GetStatiscticsInSerialzier(serializers.Serializer):

@@ -54,6 +54,14 @@ PAID_FEATURE_TYPES = (
     (PAID_FEATURE_TOP_DETAILED, 'Топ и Выделеный проект')
 )
 
+PAID_FEATURE_FOR_USER = 1
+PAID_FEATURE_FOR_PROJECT = 2
+
+PAID_FEATURE_FOR_TYPES = (
+    (PAID_FEATURE_FOR_USER, 'Для пользователя'),
+    (PAID_FEATURE_FOR_PROJECT, 'Для проекта')
+)
+
 TIME_DAY = 1
 TIME_MONTH = 2
 TIME_YEAR = 3
@@ -93,8 +101,7 @@ MAX_REGULAR_FILE_SIZE = 10000000
 
 RESPONSE_SERVER_ERROR = 'Ошибка на сервере'
 RESPONSE_USER_EXISTS = 'Пользователь с этим почтовым ящиком уже зарегестрирован'
-RESPONSE_USER_EMAIL_NOT_EXIST = 'Пользователя с таким email не существует'
-RESPONSE_USER_PHONE_NOT_EXIST = 'Пользователя с таким номером телефона не существует'
+RESPONSE_USER_EMAIL_NOT_EXIST = 'Пользователя с таким email или номером телефона не существует'
 RESPONSE_INVALID_ROLE = 'Введенной роли не существует'
 RESPONSE_ENTER_EMAIL_OR_PHONE = 'Введите имейл или номер телефона'
 RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE = 'Введите только имейл или номер телефона'
@@ -120,6 +127,8 @@ RESPONSE_NO_PROJECTS = 'У вас нет ниодного проекта'
 RESPONSE_REPLY_EXISTS = 'На этот отзыв уже существует ответ'
 RESPONSE_COMMENT_REPLY_EXISTS = 'На этот комментарий уже существует ответ'
 RESPONSE_DATA_TYPES_DIGITS = 'Должен быть числовым'
+RESPONSE_NO_FEATURE = 'Подходящие виды платных услуг не существуют'
+RESPONSE_NO_PK = 'Отсутствует пареметр pk в url'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'
@@ -139,6 +148,13 @@ VALIDATION_PRICE_INVALID = 'Цена от должна быть меньше ц�
 VALIDATION_FEATURE_NOT_EXIST = 'Платная услуга не существует'
 VALIDATION_TIME_PERIODS = 'Варианты временных отрезков: 1 - 7 дней, 2 - 30 дней'
 VALIDATION_STATISTICS_TYPES = 'Виды статистики: 1 - Просмотры, 2- Заявки'
+VALIDATION_TARGET_INVALID = 'Опции: 1 - для пользователя, 2 - для проекта'
+VALIDATION_FEATURE_TYPE_NOT_FOR = 'Типы платных услуг для {0}: {1}'
+VALIDATION_NO_LINKED_FEATURES = 'Платная услуга не имеет связаных платных услуг'
+VALIDATION_TOKEN_INVALID = 'Токен недействителен'
+
+NOTIFICATION_FEATURE_CREATED = 'Вы упешно приобрели'
+NOTIFICATION_FEATURE_EXPIRING = 'Ваша услуга {0}, завтра заканчивается'
 
 PHONE = 'Номер телефона'
 EMAIL = 'Email'
@@ -157,3 +173,17 @@ VK_WEB_INFO_URL = "https://api.vk.com/method/users.get?api_id=6781515&access_tok
 FACEBOOK_AVATAR_URL = "https://graph.facebook.com/{0}/picture?type=large"
 
 SMS_TEXT = 'Код подтверждения для ISTOKHOME.COM:'
+
+PAYMENT_REQUEST_PAYMENT = 1
+PAYMENT_REQUEST_3DS = 2
+
+PAYMENT_REQUEST_TYPES = (
+    (PAYMENT_REQUEST_PAYMENT, 'PAYMENT'),
+    (PAYMENT_REQUEST_3DS, '3DS')
+)
+
+PAYMENT_REQUEST_URL = 'https://api.cloudpayments.ru/payments/cards/charge'
+PAYMENT_REQUEST_3DS_URL = 'https://api.cloudpayments.ru/payments/cards/post3ds'
+
+PAYMENT_SUCCESS_URL = 'https://istokhome.com'
+PAYMENT_FAILURE_URL = 'https://istokhome.com'

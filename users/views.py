@@ -55,11 +55,18 @@ class UserViewSet(viewsets.GenericViewSet,
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
-        user = {
-            'email': request.data.get('email'),
-            'role': int(request.data.get('role')),
-            'password': request.data.get('password')
-        }
+        user = {}
+        if request.data.get('email'):
+            user['email'] = request.data.get('email')
+        if request.data.get('role'):
+            try:
+                role_int = int(request.data.get('role'))
+            except:
+                return Response(response.make_messages_new([('role', constants.RESPONSE_DATA_TYPES_DIGITS)]),
+                                status.HTTP_400_BAD_REQUEST)
+            user['role'] = role_int
+        if request.data.get('password'):
+            user['password'] = request.data.get('password')
         role = user.get('role')
         email = user.get('email')
         logger.info(f'Registration with email: {email} ({constants.ROLES[0]}) started')
@@ -75,22 +82,12 @@ class UserViewSet(viewsets.GenericViewSet,
         if role == constants.ROLE_CLIENT:
             serializer = ClientProfileCreateSerializer(data=request.data, context=context)
         elif role == constants.ROLE_MERCHANT:
-            print(request.data)
-            # request_data = dict(request.data)
-            # if request.data.get('tags'):
-            #     tags = request.data.pop('tags')
-            #     int_tags = []
-            #     for tag in tags:
-            #         if not general.is_digits(tag):
-            #             return Response(response.make_messages([f'Тэги: {constants.RESPONSE_DATA_TYPES_DIGITS}']),
-            #                             status.HTTP_400_BAD_REQUEST)
-            #         int_tags.append(int(tag))
-            #     request_data['tags'] = int_tags
             serializer = MerchantProfileCreateSerializer(data=request.data, context=context)
         else:
             logger.error(
                 f'Registration with email: {email} ({constants.ROLES[0]}) failed: {constants.RESPONSE_INVALID_ROLE}')
-            return Response(response.make_messages([constants.RESPONSE_INVALID_ROLE]), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_messages_new([('role', constants.RESPONSE_INVALID_ROLE)]),
+                            status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
@@ -99,7 +96,7 @@ class UserViewSet(viewsets.GenericViewSet,
             except MainUser.DoesNotExist:
                 logger.error(
                  f'Registration with email: {email} ({constants.ROLES[0]})  failed: {constants.RESPONSE_SERVER_ERROR}')
-                return Response(response.make_messages([constants.RESPONSE_SERVER_ERROR]),
+                return Response(response.make_messages_new([('server', constants.RESPONSE_SERVER_ERROR)]),
                                 status.HTTP_500_INTERNAL_SERVER_ERROR)
             payload = jwt_payload_handler(user)
             token = jwt_encode_handler(payload)
@@ -115,7 +112,7 @@ class UserViewSet(viewsets.GenericViewSet,
             return Response(data, status=status.HTTP_200_OK, headers=headers)
         logger.error(
             f'Registration with email: {email} ({constants.ROLES[0]}) failed: {response.make_errors(serializer)}')
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def login_regular(self, request, pk=None):
@@ -123,42 +120,31 @@ class UserViewSet(viewsets.GenericViewSet,
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.data.get('email')
-            phone = serializer.data.get('phone')
             password = serializer.data.get('password')
-            if not email and not phone:
+            if not email:
                 logger.error(
                     f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_ENTER_EMAIL_OR_PHONE}')
-                return Response(response.make_messages([constants.RESPONSE_ENTER_EMAIL_OR_PHONE]))
-            if email and phone:
-                logger.error(
-                  f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE}')
-                return Response(response.make_messages([constants.RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE]))
+                return Response(response.make_messages_new([('email', constants.RESPONSE_ENTER_EMAIL_OR_PHONE)]),
+                                status.HTTP_400_BAD_REQUEST)
             if email:
                 try:
                     user = MainUser.objects.get(email=email)
                 except MainUser.DoesNotExist:
-                    logger.error(
-                        f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_USER_EMAIL_NOT_EXIST}')
-                    return Response(
-                        response.make_messages(
-                            [[constants.EMAIL, constants.RESPONSE_USER_EMAIL_NOT_EXIST]]
-                        ),
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            elif phone:
-                try:
-                    phone = MerchantPhone.objects.get(phone=phone)
-                    if phone.is_valid:
-                        user = phone.user
-                    else:
-                        raise Exception()
-                except MainUser.DoesNotExist:
-                    logger.error(
-                        f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_USER_PHONE_NOT_EXIST}')
-                    return Response(
-                        response.make_messages([constants.PHONE, constants.RESPONSE_USER_PHONE_NOT_EXIST]),
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    try:
+                        phone = MerchantPhone.objects.get(phone=email)
+                        if phone.is_valid:
+                            user = phone.user
+                        else:
+                            raise Exception()
+                    except:
+                        logger.error(
+                            f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_USER_EMAIL_NOT_EXIST}')
+                        return Response(
+                            response.make_messages_new(
+                                [('email', constants.RESPONSE_USER_EMAIL_NOT_EXIST)]
+                            ),
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
             if user.check_password(password):
                 payload = jwt_payload_handler(user)
                 token = jwt_encode_handler(payload)
@@ -171,12 +157,12 @@ class UserViewSet(viewsets.GenericViewSet,
             logger.error(
                 f'Regular login ({request.data.get("email")}): failed {constants.PASSWORD} {constants.INCORRECT}')
             return Response(
-                response.make_messages([[constants.PASSWORD, constants.INCORRECT]]),
+                response.make_messages_new([('password', constants.INCORRECT)]),
                 status.HTTP_400_BAD_REQUEST
             )
         logger.error(
             f'Regular login ({request.data.get("email")}): failed {response.make_errors(serializer)}')
-        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'], name='send-activation-email')
     def send_activation_email(self, request, pk=None):
@@ -280,15 +266,18 @@ class UserViewSet(viewsets.GenericViewSet,
                 verification = CodeVerification.objects.get(phone__phone=serializer.validated_data.get('phone').get('phone'))
                 if verification.code != serializer.validated_data.get('code'):
                     logger.error(f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_INVALID_CODE}')
-                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_INVALID_CODE]), status.HTTP_400_BAD_REQUEST)
+                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_INVALID_CODE]),
+                                    status.HTTP_400_BAD_REQUEST)
                 to_tz = timezone.get_default_timezone()
                 time_diff = verification.creation_date.astimezone(to_tz) - datetime.now().astimezone(to_tz)
                 if (time_diff.days * 24 * 60) > 15:
-                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]), status.HTTP_400_BAD_REQUEST)
+                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]),
+                                    status.HTTP_400_BAD_REQUEST)
             except CodeVerification.DoesNotExist:
                 logger.error(
                     f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST}')
-                return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]), status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]),
+                                status.HTTP_400_BAD_REQUEST)
             verification.delete()
             merchant_phone = verification.phone
             merchant_phone.is_valid = True
@@ -362,9 +351,10 @@ class UserViewSet(viewsets.GenericViewSet,
         try:
             user = MainUser.objects.get(id=pk)
         except MainUser.DoesNotExist:
-            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
         if user.role == constants.ROLE_CLIENT:
-            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]), status.HTTP_400_BAD_REQUEST)
         context = {
             'request': request
         }
@@ -373,7 +363,8 @@ class UserViewSet(viewsets.GenericViewSet,
             try:
                 project = Project.objects.get(id=from_project)
             except:
-                return Response(f'Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                                status.HTTP_400_BAD_REQUEST)
             project.to_profile_count += 1
             project.save()
         serializer = UserTopDetailSerializer(user, context=context)
@@ -384,7 +375,8 @@ class UserViewSet(viewsets.GenericViewSet,
         try:
             user = MainUser.objects.get(id=pk)
         except MainUser.DoesNotExist:
-            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
         if user.role == constants.ROLE_CLIENT:
             return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
         projects = Project.objects.filter(user=user)

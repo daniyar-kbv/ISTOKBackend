@@ -7,9 +7,10 @@ from users.models import MainUser, ClientProfile, MerchantProfile, UserActivatio
     ProjectTag, ProjectPurposeSubType, ProjectStyle, ProjectType, ProjectCategory, ProfileDocument, City, Country, \
     Specialization, MerchantPhone, CodeVerification, MerchantReview, ReviewReply, ReviewDocument, ReviewReplyDocument, \
     ClientRating
-from main.models import ReviewComplain, ReviewReplyComplain
+from main.models import ReviewComplain, ReviewReplyComplain, Project
 from main.admin import ComplainAdmin
-from profiles.models import FormUserAnswer, Notification, UsersPaidFeature
+from profiles.models import FormUserAnswer, Notification
+from payments.models import UsersPaidFeature, Transaction
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
 
@@ -126,6 +127,26 @@ class InlineUsersPaidFeature(admin.StackedInline):
     autocomplete_fields = ['type', ]
 
 
+# class TransactionForm(forms.ModelForm):
+#     def __init__(self, *args, **kwargs):
+#         super(TransactionForm, self).__init__(*args, **kwargs)
+#         instance = kwargs.get('instance')
+#         if instance:
+#             self.fields['project'].queryset = Project.objects.filter(user=instance.user)
+#
+#     class Meta:
+#         model = Transaction
+#         fields = '__all__'
+
+
+class InlineTransaction(admin.StackedInline):
+    model = Transaction
+    extra = 0
+    autocomplete_fields = ['project', 'user_feature', 'project_feature_main', 'project_feature_secondary']
+    readonly_fields = ['creation_date', 'succeeded', 'sum']
+    # form = TransactionForm
+
+
 class UserCreationForm(forms.ModelForm):
     class Meta:
         model = MainUser
@@ -148,7 +169,7 @@ class MainUserAdmin(admin.ModelAdmin):
     fields = ['email', 'password', 'role', 'is_superuser', 'is_staff', 'is_active', 'groups', 'user_permissions']
     list_display = ('id', 'email', 'role', 'is_active', 'is_staff', 'creation_date')
     inlines = [InlineClientProfile, InlineMerchantProfile, InlineMerchantPhone, InlineProfileDocument,
-               InlineFormUserAnswer, InlineNotification, InlineUsersPaidFeature, InlineClientReview,
+               InlineFormUserAnswer, InlineNotification, InlineUsersPaidFeature, InlineTransaction, InlineClientReview,
                InlineMerchantReview]
     list_filter = ['role', 'is_staff', 'is_active']
     search_fields = ['email', 'merchant_profile__first_name']
@@ -170,8 +191,8 @@ class MainUserAdmin(admin.ModelAdmin):
             if obj:
                 if inline.__class__ == InlineClientProfile or inline.__class__ == InlineMerchantProfile or \
                         inline.__class__ == InlineProfileDocument or inline.__class__ == InlineFormUserAnswer or \
-                        InlineUsersPaidFeature or inline.__class__ == InlineClientReview or \
-                        inline.__class__ == InlineMerchantReview:
+                        inline.__class__ == InlineUsersPaidFeature or inline.__class__ == InlineClientReview or \
+                        inline.__class__ == InlineMerchantReview or inline.__class__ == InlineTransaction:
                     if obj.role == constants.ROLE_CLIENT and (inline.__class__ == InlineClientProfile or
                                                               inline.__class__ == InlineFormUserAnswer or
                                                               inline.__class__ == InlineClientReview):
@@ -179,7 +200,8 @@ class MainUserAdmin(admin.ModelAdmin):
                     elif obj.role == constants.ROLE_MERCHANT and (inline.__class__ == InlineMerchantProfile or
                                                                   inline.__class__ == InlineProfileDocument or
                                                                   inline.__class__ == InlineUsersPaidFeature or
-                                                                  inline.__class__ == InlineMerchantReview):
+                                                                  inline.__class__ == InlineMerchantReview or
+                                                                  inline.__class__ == InlineTransaction):
                         yield inline.get_formset(request, obj), inline
                 else:
                     yield inline.get_formset(request, obj), inline

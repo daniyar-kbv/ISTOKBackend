@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+<body>
+<form name="downloadForm" id="downloadForm" method="POST">
+    <input type="hidden" name="PaReq" value="{{ pa_req }}">
+    <input type="hidden" name="MD" value="{{ transaction_id }}">
+    <input type="hidden" name="TermUrl" value="{{ term_url }}">
+</form>
+<script>
+    $(document).ready(function() {
+        document.getElementById("downloadForm").setAttribute("action", "{{ acs_url }}");
+        function submitForm() { downloadForm.submit(); }
+        window.onload = submitForm;
+    });
+</script>
+</body>
+</html>

@@ -104,7 +104,7 @@ class PhoneSerializer(serializers.Serializer):
 
 
 class UserClientCreateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(required=False)
+    password = serializers.CharField(required=True)
 
     class Meta:
         model = MainUser
@@ -120,6 +120,8 @@ class UserClientCreateSerializer(serializers.ModelSerializer):
 
 class ClientProfileCreateSerializer(serializers.ModelSerializer):
     user = UserClientCreateSerializer(required=False)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
 
     class Meta:
         model = ClientProfile
@@ -131,7 +133,7 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
         if serializer.is_valid():
             user = serializer.save()
         else:
-            raise serializers.ValidationError(response.make_errors(serializer))
+            raise serializers.ValidationError(serializer.errors)
         profile = ClientProfile.objects.create(user=user, **validated_data)
         if settings.DEBUG:
             if self.context['avatar']:
@@ -163,7 +165,7 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
             if serializer.is_valid():
                 user = MainUser.objects.create_user(**user_data)
             else:
-                raise serializers.ValidationError(response.make_errors(serializer))
+                raise serializers.ValidationError(serializer.errors)
         if self.context['phones']:
             for phone in self.context['phones']:
                 serializer = PhoneSerializer(data={
@@ -174,22 +176,32 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                         merchant_phone = MerchantPhone.objects.get(phone=phone)
                     except MerchantPhone.DoesNotExist:
                         user.delete()
-                        raise serializers.ValidationError(constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)
+                        raise serializers.ValidationError(
+                            response.make_messages_new([('phone', constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)])
+                        )
                     if merchant_phone.user is not None:
                         user.delete()
-                        raise serializers.ValidationError(f'{phone} {constants.RESPONSE_PHONE_REGISTERED}')
+                        raise serializers.ValidationError(
+                            response.make_messages_new([('phone', f'{phone} {constants.RESPONSE_PHONE_REGISTERED}')])
+
+                        )
                     if not merchant_phone.is_valid:
                         user.delete()
-                        raise serializers.ValidationError(constants.VALIDATION_PHONE_NOT_VERIFIED)
+                        raise serializers.ValidationError(
+                            response.make_messages_new([('phone', constants.VALIDATION_PHONE_NOT_VERIFIED)])
+                        )
                     merchant_phone.user = user
                     merchant_phone.save()
                 else:
                     user.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(serializer.errors)
         documents = self.context.get('documents')
         if documents:
             if len(documents) > 6:
-                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
+                user.delete()
+                raise serializers.ValidationError(
+                    response.make_messages_new([('documents', f'{constants.RESPONSE_MAX_FILES} 6')])
+                )
             for document in documents:
                 doc_data = {
                     'user': user.id,
@@ -200,7 +212,7 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                     serializer.save()
                 else:
                     user.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(serializer.errors)
         categories = validated_data.pop('categories')
         specializations = validated_data.pop('specializations')
         tags = validated_data.pop('tags')
@@ -222,7 +234,7 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
 
 
 class UserLoginSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=False)
+    email = serializers.CharField(required=False)
     phone = serializers.CharField(required=False)
 
     class Meta:

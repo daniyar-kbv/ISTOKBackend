@@ -1,7 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 from celery import shared_task
 from django.core.mail import EmailMessage
-from profiles.models import UsersPaidFeature, ProjectPaidFeature, Notification
+from profiles.models import Notification
+from payments.models import UsersPaidFeature, ProjectPaidFeature
 from users.models import MainUser
 from utils import general
 import os
@@ -79,7 +80,7 @@ def deactivate_project_feature(id):
 
 
 @shared_task
-def notify_user_feature(text, user_id):
+def notify_user_feature(id):
     try:
         feature = UsersPaidFeature.objects.get(id=id)
         if feature.refresh_count == 0:

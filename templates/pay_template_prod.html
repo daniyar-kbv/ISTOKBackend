@@ -17,8 +17,13 @@
 
     <form name="downloadForm" id="downloadForm" method="POST">
         <input type="hidden" id="packetInput" name="packet">
+        <label for="type" >type</label>
+        <input name="type" value="2">
+        <label for="target">target</label>
+        <input name="target" value="2">
+        <label for="token" >token</label>
+        <input name="token" value="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwidXNlcm5hbWUiOiJ0ZXN0NjBAdGVzdC50ZXN0IiwiZXhwIjoxNTkzODA5NTE3LCJlbWFpbCI6InRlc3Q2MEB0ZXN0LnRlc3QiLCJyb2xlIjoyLCJvcmlnX2lhdCI6MTU5Mzc0OTUxN30.-GZAmTxmFhnfDiAmeC4IN8pbEmURPOAZ3yMIiT3O1o8" >
     </form>
-
     <script src="https://widget.cloudpayments.ru/bundles/checkout"></script>
     <script>
         var createCryptogram = function (checkout) {
@@ -27,7 +32,8 @@
             if (result.success) {
                 // сформирована криптограмма
                 {#alert(result.packet);#}
-                document.getElementById("downloadForm").setAttribute("action", "http://0.0.0.0:8990/api/tests/projects/tests/");
+
+                document.getElementById("downloadForm").setAttribute("action", `{{ pay_url }}52/`);
                 document.getElementById("packetInput").setAttribute("value", `${result.packet}`);
                 function submitForm() { downloadForm.submit(); }
                 submitForm();

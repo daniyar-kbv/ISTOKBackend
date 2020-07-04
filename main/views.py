@@ -211,7 +211,8 @@ class ProjectViewSet(viewsets.GenericViewSet,
         try:
             project = Project.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Проект с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages([f'Проект с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
         context = {
         }
         if request.data.get('documents'):

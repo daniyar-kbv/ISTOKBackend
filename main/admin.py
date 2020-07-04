@@ -5,7 +5,8 @@ from main.models import Project, ProjectDocument, ProjectComment, ProjectView, P
     ProjectCommentDocument, Render360, ProjectCommentReplyDocument, ProjectComplain, CommentComplain, \
     CommentReplyComplain
 from users.models import MerchantReview
-from profiles.models import ProjectPaidFeature, Application, ApplicationDocument
+from profiles.models import Application, ApplicationDocument
+from payments.models import ProjectPaidFeature, Transaction
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from admin_numeric_filter.admin import NumericFilterModelAdmin, RangeNumericFilter
 from utils.admin.custom_filters import GteNumericFilter, LteNumericFilter
@@ -89,6 +90,15 @@ class InlineProjectPaidFeature(NestedStackedInline):
     autocomplete_fields = ['type', ]
 
 
+class InlineTransaction(NestedStackedInline):
+    model = Transaction
+    fields = ['feature_type', 'type', 'user_feature', 'project_feature_main', 'project_feature_secondary',
+              'creation_date', 'succeeded', 'sum']
+    extra = 0
+    autocomplete_fields = ['user', 'user_feature', 'project_feature_main', 'project_feature_secondary']
+    readonly_fields = ['creation_date', 'succeeded', 'sum']
+
+
 class InlineApplicationDocument(NestedStackedInline):
     model = ApplicationDocument
     extra = 0
@@ -107,7 +117,7 @@ class ProjectAdmin(NestedModelAdmin, NumericFilterModelAdmin):
     list_display = ('id', 'user', 'name', 'price_from', 'price_to', 'creation_date', 'rating')
     filter_horizontal = ('tags', )
     inlines = [InlineProjectDocument, InlineRender360, InlineProjectComment,
-               InlineProjectPaidFeature, InlineApplication, InlineProjectComplaint]
+               InlineProjectPaidFeature, InlineTransaction, InlineApplication, InlineProjectComplaint]
     list_filter = ['category', 'purpose', 'type', 'style', 'tags', ('price_from', GteNumericFilter),
                    ('price_to', LteNumericFilter), ('area', RangeNumericFilter), 'is_top', 'is_detailed',
                    'creation_date', ('rating', RangeNumericFilter)]

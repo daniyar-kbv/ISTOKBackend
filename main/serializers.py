@@ -8,7 +8,8 @@ from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurp
 from users.models import Country, City
 from users.serializers import UserShortSerializer, UserMediumSerializer, UserShortAvatarSerializer, \
     SpecializationSerializer
-from profiles.models import ProjectPaidFeature, Application
+from profiles.models import Application
+from payments.models import ProjectPaidFeature
 from utils import response, upload
 import constants, math
 
