@@ -208,7 +208,10 @@ class ProjectModalSerializer(serializers.ModelSerializer):
         return obj.category.name
 
     def get_purpose_name(self, obj):
-        return f'{obj.purpose.type.name} - {obj.purpose.subtype.name} - {obj.purpose.name}'
+        if obj.purpose.subtype:
+            return f'{obj.purpose.type.name} - {obj.purpose.subtype.name} - {obj.purpose.name}'
+        else:
+            return f'{obj.purpose.type.name} - {obj.purpose.name}'
 
     def get_type_name(self, obj):
         return obj.type.name
