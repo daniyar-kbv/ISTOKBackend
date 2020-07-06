@@ -81,26 +81,28 @@ class FormUserAnswer(models.Model):
 
 class Application(models.Model):
     client = models.ForeignKey(MainUser,
-                               on_delete=models.DO_NOTHING,
+                               on_delete=models.CASCADE,
                                null=True,
                                blank=False,
+                               default=None,
                                related_name='client_applications',
                                verbose_name='Клиент')
     merchant = models.ForeignKey(MainUser,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.CASCADE,
                                  null=True,
                                  blank=False,
+                                 default=None,
                                  related_name='merchant_applications',
                                  verbose_name='Специалист')
     category = models.ForeignKey(ProjectCategory,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.SET_NULL,
                                  null=True,
                                  blank=False,
                                  related_name='applications',
                                  verbose_name='Категория')
     creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
     project = models.ForeignKey(Project,
-                                on_delete=models.DO_NOTHING,
+                                on_delete=models.SET_NULL,
                                 null=True,
                                 blank=False,
                                 related_name='applications',

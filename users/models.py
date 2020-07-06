@@ -58,13 +58,13 @@ class ProjectPurposeSubType(models.Model):
 class ProjectPurpose(models.Model):
     name = models.CharField(max_length=100, null=False, blank=False, verbose_name='Название')
     type = models.ForeignKey(ProjectPurposeType,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=False,
                              related_name='purposes',
                              verbose_name='Тип')
     subtype = models.ForeignKey(ProjectPurposeSubType,
-                                on_delete=models.DO_NOTHING,
+                                on_delete=models.SET_NULL,
                                 null=True,
                                 blank=True,
                                 related_name='purposes',
@@ -396,7 +396,7 @@ class MerchantProfile(Profile):
                                 verbose_name='Профиль')
     company_name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Название компании')
     city = models.ForeignKey(City,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=False,
                              related_name='merchant_profiles',

@@ -47,7 +47,7 @@ class BlogPost(models.Model):
                                         related_name='blog_post_likes',
                                         verbose_name='Лайки пользователей')
     category = models.ForeignKey(BlogPostCategory,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.SET_NULL,
                                  null=True,
                                  blank=False,
                                  default=None,
@@ -58,7 +58,7 @@ class BlogPost(models.Model):
                                   blank=True,
                                   verbose_name='На главной')
     city = models.ForeignKey(City,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=False,
                              related_name='blog_posts',
