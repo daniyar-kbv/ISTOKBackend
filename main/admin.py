@@ -107,7 +107,7 @@ class InlineApplicationDocument(NestedStackedInline):
 class InlineApplication(NestedStackedInline):
     model = Application
     extra = 0
-    readonly_fields = ['rating', 'decline_reason']
+    readonly_fields = ['rating', 'decline_reason', 'creation_date']
     autocomplete_fields = ['client', 'merchant', 'category']
     inlines = [InlineApplicationDocument, ]
 
