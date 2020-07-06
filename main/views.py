@@ -206,7 +206,8 @@ class ProjectViewSet(viewsets.GenericViewSet,
             return Response(serializer.data, status.HTTP_200_OK)
         return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsClient, permissions.HasPhone])
+    # TODO: add permissions.HasPhone
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsClient, ])
     def submit(self, request, pk=None):
         try:
             project = Project.objects.get(id=pk)

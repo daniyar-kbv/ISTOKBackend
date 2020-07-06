@@ -674,7 +674,8 @@ class ApplicationViewSet(viewsets.GenericViewSet,
         application.save()
         return Response(status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsClient, HasPhone])
+    # TODO: add permissions.HasPhone
+    @action(detail=True, methods=['post'], permission_classes=[IsClient, ])
     def resend(self, request, pk=None):
         try:
             application = Application.objects.get(id=pk)
