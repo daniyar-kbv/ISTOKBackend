@@ -41,7 +41,7 @@ class InlineCommentReplyComplain(NestedStackedInline):
 class InlineProjectCommentReply(NestedStackedInline):
     model = ProjectCommentReply
     extra = 0
-    inlines = [InlineProjectCommentReplyDocument, InlineCommentReplyComplain]
+    # inlines = [InlineProjectCommentReplyDocument, InlineCommentReplyComplain]
     readonly_fields = ['user_likes', 'likes_count']
     formfield_overrides = {
         models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
