@@ -26,6 +26,8 @@ def jwt_payload_handler(user):
         payload['user_id'] = str(user.pk)
     if hasattr(user, 'role'):
         payload['role'] = user.role
+    if hasattr(user, 'full_name'):
+        payload['name'] = user.full_name
 
     payload[username_field] = username
 
