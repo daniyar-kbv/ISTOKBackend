@@ -529,35 +529,59 @@ class ApplicationViewSet(viewsets.GenericViewSet,
     permission_classes = [IsAuthenticated, ]
 
     def list(self, request, *args, **kwargs):
-        status_name = request.GET.get('status') if request.GET.get('status') else constants.APPLICATION_CREATED_STRING
+        status_name = request.GET.get('status') if request.GET.get('status') else constants.APPLICATION_CONFIRMED_STRING
         user = request.user
 
-        if status_name not in constants.APPLICATION_STATUSES_STRING:
+        if user.role == constants.ROLE_CLIENT and status_name not in constants.CLIENT_STATUSES:
+            return Response(response.make_messages([constants.RESPONSE_STATUS_NOT_VALID]), status.HTTP_400_BAD_REQUEST)
+        elif user.role == constants.ROLE_MERCHANT and status_name not in constants.MERCHANT_STATUSES:
             return Response(response.make_messages([constants.RESPONSE_STATUS_NOT_VALID]), status.HTTP_400_BAD_REQUEST)
 
-        if status_name == constants.APPLICATION_CREATED_STRING:
-            queryset = self.get_queryset().filter(status=constants.APPLICATION_CREATED)
-            serializer_class = ApplicationBaseSerializer
+        if user.role == constants.ROLE_CLIENT:
+            queryset = self.get_queryset().filter(client=user)
+        elif user.role == constants.ROLE_MERCHANT:
+            queryset = self.get_queryset().filter(merchant=user)
+
+        data = {
+            'confirmed_count': queryset.filter(status=constants.APPLICATION_CONFIRMED).count(),
+            'waiting_count': queryset.filter(Q(status=constants.APPLICATION_CREATED) |
+                                             Q(status=constants.APPLICATION_FINISHED)).count(),
+            'finished_count': queryset.filter(status=constants.APPLICATION_FINISHED_CONFIRMED).count(),
+            'declined_count': queryset.filter(Q(status=constants.APPLICATION_DECLINED_CLIENT) |
+                                        Q(status=constants.APPLICATION_DECLINED_MERCHANT)).count()
+        }
+
+        if user.role == constants.ROLE_CLIENT:
+            data['waiting_count'] = queryset.filter(Q(status=constants.APPLICATION_CREATED) |
+                                                    Q(status=constants.APPLICATION_FINISHED)).count()
+        elif user.role == constants.ROLE_MERCHANT:
+            data['new'] = queryset.filter(status=constants.APPLICATION_CONFIRMED).count()
+            data['waiting_count'] = queryset.filter(status=constants.APPLICATION_FINISHED).count()
+
+        if status_name == constants.APPLICATION_NEW_STRING:
+            queryset = queryset.filter(status=constants.APPLICATION_CREATED)
+            serializer_class = ApplicationMerchantConfirmedDeclinedWaitingSerializer
         elif status_name == constants.APPLICATION_CONFIRMED_STRING:
-            queryset = self.get_queryset().filter(status=constants.APPLICATION_CONFIRMED)
+            queryset = queryset.filter(status=constants.APPLICATION_CONFIRMED)
             if user.role == constants.ROLE_CLIENT:
                 serializer_class = ApplicationClientConfirmedSerializer
             elif user.role == constants.ROLE_MERCHANT:
                 serializer_class = ApplicationMerchantConfirmedDeclinedWaitingSerializer
-        elif status_name == constants.APPLICATION_FINISHED_STRING:
-            queryset = self.get_queryset().filter(status=constants.APPLICATION_FINISHED)
+        elif status_name == constants.APPLICATION_WAITING_STRING:
             if user.role == constants.ROLE_CLIENT:
-                serializer_class = ApplicationBaseSerializer
+                queryset = queryset.filter(Q(status=constants.APPLICATION_CREATED) |
+                                           Q(status=constants.APPLICATION_FINISHED))
             elif user.role == constants.ROLE_MERCHANT:
-                serializer_class = ApplicationMerchantConfirmedDeclinedWaitingSerializer
-        elif status_name == constants.APPLICATION_FINISHED_CONFIRMED_STRING:
-            queryset = self.get_queryset().filter(status=constants.APPLICATION_FINISHED_CONFIRMED)
+                queryset = queryset.filter(status=constants.APPLICATION_FINISHED)
+            serializer_class = ApplicationBaseSerializer
+        elif status_name == constants.APPLICATION_FINISHED_STRING:
+            queryset = queryset.filter(status=constants.APPLICATION_FINISHED_CONFIRMED)
             if user.role == constants.ROLE_CLIENT:
                 serializer_class = ApplicationClientFinishedSerializer
             elif user.role == constants.ROLE_MERCHANT:
                 serializer_class = ApplicationMerchantConfirmedDeclinedWaitingSerializer
         elif status_name == constants.APPLICATION_DECLINED_STRING:
-            queryset = self.get_queryset().filter(Q(status=constants.APPLICATION_DECLINED_CLIENT) |
+            queryset = queryset.filter(Q(status=constants.APPLICATION_DECLINED_CLIENT) |
                                                   Q(status=constants.APPLICATION_DECLINED_MERCHANT))
             serializer_class = ApplicationDeclinedSerializer
 
@@ -567,7 +591,7 @@ class ApplicationViewSet(viewsets.GenericViewSet,
 
         if page is not None:
             serializer = serializer_class(page, many=True, context=request)
-            return paginator.get_paginated_response(serializer.data)
+            return paginator.get_paginated_response(serializer.data, additional_data=data)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
