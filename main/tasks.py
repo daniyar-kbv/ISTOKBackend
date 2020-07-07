@@ -37,4 +37,3 @@ def deactivate_user_feature(id):
         feature.save()
     except:
         pass
-
