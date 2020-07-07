@@ -1,9 +1,11 @@
 from django.shortcuts import render
-from rest_framework import viewsets, mixins, status
+from rest_framework import viewsets, mixins, status, permissions
 from rest_framework.response import Response
-from blog.models import BlogPost
-from blog.serializers import BlogPostSearchSerializer, BlogPostDetailSerializer
-from utils import pagination
+from rest_framework.decorators import action
+from blog.models import BlogPost, BlogPostCategory
+from blog.serializers import BlogPostSearchSerializer, BlogPostDetailSerializer, BlogPostCategorySerializer
+from utils import pagination, response
+import constants
 
 
 class BlogViewSet(viewsets.GenericViewSet,
@@ -29,3 +31,26 @@ class BlogViewSet(viewsets.GenericViewSet,
         instance = self.get_object()
         serializer = BlogPostDetailSerializer(instance, context=request)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request, pk=None):
+        try:
+            post = BlogPost.objects.get(id=pk)
+        except BlogPost.DoesNotExist:
+            return Response(response.make_messages([f'Пост {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        try:
+            post.user_likes.get(id=request.user.id)
+            post.user_likes.remove(request.user)
+            post.save()
+        except:
+            post.user_likes.add(request.user)
+            post.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+class BlogPostCategoryViewSet(viewsets.GenericViewSet,
+                              mixins.ListModelMixin):
+    queryset = BlogPostCategory.objects.all()
+    serializer_class = BlogPostCategorySerializer
+    pagination_class = None

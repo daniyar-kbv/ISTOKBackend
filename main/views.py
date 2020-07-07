@@ -9,20 +9,24 @@ from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from django.shortcuts import redirect
 from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
-from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplaint, City, \
-    ProjectCategory
+from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplain, City, \
+    ProjectCategory, CommentReplyComplain, CommentComplain, ProjectCommentReply
 from main.serializers import ProjectMainPageSerializer, ServicesMainPageSerialzier, ProjectModalSerializer, \
     ProjectSearchSerializer, ProjectDetailSerializer, ProjectCommentDetailSerializer, ProjectCommentWithReplySerializer, \
-    ProjectCommentCreateSerializer, CitySerializer, ProjectCategoryShortSerializer
+    ProjectCommentCreateSerializer, CitySerializer, ProjectCategoryShortSerializer, CountrySerializer, \
+    ProjectTypeSerializer, ProjectPurposeTypeFullSerializer, ProjectStyleSerializer, CommentComplainSerializer, \
+    CommentReplyComplainSerializer, ProjectComplainSerializer
 from blog.models import MainPageBlogPost, BlogPost
 from blog.serializers import BlogPostMainPageSerializer, BlogPostSearchSerializer
-from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser, Specialization, ProjectTag
+from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser, Specialization, ProjectTag, Country, \
+    ProjectType, ProjectPurposeType, ProjectStyle
 from users.serializers import MerchantMainPageSerializer, ReviewMainPageSerializer, UserSearchSerializer, \
     SpecializationSerializer, ProjectTagShortSerializer
 from other.models import FAQ
 from other.serializers import FAQSerializer
-from utils import permissions, response, pagination, projects
+from utils import permissions, response, pagination, projects, general
 from random import randrange
+from profiles.serializers import ApplicationCreateSerializer
 
 import constants
 import logging, math
@@ -189,29 +193,36 @@ class ProjectViewSet(viewsets.GenericViewSet,
             logger.error(f'Project({pk}) comment create failed: {response.make_errors(serializer)}')
             return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get', 'post'])
-    def tests(self, request, pk=None):
-        cities_ = City.objects.all()
-        cities = cities_
-        print(cities)
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            project = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Проект {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = ProjectComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, project=project)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
-        c = City.objects.create(name='asd', country_id=1)
-
-        print(cities)
-
-        c.delete()
-
-        print(cities)
-
-        return Response()
-
-    # @action(detail=True, methods=['post'])
-    # def complain(self, request, pk=None):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    # TODO: add permissions.HasPhone
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsClient, ])
+    def submit(self, request, pk=None):
+        try:
+            project = Project.objects.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Проект с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        context = {
+        }
+        if request.data.get('documents'):
+            context['documents'] = request.data.pop('documents')
+        serializer = ApplicationCreateSerializer(data=request.data, context=context)
+        if serializer.is_valid():
+            serializer.save(client=request.user, merchant=project.user, project=project)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProjectsSearch(views.APIView):
@@ -308,6 +319,43 @@ class CommentViewSet(viewsets.GenericViewSet):
         logger.info(f'Like of project comment ({pk}) user({request.user.email}) succeeded')
         return Response(status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            comment = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Комментарий {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = CommentComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, comment=comment)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+
+
+class CommentReplyViewSet(viewsets.GenericViewSet):
+    queryset = ProjectCommentReply.objects.all()
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complain(self, request, pk=None):
+        try:
+            reply = self.queryset.get(id=pk)
+        except Project.DoesNotExist:
+            return Response(response.make_messages([f'Ответ на омментарий {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+                            status.HTTP_400_BAD_REQUEST)
+        serializer = CommentReplyComplainSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, reply=reply)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+
+
+class CountryViewSet(viewsets.GenericViewSet,
+                     mixins.ListModelMixin):
+    queryset = Country.objects.all()
+    serializer_class = CountrySerializer
+    pagination_class = None
+
 
 class CityViewSet(viewsets.GenericViewSet,
                   mixins.ListModelMixin):
@@ -344,3 +392,24 @@ class ProjectTagViewSet(viewsets.GenericViewSet,
         queryset = ProjectTag.objects.search(search)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
+
+
+class ProjectTypeViewSet(viewsets.GenericViewSet,
+                         mixins.ListModelMixin):
+    queryset = ProjectType.objects.all()
+    serializer_class = ProjectTypeSerializer
+    pagination_class = None
+
+
+class ProjectPurposeTypeViewSet(viewsets.GenericViewSet,
+                                mixins.ListModelMixin):
+    queryset = ProjectPurposeType.objects.all()
+    serializer_class = ProjectPurposeTypeFullSerializer
+    pagination_class = None
+
+
+class ProjectStyleViewSet(viewsets.GenericViewSet,
+                          mixins.ListModelMixin):
+    queryset = ProjectStyle.objects.all()
+    serializer_class = ProjectStyleSerializer
+    pagination_class = None

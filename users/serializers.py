@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone, CodeVerification, ProfileDocument, \
-    MerchantReview, ReviewReply, ReviewDocument, Specialization, ClientRating
+    MerchantReview, ReviewReply, ReviewDocument, Specialization, ClientRating, ReviewReplyDocument
 from main.models import Project, ProjectDocument, ProjectTag, ProjectCategory
 from utils import response, validators
 
@@ -104,7 +104,7 @@ class PhoneSerializer(serializers.Serializer):
 
 
 class UserClientCreateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(required=False)
+    password = serializers.CharField(required=True)
 
     class Meta:
         model = MainUser
@@ -120,6 +120,8 @@ class UserClientCreateSerializer(serializers.ModelSerializer):
 
 class ClientProfileCreateSerializer(serializers.ModelSerializer):
     user = UserClientCreateSerializer(required=False)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
 
     class Meta:
         model = ClientProfile
@@ -131,7 +133,7 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
         if serializer.is_valid():
             user = serializer.save()
         else:
-            raise serializers.ValidationError(response.make_errors(serializer))
+            raise serializers.ValidationError(serializer.errors)
         profile = ClientProfile.objects.create(user=user, **validated_data)
         if settings.DEBUG:
             if self.context['avatar']:
@@ -163,7 +165,7 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
             if serializer.is_valid():
                 user = MainUser.objects.create_user(**user_data)
             else:
-                raise serializers.ValidationError(response.make_errors(serializer))
+                raise serializers.ValidationError(serializer.errors)
         if self.context['phones']:
             for phone in self.context['phones']:
                 serializer = PhoneSerializer(data={
@@ -174,20 +176,32 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                         merchant_phone = MerchantPhone.objects.get(phone=phone)
                     except MerchantPhone.DoesNotExist:
                         user.delete()
-                        raise serializers.ValidationError(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]))
+                        raise serializers.ValidationError(
+                            response.make_messages_new([('phone', constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)])
+                        )
                     if merchant_phone.user is not None:
                         user.delete()
-                        raise serializers.ValidationError(response.make_messages([f'{phone} {constants.RESPONSE_PHONE_REGISTERED}']))
+                        raise serializers.ValidationError(
+                            response.make_messages_new([('phone', f'{phone} {constants.RESPONSE_PHONE_REGISTERED}')])
+
+                        )
                     if not merchant_phone.is_valid:
                         user.delete()
-                        raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_NOT_VERIFIED]))
+                        raise serializers.ValidationError(
+                            response.make_messages_new([('phone', constants.VALIDATION_PHONE_NOT_VERIFIED)])
+                        )
                     merchant_phone.user = user
                     merchant_phone.save()
                 else:
                     user.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(serializer.errors)
         documents = self.context.get('documents')
         if documents:
+            if len(documents) > 6:
+                user.delete()
+                raise serializers.ValidationError(
+                    response.make_messages_new([('documents', f'{constants.RESPONSE_MAX_FILES} 6')])
+                )
             for document in documents:
                 doc_data = {
                     'user': user.id,
@@ -198,7 +212,7 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
                     serializer.save()
                 else:
                     user.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(serializer.errors)
         categories = validated_data.pop('categories')
         specializations = validated_data.pop('specializations')
         tags = validated_data.pop('tags')
@@ -220,7 +234,7 @@ class MerchantProfileCreateSerializer(serializers.ModelSerializer):
 
 
 class UserLoginSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=False)
+    email = serializers.CharField(required=False)
     phone = serializers.CharField(required=False)
 
     class Meta:
@@ -325,7 +339,7 @@ class ReviewMainPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MerchantReview
-        fields = ('user', 'creation_date', 'likes_count', 'is_liked', 'text', 'rating')
+        fields = ('id', 'user', 'creation_date', 'likes_count', 'is_liked', 'text', 'rating')
 
     def get_is_liked(self, obj):
         user = self.context.user
@@ -344,10 +358,11 @@ class MerchantReviewReplyDetailListSerializer(serializers.ModelSerializer):
     user = UserShortAvatarSerializer()
     creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
     is_liked = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
 
     class Meta:
         model = ReviewReply
-        fields = ('user', 'creation_date', 'likes_count', 'is_liked', 'text')
+        fields = ('id', 'user', 'creation_date', 'likes_count', 'is_liked', 'text', 'photos')
 
     def get_is_liked(self, obj):
         user = self.context.user
@@ -360,6 +375,13 @@ class MerchantReviewReplyDetailListSerializer(serializers.ModelSerializer):
 
     def get_likes_count(self, obj):
         return obj.user_likes.count()
+
+    def get_photos(self, obj):
+        urls = []
+        comment_documents = ReviewReplyDocument.objects.filter(reply=obj)
+        for doc in comment_documents:
+            urls.append(self.context.build_absolute_uri(doc.document.url))
+        return urls
 
 
 class MerchantReviewDetailList(ReviewMainPageSerializer):
@@ -497,6 +519,12 @@ class MerchantReviewDocumentCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class MerchantReviewReplyDocumentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewReplyDocument
+        fields = '__all__'
+
+
 class MerchantReviewCreateSerializer(serializers.ModelSerializer):
     rating = serializers.FloatField(required=True)
 
@@ -509,6 +537,8 @@ class MerchantReviewCreateSerializer(serializers.ModelSerializer):
 
         documents = self.context.get('documents')
         if documents:
+            if len(documents) > 6:
+                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for document in documents:
                 doc_data = {
                     'review': review.id,
@@ -527,6 +557,36 @@ class MerchantReviewCreateSerializer(serializers.ModelSerializer):
         if value < 0 or value > 10:
             raise serializers.ValidationError(response.make_messages([constants.VALIDATION_RATING_RANGE]))
         return value
+
+
+class MerchantReviewReplyCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewReply
+        fields = ('text', )
+
+    def create(self, validated_data):
+        reply = ReviewReply.objects.create(**validated_data)
+
+        documents = self.context.get('documents')
+        doc_serializers = []
+        if documents:
+            if len(documents) > 6:
+                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
+            for document in documents:
+                doc_data = {
+                    'reply': reply.id,
+                    'document': document,
+                    'user': self.context.get('user').id
+                }
+                serializer = MerchantReviewReplyDocumentCreateSerializer(data=doc_data)
+                if serializer.is_valid():
+                    doc_serializers.append(serializer)
+                else:
+                    reply.delete()
+                    raise serializers.ValidationError(response.make_errors(serializer))
+        for serializer in doc_serializers:
+            serializer.save()
+        return reply
 
 
 class ClientRatingCreateSerializer(serializers.ModelSerializer):

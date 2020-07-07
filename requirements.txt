@@ -9,10 +9,13 @@ chardet==3.0.4
 cryptography==2.9.2
 defusedxml==0.6.0
 Django==3.0.6
-django-braces==1.14.0
+django-admin-numeric-filter==0.1.6
+django-braces==1.13.0
 django-celery-results==1.2.1
 django-cors-headers==3.3.0
 django-filters==0.2.1
+django-modeladmin-reorder==0.3.1
+django-nested-inline==0.4.2
 django-phone-field==1.8.0
 django-rest-framework==0.1.0
 djangorestframework==3.11.0
@@ -29,6 +32,7 @@ python-dateutil==2.8.1
 python3-openid==3.1.0
 pytz==2020.1
 requests==2.23.0
+simplejson==3.17.0
 six==1.14.0
 sqlparse==0.3.1
 text-unidecode==1.3

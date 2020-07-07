@@ -34,6 +34,27 @@ msgstr ""
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
 "%100>=11 && n%100<=14)? 2 : 3);\n"
 
+msgid "Yes, I’m sure"
+msgstr "Да, я уверен"
+
+msgid "Searching..."
+msgstr "Поиск..."
+
+msgid "No results found"
+msgstr "Ничего не найдено"
+
+msgid "From"
+msgstr "От"
+
+msgid "To"
+msgstr "До"
+
+msgid "Apply"
+msgstr "Применить"
+
+msgid "By"
+msgstr "По"
+
 msgid "Activation"
 msgstr "Активация"
 

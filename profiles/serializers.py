@@ -3,7 +3,9 @@ from users.models import MainUser, ClientProfile, MerchantReview, ProjectCategor
 from users.serializers import PhoneSerializer, MerchantPhone, UserShortRatingSerializer, MerchantProfile, \
     ProfileDocumentCreateSerializer, SpecializationWithCategorySerializer
 from profiles.models import FormAnswer, FormQuestion, FormQuestionGroup, FormUserAnswer, Application, \
-    ApplicationDocument, PaidFeatureType, UsersPaidFeature
+    ApplicationDocument, Notification
+from payments.models import PaidFeatureType, UsersPaidFeature, ProjectPaidFeature
+from main.models import ProjectUserFavorite
 from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagSerializer
 from utils import response, upload, validators, general
 from datetime import datetime
@@ -137,7 +139,7 @@ class ClientProfileUpdateSerializer(serializers.ModelSerializer):
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         avatar = validated_data.get('avatar')
-        if avatar:
+        if instance.avatar and avatar:
             upload.delete_folder(instance.avatar)
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
@@ -190,10 +192,11 @@ class MerchantProfileGetSerializer(serializers.ModelSerializer):
     description_full = serializers.SerializerMethodField()
     documents = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    profile_fullness = serializers.SerializerMethodField()
 
     class Meta:
         model = MainUser
-        fields = ('description_full', 'documents', 'tags')
+        fields = ('profile_fullness', 'description_full', 'documents', 'tags')
 
     def get_description_full(self, obj):
         return obj.profile.description_full
@@ -202,7 +205,7 @@ class MerchantProfileGetSerializer(serializers.ModelSerializer):
         urls = []
         documents = ProfileDocument.objects.filter(user=obj)
         for doc in documents:
-            urls.append(self.context.build_absolute_uri(doc.url))
+            urls.append(self.context.build_absolute_uri(doc.document.url))
         return urls
 
     def get_tags(self, obj):
@@ -211,6 +214,12 @@ class MerchantProfileGetSerializer(serializers.ModelSerializer):
         for tag in tags:
             names.append(tag.name)
         return names
+
+    def get_profile_fullness(self, obj):
+        profile = obj.profile
+        if isinstance(profile, MerchantProfile):
+            return profile.fullness()
+        return None
 
 
 class MerchantProfileForUpdate(serializers.ModelSerializer):
@@ -257,7 +266,7 @@ class MerchantProfileForUpdate(serializers.ModelSerializer):
         urls = []
         documents = ProfileDocument.objects.filter(user=obj.user)
         for doc in documents:
-            urls.append(self.context.build_absolute_uri(doc.document))
+            urls.append(self.context.build_absolute_uri(doc.document.url))
         return urls
 
 
@@ -324,7 +333,6 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
             doc_objects = ProfileDocument.objects.filter(user=user)
             for doc in doc_objects:
                 if doc.filename() == name:
-                    upload.delete_file(doc.document)
                     doc.delete()
         for serializer in doc_serializers:
             serializer.save()
@@ -571,18 +579,20 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         try:
             category = ProjectCategory.objects.get(id=validated_data.pop('category'))
         except:
-            raise serializers.ValidationError(response.make_messages([f'Катерия {constants.RESPONSE_DOES_NOT_EXIST}']))
+            raise serializers.ValidationError(response.make_messages([f'Категория {constants.RESPONSE_DOES_NOT_EXIST}']))
 
         application = Application.objects.create(**validated_data, category=category)
 
         documents = self.context.get('documents')
         doc_objects = []
         if documents:
+            if len(documents) > 6:
+                raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
                 doc_data = {
                     'application': application.id,
                     'document': doc
-                }
+                    }
                 serializer = ApplicationDocumentSerializer(data=doc_data)
                 if serializer.is_valid():
                     doc_objects.append(serializer.save())
@@ -594,13 +604,79 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         return application
 
 
-class PaidFeatureTypeListSerializer(serializers.ModelSerializer):
-    time_unit = serializers.SerializerMethodField()
+class GetStatiscticsInSerialzier(serializers.Serializer):
+    time_period = serializers.IntegerField(required=True)
+    type = serializers.IntegerField(required=True)
+
+    def validate_time_period(self, value):
+        if value < 1 or value > len(constants.STATISTICS_TIME_PERIODS):
+            raise serializers.ValidationError(constants.VALIDATION_TIME_PERIODS)
+        return value
+
+    def validate_type(self, value):
+        if value < 1 or value > len(constants.STATISTICS_TYPES):
+            raise serializers.ValidationError(constants.VALIDATION_STATISTICS_TYPES)
+        return value
+
+
+class GetStatiscticsOutSerialzier(serializers.ModelSerializer):
+    project_id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    creation_date = serializers.SerializerMethodField()
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    to_profile_count = serializers.SerializerMethodField()
+    to_favorites_count = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    is_top = serializers.SerializerMethodField()
+    is_detailed = serializers.SerializerMethodField()
 
     class Meta:
-        model = PaidFeatureType
-        fields = ('id', 'time_amount', 'time_unit', 'text', 'price', 'beneficial')
+        model = ProjectPaidFeature
+        fields = ('id', 'project_id', 'name', 'creation_date', 'start_date', 'end_date', 'rating', 'to_profile_count',
+                  'to_favorites_count', 'price', 'is_top', 'is_detailed')
 
-    def get_time_unit(self, obj):
-        return general.format_time_period(obj.time_amount, obj.time_unit)
+    def get_project_id(self, obj):
+        return obj.project.id
+
+    def get_name(self, obj):
+        return obj.project.name
+
+    def get_creation_date(self, obj):
+        return obj.project.creation_date.strftime(constants.DATE_FORMAT)
+
+    def get_start_date(self, obj):
+        return obj.created_at.strftime(constants.DATE_FORMAT)
+
+    def get_end_date(self, obj):
+        return obj.expires_at.strftime(constants.DATE_FORMAT)
+
+    def get_rating(self, obj):
+        return obj.project.rating
+
+    def get_to_profile_count(self, obj):
+        return obj.project.to_profile_count
+
+    def get_to_favorites_count(self, obj):
+        return ProjectUserFavorite.objects.filter(project=obj.project).count()
+
+    def get_price(self, obj):
+        return obj.type.price
+
+    def get_is_top(self, obj):
+        return obj.type.type == constants.PAID_FEATURE_TOP
+
+    def get_is_detailed(self, obj):
+        return obj.type.type == constants.PAID_FEATURE_DETAILED
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    creation_date = serializers.DateTimeField(format=constants.DATETIME_FORMAT)
+
+    class Meta:
+        model = Notification
+        fields = ('text', 'creation_date', 'read')
+
+
 

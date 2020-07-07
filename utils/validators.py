@@ -1,6 +1,7 @@
 import os
 import constants, re
 from django.core.exceptions import ValidationError
+# from payments.models import PaidFeatureType
 from utils import response
 
 
@@ -34,3 +35,4 @@ def validate_phone(value):
     if not isinstance(value, str) or re.search(regex, value) is None:
         raise ValidationError(constants.VALIDATION_PHONE_FORMAT_ERROR)
     return value
+

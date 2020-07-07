@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import Q
-from users.models import MainUser, ProjectCategory, ProjectTag, ProjectStyle, ProjectPurpose, ProjectType, City
+from users.models import MainUser, ProjectCategory, ProjectTag, ProjectStyle, ProjectPurpose, ProjectType, City, \
+    MerchantReview, ReviewReply
+
 from utils import upload, validators
 
 
@@ -46,25 +48,25 @@ class Project(models.Model):
                              verbose_name='Пользователь')
     name = models.CharField(max_length=100, null=False, blank=False, verbose_name='Название')
     category = models.ForeignKey(ProjectCategory,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.SET_NULL,
                                  null=True,
                                  blank=False,
                                  related_name='main',
                                  verbose_name='Категория')
     purpose = models.ForeignKey(ProjectPurpose,
-                                on_delete=models.DO_NOTHING,
+                                on_delete=models.SET_NULL,
                                 null=True,
                                 blank=False,
                                 related_name='main',
                                 verbose_name='Назначение')
     type = models.ForeignKey(ProjectType,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=False,
                              related_name='main',
                              verbose_name='Тип')
     style = models.ForeignKey(ProjectStyle,
-                              on_delete=models.DO_NOTHING,
+                              on_delete=models.SET_NULL,
                               null=True,
                               blank=False,
                               related_name='main',
@@ -78,6 +80,8 @@ class Project(models.Model):
     is_detailed = models.BooleanField(default=False, verbose_name='Выделенный')
     creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
     rating = models.FloatField(null=False, blank=True, default=0, verbose_name='Рейтинг')
+    to_profile_count = models.PositiveSmallIntegerField(null=False, blank=True, default=0,
+                                                        verbose_name='Переходы в профиль')
 
     objects = ProjectManager()
 
@@ -134,11 +138,11 @@ class ProjectDocument(models.Model):
 class Render360(models.Model):
     project = models.OneToOneField(Project,
                                    on_delete=models.CASCADE,
-                                   null=False,
+                                   null=True,
                                    blank=False,
                                    related_name='render360',
                                    verbose_name='Проект')
-    document = models.FileField(upload_to=upload.profile_document_path,
+    document = models.FileField(upload_to=upload.project_render360_path,
                                 validators=[validators.validate_file_size, validators.basic_validate_images],
                                 verbose_name='Документ')
 
@@ -251,25 +255,119 @@ class ProjectCommentDocument(models.Model):
         return f'{self.id}: коммент({self.comment.id}), документ({self.document.name})'
 
 
-class ProjectComplaint(models.Model):
+class ProjectCommentReplyDocument(models.Model):
+    reply = models.ForeignKey(ProjectCommentReply,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name='documents',
+                                verbose_name='Ответ на комментарий')
+    document = models.FileField(upload_to=upload.project_comment_reply_document_path,
+                                validators=[validators.validate_file_size, validators.basic_validate_images],
+                                verbose_name='Документ')
+
+    class Meta:
+        verbose_name = 'Документ ответа на комментарий'
+        verbose_name_plural = 'Документы ответов на комментарии'
+
+    def __str__(self):
+        return f'{self.id}: ответ на коммент({self.comment.id}), документ({self.document.name})'
+
+
+class Complain(models.Model):
     user = models.ForeignKey(MainUser,
                              on_delete=models.CASCADE,
                              null=False,
                              blank=False,
-                             related_name='project_complaints',
                              verbose_name='Пользователь')
+    text = models.CharField(max_length=1000, null=False, blank=False, verbose_name='Причина')
+    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата')
+    is_active = models.BooleanField(default=True, null=False, blank=True, verbose_name='Активная')
+
+    class Meta:
+        abstract = True
+
+
+class ProjectComplain(Complain):
     project = models.ForeignKey(Project,
                                 on_delete=models.CASCADE,
                                 null=False,
                                 blank=False,
                                 related_name='complaints',
                                 verbose_name='Проект')
-    text = models.CharField(max_length=1000, null=False, blank=False, verbose_name='Причина')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата')
 
     class Meta:
         verbose_name = 'Жалоба на проект'
         verbose_name_plural = 'Жалобы на проекты'
+        ordering = ['-creation_date', ]
 
     def __str__(self):
         return f'{self.id}: проект({self.project.id}): {self.text[:15]}...'
+
+
+class CommentComplain(Complain):
+    comment = models.ForeignKey(ProjectComment,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name='complaints',
+                                verbose_name='Комментарий')
+
+    class Meta:
+        verbose_name = 'Жалоба на комментарий'
+        verbose_name_plural = 'Жалобы на комментарии'
+        ordering = ['-creation_date', ]
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.comment.id}): {self.text[:15]}...'
+
+
+class CommentReplyComplain(Complain):
+    reply = models.ForeignKey(ProjectCommentReply,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name='complaints',
+                                verbose_name='Ответ на комментарий')
+
+    class Meta:
+        verbose_name = 'Жалоба на ответ на комментарий'
+        verbose_name_plural = 'Жалобы на ответы на комментарии'
+        ordering = ['-creation_date', ]
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.reply.id}): {self.text[:15]}...'
+
+
+class ReviewComplain(Complain):
+    review = models.ForeignKey(MerchantReview,
+                               on_delete=models.CASCADE,
+                               null=False,
+                               blank=False,
+                               related_name='complaints',
+                               verbose_name='Отзыв')
+
+    class Meta:
+        verbose_name = 'Жалоба на отзыв'
+        verbose_name_plural = 'Жалобы на отзывы'
+        ordering = ['-creation_date', ]
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.review.id}): {self.text[:15]}...'
+
+
+class ReviewReplyComplain(Complain):
+    reply = models.ForeignKey(ReviewReply,
+                              on_delete=models.CASCADE,
+                              null=False,
+                              blank=False,
+                              related_name='complaints',
+                              verbose_name='Ответ на отзыв')
+
+    class Meta:
+        verbose_name = 'Жалоба на ответ на отзыв'
+        verbose_name_plural = 'Жалобы на ответы на отзывы'
+        ordering = ['-creation_date', ]
+
+    def __str__(self):
+        return f'{self.id}: коммент({self.reply.id}): {self.text[:15]}...'

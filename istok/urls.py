@@ -25,9 +25,11 @@ urlpatterns = i18n_patterns(
     url(r'^api/main/', include('main.urls')),
     url(r'^api/blogs/', include('blog.urls')),
     url(r'^api/profiles/', include('profiles.urls')),
+    url(r'^api/payments/', include('payments.urls')),
     url(r'^api/tests/', include('tests.urls')),
     prefix_default_language=False
-) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + \
+              static(settings.ADDITIONAL_URL, document_root=settings.ADDITIONAL_ROOT)
 
 admin.site.index_title = ''
 admin.site.site_header = 'Панель администрирования ISTOK HOME'

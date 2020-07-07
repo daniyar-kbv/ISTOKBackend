@@ -1,8 +1,11 @@
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser, PermissionsMixin
-from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path
+from django.db.models.query_utils import DeferredAttribute
+from utils.upload import user_avatar_path, profile_document_path, project_category_image_path, review_document_path, \
+    review_reply_document_path
 from utils.validators import validate_file_size, basic_validate_images
+from itertools import chain
 from constants import ROLES, ROLE_CLIENT, ROLE_MERCHANT
 import os
 
@@ -55,13 +58,13 @@ class ProjectPurposeSubType(models.Model):
 class ProjectPurpose(models.Model):
     name = models.CharField(max_length=100, null=False, blank=False, verbose_name='Название')
     type = models.ForeignKey(ProjectPurposeType,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=False,
                              related_name='purposes',
                              verbose_name='Тип')
     subtype = models.ForeignKey(ProjectPurposeSubType,
-                                on_delete=models.DO_NOTHING,
+                                on_delete=models.SET_NULL,
                                 null=True,
                                 blank=True,
                                 related_name='purposes',
@@ -191,8 +194,61 @@ class MainUserManager(BaseUserManager):
 
         return self._create_user(email, password, **extra_fields)
 
+    def search(self, model_admin, arg=None, request=None):
+        client_queryset = self.filter(role=ROLE_CLIENT)
+        merchant_queryset = self.filter(role=ROLE_MERCHANT)
+        if arg:
+            merchant_queryset = merchant_queryset.filter(
+                Q(email__icontains=arg) |
+                Q(merchant_profile__first_name__icontains=arg) |
+                Q(merchant_profile__last_name__icontains=arg) |
+                Q(merchant_profile__company_name__icontains=arg) |
+                Q(merchant_profile__description_full__icontains=arg) |
+                Q(merchant_profile__description_short__icontains=arg))
+            client_queryset = client_queryset.filter(
+                Q(email=arg) |
+                Q(client_profile__first_name__icontains=arg) |
+                Q(client_profile__last_name__icontains=arg)
+            )
+        if request:
+            filters = dict(request.GET)
+            try:
+                del filters['q']
+            except KeyError:
+                pass
+            try:
+                del filters['o']
+            except KeyError:
+                pass
+            for key in filters:
+                attribute = key.split('__')[0]
+                attr_type = type(getattr(MainUser, attribute))
+                if isinstance(filters[key], list) and len(filters[key]) == 1:
+                    filters[key] = filters[key][0]
+                if attr_type == bool or attribute == 'is_active' or attribute == 'is_staff' or attribute == 'role':
+                    filters[key] = int(filters[key])
+            merchant_queryset = merchant_queryset.filter(**filters)
+            client_queryset = client_queryset.filter(**filters)
+        queryset = client_queryset | merchant_queryset
+        if request:
+            filters = dict(request.GET)
+            if filters.__contains__('o'):
+                fields = model_admin.list_display
+                ordering = []
+                o = filters.pop('o')
+                if len(o[0]) > 0:
+                    field_nums = o[0].split('.')
+                    for num in field_nums:
+                        operator = ''
+                        number = int(num[-1])
+                        if len(num) > 1:
+                            operator = num[0]
+                        ordering.append(f'{operator}{fields[number-1]}')
+                    queryset = queryset.order_by(*ordering)
+        return queryset, True
+
     def merchant_search(self, arg=None, request=None):
-        queryset = self.filter(role=ROLE_MERCHANT)
+        queryset = self.filter(role=ROLE_MERCHANT, is_active=True)
         if arg:
             queryset = queryset.filter(
                                 Q(merchant_profile__first_name__icontains=arg) |
@@ -267,12 +323,12 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
             try:
                 return self.client_profile
             except:
-                return self.merchant_profile
+                return None
         elif self.role == ROLE_MERCHANT:
             try:
                 return self.merchant_profile
             except:
-                return self.client_profile
+                return None
 
 
 class ProfileDocument(models.Model):
@@ -340,7 +396,7 @@ class MerchantProfile(Profile):
                                 verbose_name='Профиль')
     company_name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Название компании')
     city = models.ForeignKey(City,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=False,
                              related_name='merchant_profiles',
@@ -381,6 +437,34 @@ class MerchantProfile(Profile):
         else:
             return f'{self.id}: {self.company_name}'
 
+    def fullness(self):
+        sum = 3
+        if (self.first_name and self.last_name) or self.company_name:
+            sum += 3
+        if self.city:
+            sum += 2
+        if self.address:
+            sum += 2
+        if self.categories.all().count() > 0 and self.specializations.all().count() > 0:
+            sum += 5
+        if self.tags.all().count() > 0:
+            sum += 5
+        if self.description_short:
+            sum += 5
+        if self.description_full:
+            sum += 10
+        if self.url:
+            sum += 5
+        if MerchantPhone.objects.filter(user=self.user, is_valid=True).count() > 0:
+            sum += 20
+        if ProfileDocument.objects.filter(user=self.user).count() > 0:
+            sum += 10
+        if self.avatar:
+            sum += 10
+        if self.user.projects.count() > 0:
+            sum += 20
+        return sum
+
 
 class UserActivation(models.Model):
     user = models.OneToOneField(MainUser,
@@ -401,7 +485,7 @@ class UserActivation(models.Model):
         verbose_name_plural = 'Активации'
 
     def __str__(self):
-        return f'{self.id}: {self.user.email}'
+        return f'{self.id}: {self.user.email if self.user else ""}'
 
 
 class MerchantPhone(models.Model):
@@ -464,13 +548,13 @@ class MerchantReview(models.Model):
     likes_count = models.IntegerField(default=0, null=False, blank=True, verbose_name='Количество лайков')
     rating = models.FloatField(default=0,
                                null=False,
-                               blank=False,
+                               blank=True,
                                verbose_name='Рейтинг')
     text = models.CharField(max_length=500,
                             null=False,
                             blank=False,
                             verbose_name='Основной текст')
-    creation_date = models.DateTimeField(auto_now=True)
+    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Отзыв'
@@ -526,6 +610,25 @@ class ReviewReply(models.Model):
 
     def __str__(self):
         return f'{self.id}: отзыв ({self.review.id})'
+
+
+class ReviewReplyDocument(models.Model):
+    reply = models.ForeignKey(ReviewReply,
+                               on_delete=models.CASCADE,
+                               null=False,
+                               blank=False,
+                               related_name='documents',
+                               verbose_name='Ответ на отзыв')
+    document = models.FileField(upload_to=review_reply_document_path,
+                                validators=[validate_file_size, basic_validate_images],
+                                verbose_name='Документ')
+
+    class Meta:
+        verbose_name = 'Фото ответа на отзыв'
+        verbose_name_plural = 'Фото ответов на отзывы'
+
+    def __str__(self):
+        return f'Документ ({self.id}) ответа на отзыв ({self.reply.id})'
 
 
 class ClientRating(models.Model):

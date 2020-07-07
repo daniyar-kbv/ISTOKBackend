@@ -43,12 +43,16 @@ INSTALLED_APPS = [
     'django_celery_results',
     'phone_field',
     'corsheaders',
+    'admin_reorder',
+    'nested_inline',
+    'admin_numeric_filter',
 
     'users',
     'main',
     'blog',
     'other',
     'profiles',
+    'payments',
     'tests',
 ]
 
@@ -63,6 +67,7 @@ MIDDLEWARE = [
     'django.middleware.locale.LocaleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
 ]
 
 ROOT_URLCONF = 'istok.urls'
@@ -70,7 +75,9 @@ ROOT_URLCONF = 'istok.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -143,6 +150,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_URL = '/api/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+ADDITIONAL_URL = 'api/additional/'
+ADDITIONAL_ROOT = os.path.join(BASE_DIR, 'additional')
+
 AUTH_USER_MODEL = 'users.MainUser'
 
 REST_FRAMEWORK = {
@@ -164,7 +174,9 @@ JWT_AUTH = {
     'rest_framework_jwt.utils.jwt_decode_handler',
 
     'JWT_PAYLOAD_HANDLER':
-    'rest_framework_jwt.utils.jwt_payload_handler',
+    # 'rest_framework_jwt.utils.jwt_payload_handler',
+    'utils.jwt.jwt_payload_handler',
+
 
     'JWT_PAYLOAD_GET_USER_ID_HANDLER':
     'rest_framework_jwt.utils.jwt_get_user_id_from_payload_handler',
@@ -271,4 +283,65 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+ADMIN_REORDER = (
+    {
+        'app': 'main',
+        'label': 'Основной',
+        'models': (
+            'main.Project',
+            'main.ProjectComplain',
+            'main.CommentComplain',
+            'main.CommentReplyComplain',
+            'main.ReviewComplain',
+            'main.ReviewReplyComplain'
+        )
+    },
+    {
+        'app': 'users',
+        'models': (
+            'users.MainUser',
+            'users.MerchantReview',
+            'users.ClientRating',
+            'users.MerchantPhone'
+        )
+    },
+    {
+        'app': 'profiles',
+        'models': (
+            {'model': 'profiles.FormQuestionGroup', 'label': 'Анкета'},
+            'profiles.Application',
+        )
+    },
+    {
+        'app': 'payments',
+        'models': (
+            'payments.PaidFeatureType',
+            'payments.UsersPaidFeature',
+            'payments.ProjectPaidFeature',
+            'payments.ProjectLinkedPaidFeatures',
+            'payments.Transaction'
+        )
+    },
+    {
+        'app': 'other',
+        'label': 'Другое',
+        'models': (
+            'users.ProjectCategory',
+            {'model': 'users.ProjectPurposeType', 'label': 'Назначения'},
+            'users.ProjectType',
+            'users.ProjectStyle',
+            {'model': 'users.Country', 'label': 'Города и Страны'},
+            'other.FAQ'
+        )
+    },
+    {
+        'app': 'blog',
+        'models': (
+            'blog.BlogPostCategory',
+            'blog.BlogPost',
+            'blog.MainPageBlogPost'
+        )
+    },
+)
 

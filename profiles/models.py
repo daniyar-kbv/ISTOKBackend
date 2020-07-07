@@ -81,26 +81,28 @@ class FormUserAnswer(models.Model):
 
 class Application(models.Model):
     client = models.ForeignKey(MainUser,
-                               on_delete=models.DO_NOTHING,
+                               on_delete=models.CASCADE,
                                null=True,
                                blank=False,
+                               default=None,
                                related_name='client_applications',
                                verbose_name='Клиент')
     merchant = models.ForeignKey(MainUser,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.CASCADE,
                                  null=True,
                                  blank=False,
+                                 default=None,
                                  related_name='merchant_applications',
                                  verbose_name='Специалист')
     category = models.ForeignKey(ProjectCategory,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.SET_NULL,
                                  null=True,
                                  blank=False,
                                  related_name='applications',
                                  verbose_name='Категория')
     creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
     project = models.ForeignKey(Project,
-                                on_delete=models.DO_NOTHING,
+                                on_delete=models.SET_NULL,
                                 null=True,
                                 blank=False,
                                 related_name='applications',
@@ -154,95 +156,13 @@ class Notification(models.Model):
                              verbose_name='Пользователь')
     text = models.TextField(null=False, blank=False, verbose_name='Содержание')
     read = models.BooleanField(default=False, blank=False, verbose_name='Прочитано')
+    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Уведомление'
         verbose_name_plural = 'Уведомления'
+        ordering = ('-creation_date', )
 
     def __str__(self):
         return f'{self.id}: {self.user}, {self.text[:15]}'
-
-
-class Transaction(models.Model):
-    created_at = models.DateTimeField(auto_now=True, verbose_name='Дата создание')
-    number = models.TextField(null=False, blank=False, verbose_name='Номер')
-
-    class Meta:
-        verbose_name = 'Транзакция'
-        verbose_name_plural = 'Транзакции'
-
-    def __str__(self):
-        return f'{self.id}: {self.number}'
-
-
-class PaidFeatureType(models.Model):
-    type = models.PositiveSmallIntegerField(choices=constants.PAID_FEATURE_TYPES,
-                                            default=constants.PAID_FEATURE_PRO,
-                                            verbose_name='Тип')
-    text = models.TextField(null=True, blank=True, verbose_name='Текст')
-    price = models.FloatField(null=False, blank=False, default=0, verbose_name='Цена')
-    time_amount = models.PositiveIntegerField(null=False, blank=False, default=1, verbose_name='Количество (время)')
-    time_unit = models.PositiveSmallIntegerField(choices=constants.TIME_TYPES,
-                                                 default=constants.TIME_DAY,
-                                                 verbose_name='Еденицы измерения времени')
-    beneficial = models.BooleanField(null=False, blank=True, default=False, verbose_name='Выгодный')
-
-    class Meta:
-        verbose_name = 'Тип платной услуги'
-        verbose_name_plural = 'Типы платных услуг'
-
-    def __str__(self):
-        return f'{self.id}: {self.type}, {self.price}'
-
-
-class PaidFeature(models.Model):
-    type = models.ForeignKey(PaidFeatureType,
-                             on_delete=models.DO_NOTHING,
-                             null=True,
-                             blank=False,
-                             verbose_name='Тип')
-    transaction = models.ForeignKey(Transaction,
-                                    on_delete=models.CASCADE,
-                                    null=False,
-                                    blank=False,
-                                    verbose_name='Транзакция')
-    is_active = models.BooleanField(null=False, blank=True, default=False, verbose_name='Активный')
-    created_at = models.DateTimeField(auto_now=True, blank=True, null=False, verbose_name='Дата создание')
-    expires_at = models.DateTimeField(null=True, blank=True, verbose_name='Дата истечения')
-
-    class Meta:
-        abstract = True
-
-
-class UsersPaidFeature(PaidFeature):
-    user = models.ForeignKey(MainUser,
-                             on_delete=models.CASCADE,
-                             null=False,
-                             blank=False,
-                             related_name='features',
-                             verbose_name='Пользователь')
-
-    class Meta:
-        verbose_name = 'Платная услуга пользователя'
-        verbose_name_plural = 'Платные услуги пользователей'
-
-    def __str__(self):
-        return f'{self.id}: {self.user}, {self.type}'
-
-
-class ProjectPaidFeature(PaidFeature):
-    project = models.ForeignKey(Project,
-                                on_delete=models.CASCADE,
-                                null=False,
-                                blank=False,
-                                related_name='features',
-                                verbose_name='Проект')
-
-    class Meta:
-        verbose_name = 'Платная услуга проекта'
-        verbose_name_plural = 'Платные услуги проектов'
-
-    def __str__(self):
-        return f'{self.id}: {self.project}, {self.type}'
-
 

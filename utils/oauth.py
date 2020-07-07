@@ -15,6 +15,14 @@ def get_facebook_avatar(fb_id):
         pass
     return None, None
 
+def get_vk_info(access_token):
+    try:
+        response = requests.get(constants.VK_INFO_URL.format(access_token))
+        if response.status_code == 200:
+            return response.json()
+    except:
+        return None
+
 
 def get_vk_web_info(access_token):
     try:
@@ -69,16 +77,18 @@ def get_social_info(body, social_type):
             result['avatar_url'] = constants.FACEBOOK_AVATAR_URL.format(info['id'])
             return result, None
     elif social_type == constants.VK_WEB:
-        result['social_id'] = body['user_id']
-        result['first_name'] = body['first_name']
-        result['last_name'] = body['last_name']
-        result['full_name'] = '{} {}'.format(body['first_name'],
-                                             body['last_name'])
-        result['gender'] = body.get('gender')
-        result['email'] = body.get('email') # not given
-        result['phone'] = body.get('phone') # not given
-        result['avatar_url'] = body.get('avatar_url')
-        return result, None
+        info = get_vk_info(access_token)
+        if info and not info.get('error'):
+            response = info['response'][0]
+            result['social_id'] = response['id']
+            result['full_name'] = '{} {}'.format(response['first_name'],
+                                                 response['last_name'])
+            result['first_name'] = response['first_name']
+            result['last_name'] = response['last_name']
+            result['email'] = response.get('email')  # not given
+            result['phone'] = response.get('phone')  # not given
+            result['avatar_url'] = response.get('photo_200')
+            return result, None
     elif social_type == constants.GOOGLE:
         info = get_google_info(access_token)
         if info:

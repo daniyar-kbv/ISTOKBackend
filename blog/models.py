@@ -47,7 +47,7 @@ class BlogPost(models.Model):
                                         related_name='blog_post_likes',
                                         verbose_name='Лайки пользователей')
     category = models.ForeignKey(BlogPostCategory,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.SET_NULL,
                                  null=True,
                                  blank=False,
                                  default=None,
@@ -58,7 +58,7 @@ class BlogPost(models.Model):
                                   blank=True,
                                   verbose_name='На главной')
     city = models.ForeignKey(City,
-                             on_delete=models.DO_NOTHING,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=False,
                              related_name='blog_posts',
@@ -100,10 +100,12 @@ class MainPageBlogPost(models.Model):
                                 blank=False,
                                 related_name='main_page',
                                 verbose_name='Пост')
+    position = models.PositiveSmallIntegerField(null=False, blank=False, default=0, verbose_name='Позиция')
 
     class Meta:
         verbose_name = 'Пост на главной странице'
         verbose_name_plural = 'Посты на главной странице'
+        ordering = ('position', )
 
     def __str__(self):
         return f'{self.id}: {self.post.title[0:15]}'

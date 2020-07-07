@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <form id="paymentFormSample" autocomplete="off">
+        <input type="text" data-cp="cardNumber" placeholder="cardNumber" value="4242424242424242">
+        <input type="text" data-cp="expDateMonth" placeholder="expDateMonth" value="12">
+        <input type="text" data-cp="expDateYear" placeholder="expDateYear" value="22">
+        <input type="text" data-cp="cvv" placeholder="cvv" value="123">
+        <input type="text" data-cp="name" placeholder="name" value="name name">
+        <input type="button" id="submit">submit</input>
+    </form>
+
+    <form name="downloadForm" id="downloadForm" method="POST">
+        <input type="hidden" id="packetInput" name="packet">
+        <label for="type" >type</label>
+        <input name="type" value="2">
+        <label for="target">target</label>
+        <input name="target" value="2">
+        <label for="token" >token</label>
+        <input name="token" value="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwidXNlcm5hbWUiOiJ0ZXN0NjBAdGVzdC50ZXN0IiwiZXhwIjoxNTkzODA5NTE3LCJlbWFpbCI6InRlc3Q2MEB0ZXN0LnRlc3QiLCJyb2xlIjoyLCJvcmlnX2lhdCI6MTU5Mzc0OTUxN30.-GZAmTxmFhnfDiAmeC4IN8pbEmURPOAZ3yMIiT3O1o8" >
+    </form>
+    <script src="https://widget.cloudpayments.ru/bundles/checkout"></script>
+    <script>
+        var createCryptogram = function (checkout) {
+            var result = checkout.createCryptogramPacket();
+
+            if (result.success) {
+                // сформирована криптограмма
+                {#alert(result.packet);#}
+
+                document.getElementById("downloadForm").setAttribute("action", `{{ pay_url }}52/`);
+                document.getElementById("packetInput").setAttribute("value", `${result.packet}`);
+                function submitForm() { downloadForm.submit(); }
+                submitForm();
+            }
+            else {
+                // найдены ошибки в введённых данных, объект `result.messages` формата:
+                // { name: "В имени держателя карты слишком много символов", cardNumber: "Неправильный номер карты" }
+                // где `name`, `cardNumber` соответствуют значениям атрибутов `<input ... data-cp="cardNumber">`
+               alert(result.messages);
+            }
+        };
+
+        document.getElementById("submit").onclick = function() {
+            /* Создание checkout */
+            checkout = new cp.Checkout(
+            // public id из личного кабинета
+            "pk_b826aa0af00e5286511d54e746fda",
+            // тег, содержащий поля данных карты
+            document.getElementById("paymentFormSample"));
+            createCryptogram(checkout)
+        };
+    </script>
+</body>
+</html>

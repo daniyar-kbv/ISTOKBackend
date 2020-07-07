@@ -1,8 +1,8 @@
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from users.models import UserActivation, MainUser, ProfileDocument, ProjectCategory, MerchantReview, ClientRating, \
-    ReviewDocument
-from main.tasks import send_email
+    ReviewDocument, ReviewReply, ReviewReplyDocument, CodeVerification
+from main.tasks import send_email, send_sms
 from utils import emails, upload
 import constants
 
@@ -16,19 +16,22 @@ def activation_created(sender, instance, created=True, **kwargs):
                 send_email.delay(constants.ACTIVATION_EMAIL_SUBJECT,
                                  emails.generate_activation_email(instance.email, request=instance._request),
                                  instance.email)
-        if created:
-            activation = instance
-            activation.is_active = False
-            activation.save()
 
 
 @receiver(pre_delete, sender=MainUser)
 def user_pre_delete(sender, instance, created=True, **kwargs):
-    if instance.profile.avatar:
-        upload.delete_folder(instance.profile.avatar)
+    if instance.profile:
+        if instance.profile.avatar:
+            upload.delete_folder(instance.profile.avatar)
     doc = ProfileDocument.objects.filter(user=instance).first()
     if doc:
         upload.delete_folder(doc.document)
+
+
+@receiver(pre_delete, sender=ProfileDocument)
+def profile_document_pre_delete(sender, instance, created=True, **kwargs):
+    if instance.document:
+        upload.delete_file(instance.document)
 
 
 @receiver(pre_delete, sender=ProjectCategory)
@@ -84,7 +87,7 @@ def client_rating_post_save(sender, instance, created=True, **kwargs):
 
 
 @receiver(pre_delete, sender=ClientRating)
-def client_rating_post_save(sender, instance, created=True, **kwargs):
+def client_rating_pre_delete(sender, instance, created=True, **kwargs):
     rating_sum = 0
     rating_count = 0
     client = instance.client
@@ -95,3 +98,16 @@ def client_rating_post_save(sender, instance, created=True, **kwargs):
     profile = client.profile
     profile.rating = rating_sum / rating_count
     profile.save()
+
+
+@receiver(pre_delete, sender=ReviewReply)
+def review_reply_pre_delete(sender, instance, created=True, **kwargs):
+    doc = ReviewReplyDocument.objects.filter(reply=instance).first()
+    if doc:
+        upload.delete_folder(doc.document)
+
+
+# @receiver(post_save, sender=CodeVerification)
+# def code_verification_saved(sender, instance, created=True, **kwargs):
+#     if created:
+        # send_sms.delay(instance.phone.phone, instance.code)
