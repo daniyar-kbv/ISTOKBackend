@@ -548,14 +548,14 @@ class ApplicationViewSet(viewsets.GenericViewSet,
                                              Q(status=constants.APPLICATION_FINISHED)).count(),
             'finished_count': queryset.filter(status=constants.APPLICATION_FINISHED_CONFIRMED).count(),
             'declined_count': queryset.filter(Q(status=constants.APPLICATION_DECLINED_CLIENT) |
-                                        Q(status=constants.APPLICATION_DECLINED_MERCHANT)).count()
+                                              Q(status=constants.APPLICATION_DECLINED_MERCHANT)).count()
         }
 
         if user.role == constants.ROLE_CLIENT:
             data['waiting_count'] = queryset.filter(Q(status=constants.APPLICATION_CREATED) |
                                                     Q(status=constants.APPLICATION_FINISHED)).count()
         elif user.role == constants.ROLE_MERCHANT:
-            data['new'] = queryset.filter(status=constants.APPLICATION_CONFIRMED).count()
+            data['new'] = queryset.filter(status=constants.APPLICATION_CREATED).count()
             data['waiting_count'] = queryset.filter(status=constants.APPLICATION_FINISHED).count()
 
         if status_name == constants.APPLICATION_NEW_STRING:
