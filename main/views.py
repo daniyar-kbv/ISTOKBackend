@@ -143,7 +143,8 @@ class ProjectViewSet(viewsets.GenericViewSet,
             project = Project.objects.get(id=pk)
         except Project.DoesNotExist:
             logger.error(f'Favorite of project({pk}) user({request.user.email}) failed: {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
+                            status.HTTP_400_BAD_REQUEST)
         try:
             favorite = ProjectUserFavorite.objects.get(user=request.user, project=project)
             favorite.delete()
@@ -157,7 +158,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         try:
             project = self.queryset.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = ProjectModalSerializer(project, context=request)
         return Response(serializer.data, status.HTTP_200_OK)
@@ -168,7 +169,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
             try:
                 project = self.queryset.get(id=pk)
             except Project.DoesNotExist:
-                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                                 status.HTTP_400_BAD_REQUEST)
             comments = ProjectComment.objects.filter(project=project).order_by('-creation_date')
             serializer = ProjectCommentWithReplySerializer(comments, many=True, context=request)
@@ -179,7 +180,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
                 project = self.queryset.get(id=pk)
             except Project.DoesNotExist:
                 logger.error(f'Project({pk}) comment create failed: Проект {constants.RESPONSE_DOES_NOT_EXIST}')
-                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                                 status.HTTP_400_BAD_REQUEST)
             context = {}
             if request.data.get('documents'):
@@ -198,7 +199,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         try:
             project = self.queryset.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Проект {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = ProjectComplainSerializer(data=request.data)
         if serializer.is_valid():
@@ -212,7 +213,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         try:
             project = Project.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Проект с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         context = {
         }
@@ -305,7 +306,7 @@ class CommentViewSet(viewsets.GenericViewSet):
         except ProjectComment.DoesNotExist:
             logger.error(
                 f'Like of project comment ({pk}) user({request.user.email}) failed, {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages([f'Комментарий {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             comment.user_likes.get(id=request.user.id)
@@ -324,7 +325,7 @@ class CommentViewSet(viewsets.GenericViewSet):
         try:
             comment = self.queryset.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Комментарий {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('comment', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = CommentComplainSerializer(data=request.data)
         if serializer.is_valid():
@@ -341,7 +342,7 @@ class CommentReplyViewSet(viewsets.GenericViewSet):
         try:
             reply = self.queryset.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Ответ на омментарий {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('reply', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = CommentReplyComplainSerializer(data=request.data)
         if serializer.is_valid():

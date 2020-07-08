@@ -123,11 +123,17 @@ class ClientProfileUpdateSerializer(serializers.ModelSerializer):
                 try:
                     merchant_phone = MerchantPhone.objects.get(phone=phone)
                 except MerchantPhone.DoesNotExist:
-                    raise serializers.ValidationError(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]))
+                    raise serializers.ValidationError(
+                        response.make_messages_new([('phone', constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)])
+                    )
                 if merchant_phone.user is not None:
-                    raise serializers.ValidationError(response.make_messages([f'{phone} {constants.RESPONSE_PHONE_REGISTERED}']))
+                    raise serializers.ValidationError(
+                        response.make_messages_new([('phone', f'{phone} {constants.RESPONSE_PHONE_REGISTERED}')])
+                    )
                 if not merchant_phone.is_valid:
-                    raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_NOT_VERIFIED]))
+                    raise serializers.ValidationError(
+                        response.make_messages_new([('phone', constants.VALIDATION_PHONE_NOT_VERIFIED)])
+                    )
                 phones = MerchantPhone.objects.filter(user=user)
                 for p in phones:
                     if p != merchant_phone:
@@ -289,13 +295,13 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
                         merchant_phone = MerchantPhone.objects.get(phone=phone)
                     except MerchantPhone.DoesNotExist:
                         raise serializers.ValidationError(
-                            response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]))
+                            response.make_messages_new([('phone', constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)]))
                     if merchant_phone.user != user and merchant_phone.user is not None:
                         raise serializers.ValidationError(
-                            response.make_messages([f'{phone} {constants.RESPONSE_PHONE_REGISTERED}']))
+                            response.make_messages_new([('phone', f'{phone} {constants.RESPONSE_PHONE_REGISTERED}')]))
                     if not merchant_phone.is_valid:
                         raise serializers.ValidationError(
-                            response.make_messages([constants.VALIDATION_PHONE_NOT_VERIFIED]))
+                            response.make_messages_new([('phone', constants.VALIDATION_PHONE_NOT_VERIFIED)]))
                     phones.append(merchant_phone)
                 else:
                     raise serializers.ValidationError(response.make_errors(serializer))
@@ -317,7 +323,9 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
             try:
                 usr = MainUser.objects.get(email=email)
                 if usr != user:
-                    raise serializers.ValidationError(response.make_messages([constants.VALIDATION_EMAIL_EXISTS]))
+                    raise serializers.ValidationError(
+                        response.make_messages_new([('email', constants.VALIDATION_EMAIL_EXISTS)])
+                    )
             except:
                 user.email = email
                 user.save()
@@ -418,15 +426,17 @@ class FormUserAnswerCreatePostSerializer(serializers.Serializer):
                 answer_obj = FormAnswer.objects.get(id=answer)
                 answers_objects.append(answer_obj)
             except:
-                raise serializers.ValidationError(response.make_messages(
-                    [f'Ответ {answer} {constants.RESPONSE_DOES_NOT_EXIST}'])
+                raise serializers.ValidationError(
+                    response.make_messages_new([('answer', f'{answer} {constants.RESPONSE_DOES_NOT_EXIST}')])
                 )
         questions = FormQuestion.objects.all()
         for answer in answers_objects:
             if questions.filter(question=answer.question.question).count() > 0:
                 questions.exclude(question=answer.question.question)
         if questions.count() > 0:
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_FORM_NOT_COMPLETE]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('question', constants.VALIDATION_FORM_NOT_COMPLETE)])
+            )
         user = self.context.user
         existing_answers = FormUserAnswer.objects.filter(user=user)
         existing_answers.delete()
@@ -579,7 +589,9 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         try:
             category = ProjectCategory.objects.get(id=validated_data.pop('category'))
         except:
-            raise serializers.ValidationError(response.make_messages([f'Категория {constants.RESPONSE_DOES_NOT_EXIST}']))
+            raise serializers.ValidationError(
+                response.make_messages_new([('category', constants.RESPONSE_DOES_NOT_EXIST)])
+            )
 
         application = Application.objects.create(**validated_data, category=category)
 

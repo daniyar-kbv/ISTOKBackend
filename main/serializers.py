@@ -431,7 +431,9 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         except:
             return serializers.ValidationError(f'Type {constants.RESPONSE_DOES_NOT_EXIST}')
         if validated_data.get('price_from') > validated_data.get('price_to'):
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('price', constants.VALIDATION_PRICE_INVALID)])
+            )
         tags = validated_data.pop('tags')
         project = Project.objects.create(**validated_data,
                                          category=category,
@@ -516,13 +518,19 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f'Type {constants.RESPONSE_DOES_NOT_EXIST}')
         if validated_data.get('price_from') and validated_data.get('price_to'):
             if validated_data.get('price_from') > validated_data.get('price_to'):
-                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+                raise serializers.ValidationError(
+                    response.make_messages_new([('price', constants.VALIDATION_PRICE_INVALID)])
+                )
         elif validated_data.get('price_from'):
             if validated_data.get('price_from') > instance.price_from:
-                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+                raise serializers.ValidationError(
+                    response.make_messages_new([('price', constants.VALIDATION_PRICE_INVALID)])
+                )
         elif validated_data.get('price_to'):
             if instance.price_from > validated_data.get('price_to'):
-                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PRICE_INVALID]))
+                raise serializers.ValidationError(
+                    response.make_messages_new([('price', constants.VALIDATION_PRICE_INVALID)])
+                )
         documents = self.context.get('documents')
         doc_serializers = []
         if documents:

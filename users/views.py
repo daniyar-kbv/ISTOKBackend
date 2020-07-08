@@ -95,7 +95,7 @@ class UserViewSet(viewsets.GenericViewSet,
                 user = MainUser.objects.get(email=email)
             except MainUser.DoesNotExist:
                 logger.error(
-                 f'Registration with email: {email} ({constants.ROLES[0]})  failed: {constants.RESPONSE_SERVER_ERROR}')
+                    f'Registration with email: {email} ({constants.ROLES[0]})  failed: {constants.RESPONSE_SERVER_ERROR}')
                 return Response(response.make_messages_new([('server', constants.RESPONSE_SERVER_ERROR)]),
                                 status.HTTP_500_INTERNAL_SERVER_ERROR)
             payload = jwt_payload_handler(user)
@@ -140,10 +140,8 @@ class UserViewSet(viewsets.GenericViewSet,
                         logger.error(
                             f'Regular login ({request.data.get("email")}): failed {constants.RESPONSE_USER_EMAIL_NOT_EXIST}')
                         return Response(
-                            response.make_messages_new(
-                                [('email', constants.RESPONSE_USER_EMAIL_NOT_EXIST)]
-                            ),
-                            status=status.HTTP_400_BAD_REQUEST
+                            response.make_messages_new([('email', constants.RESPONSE_USER_EMAIL_NOT_EXIST)]),
+                            status.HTTP_400_BAD_REQUEST
                         )
             if user.check_password(password):
                 payload = jwt_payload_handler(user)
@@ -173,7 +171,10 @@ class UserViewSet(viewsets.GenericViewSet,
         if email and role:
             try:
                 MainUser.objects.get(email=email)
-                return Response(response.make_messages([constants.RESPONSE_USER_EXISTS]), status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    response.make_messages_new([('user', constants.RESPONSE_USER_EXISTS)]),
+                    status.HTTP_400_BAD_REQUEST
+                )
             except:
                 pass
             if UserActivation.objects.filter(email=email).count() == 0:
@@ -188,8 +189,10 @@ class UserViewSet(viewsets.GenericViewSet,
                 if activation:
                     if activation.user:
                         logger.error(f'Activation email sending ({email}): failed {constants.RESPONSE_USER_EXISTS}')
-                        return Response(response.make_messages([constants.RESPONSE_USER_EXISTS]),
-                                        status.HTTP_400_BAD_REQUEST)
+                        return Response(
+                            response.make_messages_new([('user', constants.RESPONSE_USER_EXISTS)]),
+                            status.HTTP_400_BAD_REQUEST
+                        )
                     activation.delete()
                 activation = UserActivation.objects.create(email=email, role=role)
                 activation._request = request
@@ -198,15 +201,22 @@ class UserViewSet(viewsets.GenericViewSet,
                 logger.info(f'Activation email sending ({email}): succeeded')
                 return Response(status.HTTP_200_OK)
         if not email and not role:
-            logger.error(f'Activation email sending ({response.make_messages([response.missing_field("Email"), response.missing_field(role)])}')
-            return Response(response.make_messages([response.missing_field('Email'), response.missing_field(role)]),
-                            status.HTTP_400_BAD_REQUEST)
+            logger.error(
+                f'Activation email sending ({response.make_messages_new([("email", response.missing_field("Email")), ("role", response.missing_field("Роль"))])})')
+            return Response(
+                response.make_messages_new(
+                    [('email', response.missing_field('Email')), ('role', response.missing_field("Роль"))]
+                ),
+                status.HTTP_400_BAD_REQUEST
+            )
         if not email:
             logger.error(f'Activation email sending ({email}): failed {response.missing_field("Email")}')
-            return Response(response.make_messages([response.missing_field('Email')]), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_messages_new([('email', response.missing_field('Email'))]),
+                            status.HTTP_400_BAD_REQUEST)
         if not role:
             logger.error(f'Activation email sending ({email}): failed {response.missing_field("Роль")}')
-            return Response(response.make_messages([response.missing_field("Роль")]), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_messages_new([('role', response.missing_field("Роль"))]),
+                            status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'], name='verify-email')
     def verify_email(self, request, pk=None):
@@ -239,12 +249,15 @@ class UserViewSet(viewsets.GenericViewSet,
             try:
                 phone = MerchantPhone.objects.get(phone=serializer.validated_data.get('phone').get('phone'))
                 if phone.is_valid:
-                    return Response(response.make_messages([constants.RESPONSE_PHONE_ALREADY_REGISTERED]),
-                                    status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        response.make_messages_new([('phone', constants.RESPONSE_PHONE_ALREADY_REGISTERED)]),
+                        status.HTTP_400_BAD_REQUEST
+                    )
             except:
                 pass
             try:
-                verification = CodeVerification.objects.get(phone__phone=serializer.validated_data.get('phone').get('phone'))
+                verification = CodeVerification.objects.get(
+                    phone__phone=serializer.validated_data.get('phone').get('phone'))
                 verification.delete()
             except:
                 pass
@@ -253,7 +266,7 @@ class UserViewSet(viewsets.GenericViewSet,
             return Response(status=status.HTTP_200_OK)
         try:
             message = serializer.errors.get('phone').get('phone').get('messages')[0]
-            return Response(response.make_messages([message]), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_messages_new([('phone', message)]), status.HTTP_400_BAD_REQUEST)
         except:
             return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
 
@@ -263,21 +276,35 @@ class UserViewSet(viewsets.GenericViewSet,
         logger.info(f'Send code ({request.data.get("phone").get("phone")}): started')
         if serializer.is_valid():
             try:
-                verification = CodeVerification.objects.get(phone__phone=serializer.validated_data.get('phone').get('phone'))
+                verification = CodeVerification.objects.get(
+                    phone__phone=serializer.validated_data.get('phone').get('phone'))
                 if verification.code != serializer.validated_data.get('code'):
-                    logger.error(f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_INVALID_CODE}')
-                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_INVALID_CODE]),
-                                    status.HTTP_400_BAD_REQUEST)
+                    logger.error(
+                        f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_INVALID_CODE}')
+                    return Response(
+                        response.make_messages_new(
+                            [('verification code', constants.RESPONSE_VERIFICATION_INVALID_CODE)]
+                        ),
+                        status.HTTP_400_BAD_REQUEST
+                    )
                 to_tz = timezone.get_default_timezone()
                 time_diff = verification.creation_date.astimezone(to_tz) - datetime.now().astimezone(to_tz)
                 if (time_diff.days * 24 * 60) > 15:
-                    return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]),
-                                    status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        response.make_messages_new(
+                            [('verification code', constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)]
+                        ),
+                        status.HTTP_400_BAD_REQUEST
+                    )
             except CodeVerification.DoesNotExist:
                 logger.error(
                     f'Send code ({request.data.get("phone").get("phone")}): failed {constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST}')
-                return Response(response.make_messages([constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST]),
-                                status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    response.make_messages_new(
+                        [('verification code', constants.RESPONSE_VERIFICATION_DOES_NOT_EXIST)]
+                    ),
+                    status.HTTP_400_BAD_REQUEST
+                )
             verification.delete()
             merchant_phone = verification.phone
             merchant_phone.is_valid = True
@@ -295,14 +322,23 @@ class UserViewSet(viewsets.GenericViewSet,
     @action(detail=False, methods=['post'])
     def social_login(self, request, pk=None):
         social_type = request.data.get('social_type')
+        access_token = request.data.get('access_token')
+        role = request.data.get('role')
+        social_list = [constants.FACEBOOK, constants.GOOGLE, constants.VK_WEB]
+        role_list = [constants.ROLE_CLIENT, constants.ROLE_MERCHANT]
+        if social_type not in social_list or access_token in [None, ''] or role not in role_list:
+            return Response(
+                response.make_messages_new([('social login', constants.RESPONSE_INCORRECT_OR_EMPTY_INPUT_DATA)]),
+                status.HTTP_400_BAD_REQUEST
+            )
         logger.info(f'Social login ({social_type}): started')
         info, error = oauth.get_social_info(request.data, social_type)
         if not info:
             logger.error(f'Social login ({social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
-            return Response(response.make_messages([error]), status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(response.make_messages_new([('server', error)]), status.HTTP_500_INTERNAL_SERVER_ERROR)
         if not info:
             logger.error(f'Social login ({social_type}): failed {constants.RESPONSE_SERVER_ERROR}')
-            return Response(response.make_messages([error]), status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(response.make_messages_new([('server', error)]), status.HTTP_500_INTERNAL_SERVER_ERROR)
         try:
             if MainUser.objects.filter(email=info['email']).count() > 0:
                 user = MainUser.objects.get(email=info['email'])
@@ -320,7 +356,8 @@ class UserViewSet(viewsets.GenericViewSet,
         except:
             role = request.data.get('role')
             if not role:
-                return Response(response.make_messages(['role: Укажите роль']), status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_messages([('role', constants.RESPONSE_ENTER_ROLE)]),
+                                status.HTTP_400_BAD_REQUEST)
             if role == constants.ROLE_CLIENT and info.get('email') and info.get('first_name') and info.get('birthday'):
                 user = {
                     'email': info['email'],
@@ -351,10 +388,11 @@ class UserViewSet(viewsets.GenericViewSet,
         try:
             user = MainUser.objects.get(id=pk)
         except MainUser.DoesNotExist:
-            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('user', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if user.role == constants.ROLE_CLIENT:
-            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_messages_new([('user', constants.RESPONSE_USER_NOT_MERCHANT)]),
+                            status.HTTP_400_BAD_REQUEST)
         context = {
             'request': request
         }
@@ -363,7 +401,7 @@ class UserViewSet(viewsets.GenericViewSet,
             try:
                 project = Project.objects.get(id=from_project)
             except:
-                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                                 status.HTTP_400_BAD_REQUEST)
             project.to_profile_count += 1
             project.save()
@@ -375,10 +413,10 @@ class UserViewSet(viewsets.GenericViewSet,
         try:
             user = MainUser.objects.get(id=pk)
         except MainUser.DoesNotExist:
-            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('user', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if user.role == constants.ROLE_CLIENT:
-            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+            return Response(response.make_messages_new([('user', constants.RESPONSE_USER_NOT_MERCHANT)]))
         projects = Project.objects.filter(user=user)
         paginator = pagination.CustomPagination()
         paginator.page_size = 8
@@ -394,10 +432,10 @@ class UserViewSet(viewsets.GenericViewSet,
         try:
             user = MainUser.objects.get(id=pk)
         except MainUser.DoesNotExist:
-            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('user', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if user.role == constants.ROLE_CLIENT:
-            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+            return Response(response.make_messages_new([('user', constants.RESPONSE_USER_NOT_MERCHANT)]))
         reviews = MerchantReview.objects.filter(merchant=user)
         if request.data.get('order_by'):
             order_by = request.data.get('order_by')
@@ -421,9 +459,9 @@ class UserViewSet(viewsets.GenericViewSet,
         try:
             user = MainUser.objects.get(id=pk)
         except MainUser.DoesNotExist:
-            return Response(response.make_messages([f'Пользователь {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages_new([('user', constants.RESPONSE_DOES_NOT_EXIST)]))
         if user.role == constants.ROLE_CLIENT:
-            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+            return Response(response.make_messages_new([('user', constants.RESPONSE_USER_NOT_MERCHANT)]))
         serializer = MerchantDetailSerializer(user, context=request)
         return Response(serializer.data)
 
@@ -437,8 +475,10 @@ class ProjectReview(viewsets.GenericViewSet):
         try:
             review = MerchantReview.objects.get(id=pk)
         except MerchantReview.DoesNotExist:
-            logger.error(f'Like of merchant review ({pk}) user({request.user.email}) failed, {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages([f'Отзыв {constants.RESPONSE_DOES_NOT_EXIST}']), status.HTTP_400_BAD_REQUEST)
+            logger.error(
+                f'Like of merchant review ({pk}) user({request.user.email}) failed, {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('review', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
+                            status.HTTP_400_BAD_REQUEST)
         try:
             review.user_likes.get(id=request.user.id)
             review.user_likes.remove(request.user)
@@ -456,7 +496,7 @@ class ProjectReview(viewsets.GenericViewSet):
         try:
             review = self.queryset.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('review', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = ReviewComplainSerializer(data=request.data)
         if serializer.is_valid():
@@ -473,7 +513,7 @@ class ReviewReplyViewSet(viewsets.GenericViewSet):
         try:
             reply = self.queryset.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Ответ на отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('reply', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = ReviewReplyComplainSerializer(data=request.data)
         if serializer.is_valid():
