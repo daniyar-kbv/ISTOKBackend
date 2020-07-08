@@ -544,8 +544,6 @@ class ApplicationViewSet(viewsets.GenericViewSet,
 
         data = {
             'confirmed_count': queryset.filter(status=constants.APPLICATION_CONFIRMED).count(),
-            'waiting_count': queryset.filter(Q(status=constants.APPLICATION_CREATED) |
-                                             Q(status=constants.APPLICATION_FINISHED)).count(),
             'finished_count': queryset.filter(status=constants.APPLICATION_FINISHED_CONFIRMED).count(),
             'declined_count': queryset.filter(Q(status=constants.APPLICATION_DECLINED_CLIENT) |
                                               Q(status=constants.APPLICATION_DECLINED_MERCHANT)).count()
