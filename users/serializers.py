@@ -562,7 +562,7 @@ class MerchantReviewCreateSerializer(serializers.ModelSerializer):
                     serializer.save()
                 else:
                     review.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         return review
 
     def validate_rating(self, value):
@@ -597,7 +597,7 @@ class MerchantReviewReplyCreateSerializer(serializers.ModelSerializer):
                     doc_serializers.append(serializer)
                 else:
                     reply.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         for serializer in doc_serializers:
             serializer.save()
         return reply

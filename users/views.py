@@ -111,7 +111,7 @@ class UserViewSet(viewsets.GenericViewSet,
                 activation.delete()
             return Response(data, status=status.HTTP_200_OK, headers=headers)
         logger.error(
-            f'Registration with email: {email} ({constants.ROLES[0]}) failed: {response.make_errors(serializer)}')
+            f'Registration with email: {email} ({constants.ROLES[0]}) failed: {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
@@ -159,7 +159,7 @@ class UserViewSet(viewsets.GenericViewSet,
                 status.HTTP_400_BAD_REQUEST
             )
         logger.error(
-            f'Regular login ({request.data.get("email")}): failed {response.make_errors(serializer)}')
+            f'Regular login ({request.data.get("email")}): failed {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'], name='send-activation-email')
@@ -268,7 +268,7 @@ class UserViewSet(viewsets.GenericViewSet,
             message = serializer.errors.get('phone').get('phone').get('messages')[0]
             return Response(response.make_messages_new([('phone', message)]), status.HTTP_400_BAD_REQUEST)
         except:
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def send_code(self, request, pk=None):
@@ -316,8 +316,8 @@ class UserViewSet(viewsets.GenericViewSet,
             }
             return Response(data, status=status.HTTP_200_OK)
         logger.error(
-            f'Send code ({request.data.get("phone").get("phone")}): failed {response.make_errors(serializer)}')
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            f'Send code ({request.data.get("phone").get("phone")}): failed {response.make_errors_new(serializer)}')
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def social_login(self, request, pk=None):
@@ -326,9 +326,14 @@ class UserViewSet(viewsets.GenericViewSet,
         role = request.data.get('role')
         social_list = [constants.FACEBOOK, constants.GOOGLE, constants.VK_WEB]
         role_list = [constants.ROLE_CLIENT, constants.ROLE_MERCHANT]
-        if social_type not in social_list or access_token in [None, ''] or role not in role_list:
+        if not social_type or not access_token or not role:
             return Response(
-                response.make_messages_new([('social login', constants.RESPONSE_INCORRECT_OR_EMPTY_INPUT_DATA)]),
+                response.make_messages_new([('social_login', constants.RESPONSE_EMPTY_INPUT_DATA)]),
+                status.HTTP_400_BAD_REQUEST
+            )
+        if social_type not in social_list or role not in role_list:
+            return Response(
+                response.make_messages_new([('social_login', constants.RESPONSE_INCORRECT_INPUT_DATA)]),
                 status.HTTP_400_BAD_REQUEST
             )
         logger.info(f'Social login ({social_type}): started')
@@ -378,7 +383,7 @@ class UserViewSet(viewsets.GenericViewSet,
                         'token': token
                     }
                     return Response(data)
-                return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
             info['register'] = True
             logger.info(f'Social login ({social_type}): succeeded')
         return Response(info, status.HTTP_200_OK)
@@ -502,7 +507,7 @@ class ProjectReview(viewsets.GenericViewSet):
         if serializer.is_valid():
             serializer.save(user=request.user, review=review)
             return Response(serializer.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class ReviewReplyViewSet(viewsets.GenericViewSet):
@@ -519,7 +524,7 @@ class ReviewReplyViewSet(viewsets.GenericViewSet):
         if serializer.is_valid():
             serializer.save(user=request.user, reply=reply)
             return Response(serializer.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterPage(views.APIView):

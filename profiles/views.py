@@ -68,7 +68,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 if serializer.is_valid():
                     serializer.save()
                     return Response(serializer.data, status.HTTP_200_OK)
-                return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
             elif user.role == constants.ROLE_MERCHANT:
                 request.data._mutable = True
                 phones = []
@@ -114,7 +114,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         'token': token
                     }
                     return Response(data)
-                return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['put'], permission_classes=[permissions.IsAuthenticated])
     def change_password(self, request, pk=None):
@@ -123,7 +123,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'post'], permission_classes=[IsClient])
     def client_form(self, request, pk=None):
@@ -136,7 +136,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if serializer.is_valid():
                 serializer.save()
                 return Response(status=status.HTTP_200_OK)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def client(self, request, pk=None):
@@ -189,7 +189,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if serializer.is_valid():
                 serializer.save(user=request.user)
                 return Response(serializer.data)
-            return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get', 'put', 'delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def project(self, request, pk=None):
@@ -236,7 +236,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
         elif request.method == 'DELETE':
             project.delete()
             return Response(status=status.HTTP_200_OK)
@@ -350,7 +350,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 'statistics_data': statistics_data
             }
             return Response(data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
     def get_reviews(self, request, pk=None):
@@ -413,7 +413,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if serialzier.is_valid():
             serialzier.save(review=review, user=user)
             return Response(serialzier.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serialzier), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serialzier), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_review_reply(self, request, pk=None):
@@ -450,7 +450,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save(comment=comment, user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_comment(self, request, pk=None):
@@ -527,7 +527,7 @@ class IsPhoneValidView(views.APIView):
                 'is_valid': is_valid
             }
             return Response(data)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class ApplicationViewSet(viewsets.GenericViewSet,
@@ -615,7 +615,7 @@ class ApplicationViewSet(viewsets.GenericViewSet,
                 application.status = constants.APPLICATION_FINISHED
                 application.save()
                 return Response(serialzier.data, status.HTTP_200_OK)
-            return Response(response.make_errors(serialzier), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serialzier), status.HTTP_400_BAD_REQUEST)
         elif user.role == constants.ROLE_MERCHANT:
             if application.merchant != user:
                 return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
@@ -633,7 +633,7 @@ class ApplicationViewSet(viewsets.GenericViewSet,
                 application.status = constants.APPLICATION_FINISHED_CONFIRMED
                 application.save()
                 return Response(serializer.data, status.HTTP_200_OK)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def decline(self, request, pk=None):
@@ -669,7 +669,7 @@ class ApplicationViewSet(viewsets.GenericViewSet,
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status.HTTP_200_OK)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[IsMerchant])
     def accept(self, request, pk=None):
@@ -714,4 +714,4 @@ class ApplicationViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save(client=application.client, merchant=application.merchant, project=application.project)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)

@@ -455,7 +455,7 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
                     project.delete()
                     for doc_obj in doc_objects:
                         doc_obj.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         render = self.context.get('render')
         if render:
             doc_data = {
@@ -469,7 +469,7 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
                 project.delete()
                 for doc_obj in doc_objects:
                     doc_obj.delete()
-                raise serializers.ValidationError(response.make_errors(serializer))
+                raise serializers.ValidationError(response.make_errors_new(serializer))
         for tag in tags:
             project.tags.add(tag)
         project.save()
@@ -543,7 +543,7 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
                 if serializer.is_valid():
                     doc_serializers.append(serializer)
                 else:
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         render = self.context.get('render')
         if render:
             doc_data = {
@@ -564,7 +564,7 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
             else:
                 old_render.project = instance
                 old_render.save()
-                raise serializers.ValidationError(response.make_errors(serializer))
+                raise serializers.ValidationError(response.make_errors_new(serializer))
         delete_documents = self.context.get('delete_documents')
         for del_doc in delete_documents:
             path = del_doc
@@ -785,7 +785,7 @@ class ProjectCommentCreateSerializer(serializers.ModelSerializer):
                     serializer.save()
                 else:
                     comment.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         return comment
 
 
@@ -813,7 +813,7 @@ class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
                     doc_serializers.append(serializer)
                 else:
                     reply.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         for serializer in doc_serializers:
             serializer.save()
         return reply

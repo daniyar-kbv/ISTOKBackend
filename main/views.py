@@ -191,8 +191,8 @@ class ProjectViewSet(viewsets.GenericViewSet,
                 serializer.save(project=project, user=request.user)
                 logger.info(f'Project({pk}) comment create succeeded')
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-            logger.error(f'Project({pk}) comment create failed: {response.make_errors(serializer)}')
-            return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f'Project({pk}) comment create failed: {response.make_errors_new(serializer)}')
+            return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def complain(self, request, pk=None):
@@ -205,7 +205,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save(user=request.user, project=project)
             return Response(serializer.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     # TODO: add permissions.HasPhone
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsClient, ])
@@ -223,7 +223,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save(client=request.user, merchant=project.user, project=project)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProjectsSearch(views.APIView):
@@ -331,7 +331,7 @@ class CommentViewSet(viewsets.GenericViewSet):
         if serializer.is_valid():
             serializer.save(user=request.user, comment=comment)
             return Response(serializer.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class CommentReplyViewSet(viewsets.GenericViewSet):
@@ -348,7 +348,7 @@ class CommentReplyViewSet(viewsets.GenericViewSet):
         if serializer.is_valid():
             serializer.save(user=request.user, reply=reply)
             return Response(serializer.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class CountryViewSet(viewsets.GenericViewSet,

@@ -113,7 +113,7 @@ class ClientProfileUpdateSerializer(serializers.ModelSerializer):
             if serializer.is_valid():
                 user = serializer.save()
             else:
-                raise serializers.ValidationError(response.make_errors(serializer))
+                raise serializers.ValidationError(response.make_errors_new(serializer))
         if self.context.get('phone'):
             phone = self.context.get('phone')
             serializer = PhoneSerializer(data={
@@ -141,7 +141,7 @@ class ClientProfileUpdateSerializer(serializers.ModelSerializer):
                 merchant_phone.user = user
                 merchant_phone.save()
             else:
-                raise serializers.ValidationError(response.make_errors(serializer))
+                raise serializers.ValidationError(response.make_errors_new(serializer))
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         avatar = validated_data.get('avatar')
@@ -304,7 +304,7 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
                             response.make_messages_new([('phone', constants.VALIDATION_PHONE_NOT_VERIFIED)]))
                     phones.append(merchant_phone)
                 else:
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         documents = self.context.get('documents')
         doc_serializers = []
         if documents:
@@ -317,7 +317,7 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
                 if serializer.is_valid():
                     doc_serializers.append(serializer)
                 else:
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         email = self.context.get('email')
         if email:
             try:
@@ -612,7 +612,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
                     application.delete()
                     for doc_obj in doc_objects:
                         doc_obj.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         return application
 
 
