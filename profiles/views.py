@@ -68,7 +68,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 if serializer.is_valid():
                     serializer.save()
                     return Response(serializer.data, status.HTTP_200_OK)
-                return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
             elif user.role == constants.ROLE_MERCHANT:
                 request.data._mutable = True
                 phones = []
@@ -84,16 +84,20 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 if total_documents:
                     try:
                         if int(total_documents) > 6:
-                            return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 6']),
-                                            status.HTTP_400_BAD_REQUEST)
+                            return Response(
+                                response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 6')]),
+                                status.HTTP_400_BAD_REQUEST
+                            )
                     except:
                         return Response(
-                            response.make_messages([f'total_documents: {constants.RESPONSE_RIGHT_ONLY_DIGITS}']),
+                            response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
                             status.HTTP_400_BAD_REQUEST
                         )
                 else:
-                    return Response(response.make_messages([f'total_documents: {constants.RESPONSE_FIELD_REQUIRED}']),
-                                    status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
+                        status.HTTP_400_BAD_REQUEST
+                    )
                 context = {
                     'phones': phones,
                     'documents': documents,
@@ -110,7 +114,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         'token': token
                     }
                     return Response(data)
-                return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+                return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['put'], permission_classes=[permissions.IsAuthenticated])
     def change_password(self, request, pk=None):
@@ -119,7 +123,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'post'], permission_classes=[IsClient])
     def client_form(self, request, pk=None):
@@ -132,17 +136,18 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if serializer.is_valid():
                 serializer.save()
                 return Response(status=status.HTTP_200_OK)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def client(self, request, pk=None):
         try:
             user = MainUser.objects.get(id=pk)
         except MainUser.DoesNotExist:
-            return Response(response.make_messages([f'Пользователь {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('user', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         if user.role == constants.ROLE_MERCHANT:
-            return Response(response.make_messages([constants.RESPONSE_USER_NOT_CLIENT]), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_messages_new([('user', constants.RESPONSE_USER_NOT_CLIENT)]),
+                            status.HTTP_400_BAD_REQUEST)
         serializer = ClientProfileMerchantSerializer(user, context=request)
         return Response(serializer.data)
 
@@ -177,22 +182,24 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if request.data.get('documents'):
                 context['documents'] = request.data.pop('documents')
                 if context['documents'] > 12:
-                    return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 12']))
+                    return Response(
+                        response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 12')])
+                    )
             serializer = ProjectCreateSerializer(data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save(user=request.user)
                 return Response(serializer.data)
-            return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get', 'put', 'delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def project(self, request, pk=None):
         try:
             project = Project.objects.get(id=pk)
         except:
-            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if project.user != request.user:
-            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
+            return Response(response.make_messages_new([('project', constants.RESPONSE_NOT_OWNER)]),
                             status.HTTP_400_BAD_REQUEST)
         if request.method == 'GET':
             serializer = ProjectDetailSerializer(project, context=request)
@@ -208,15 +215,17 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if total_documents:
                 try:
                     if int(total_documents) > 12:
-                        return Response(response.make_messages([f'{constants.RESPONSE_MAX_FILES} 12']),
-                                        status.HTTP_400_BAD_REQUEST)
+                        return Response(
+                            response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 12')]),
+                            status.HTTP_400_BAD_REQUEST
+                        )
                 except:
                     return Response(
-                        response.make_messages([f'total_documents: {constants.RESPONSE_RIGHT_ONLY_DIGITS}']),
+                        response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
                         status.HTTP_400_BAD_REQUEST
                     )
             else:
-                return Response(response.make_messages([f'total_documents: {constants.RESPONSE_FIELD_REQUIRED}']),
+                return Response(response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
                                 status.HTTP_400_BAD_REQUEST)
             context = {
                 'documents': documents,
@@ -227,7 +236,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
         elif request.method == 'DELETE':
             project.delete()
             return Response(status=status.HTTP_200_OK)
@@ -237,10 +246,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
         try:
             project = Project.objects.get(id=pk)
         except:
-            return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if project.user != request.user:
-            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
+            return Response(response.make_messages_new([('project', constants.RESPONSE_NOT_OWNER)]),
                             status.HTTP_400_BAD_REQUEST)
         project_serializer = ProjectForUpdateSerializer(project, context=request)
         categories = ProjectCategory.objects.all()
@@ -280,7 +289,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             try:
                 project = Project.objects.get(id=pk)
             except:
-                return Response(response.make_messages([f'Проект {constants.RESPONSE_DOES_NOT_EXIST}']),
+                return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                                 status.HTTP_400_BAD_REQUEST)
         else:
             projects = Project.objects.filter(user=request.user)
@@ -289,7 +298,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             else:
                 return Response(constants.RESPONSE_NO_PROJECTS, status.HTTP_400_BAD_REQUEST)
         if project.user != request.user:
-            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} проекта']),
+            return Response(response.make_messages_new([('project', constants.RESPONSE_NOT_OWNER)]),
                             status.HTTP_400_BAD_REQUEST)
         project_serializer = ProjectSearchSerializer(project, context=request)
         projects = Project.objects.filter(user=request.user)
@@ -305,10 +314,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
         try:
             feature = ProjectPaidFeature.objects.get(id=pk)
         except:
-            return Response(response.make_messages([f'Прдвиженияе прооекта {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('feature', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if feature.project.user != request.user:
-            return Response(response.make_messages([f'{constants.RESPONSE_NOT_OWNER} продвижением проекта']),
+            return Response(response.make_messages_new([('feature', constants.RESPONSE_NOT_OWNER)]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = GetStatiscticsInSerialzier(data=request.data)
         if serializer.is_valid():
@@ -341,13 +350,13 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 'statistics_data': statistics_data
             }
             return Response(data, status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
     def get_reviews(self, request, pk=None):
         user = request.user
         if user.role == constants.ROLE_CLIENT:
-            return Response(response.make_messages([constants.RESPONSE_USER_NOT_MERCHANT]))
+            return Response(response.make_messages_new([('user', constants.RESPONSE_USER_NOT_MERCHANT)]))
         reviews = MerchantReview.objects.filter(merchant=user)
         if request.data.get('order_by'):
             order_by = request.data.get('order_by')
@@ -371,7 +380,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         try:
             review = MerchantReview.objects.get(id=pk)
         except:
-            return Response(response.make_messages([f'Отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('review', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         user = request.user
         if review.merchant != user:
@@ -384,11 +393,11 @@ class ProfileViewSet(viewsets.GenericViewSet,
         try:
             review = MerchantReview.objects.get(id=pk)
         except:
-            return Response(response.make_messages([f'Отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('review', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             ReviewReply.objects.get(review=review)
-            return Response(response.make_messages([constants.RESPONSE_REPLY_EXISTS]))
+            return Response(response.make_messages_new([('review_reply', constants.RESPONSE_REPLY_EXISTS)]))
         except:
             pass
         user = request.user
@@ -404,14 +413,14 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if serialzier.is_valid():
             serialzier.save(review=review, user=user)
             return Response(serialzier.data, status.HTTP_200_OK)
-        return Response(response.make_errors(serialzier), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serialzier), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_review_reply(self, request, pk=None):
         try:
             reply = ReviewReply.objects.get(id=pk)
         except:
-            return Response(response.make_messages([f'Ответ на отзыв {pk} {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('review_reply', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         user = request.user
         if reply.user != user:
@@ -424,13 +433,13 @@ class ProfileViewSet(viewsets.GenericViewSet,
         try:
             comment = ProjectComment.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Комментарий {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if comment.project.user != request.user:
-            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_NOT_OWNER)]))
         try:
             ProjectCommentReply.objects.get(comment=comment)
-            return Response(response.make_messages([constants.RESPONSE_COMMENT_REPLY_EXISTS]))
+            return Response(response.make_messages_new([('comment_reply', constants.RESPONSE_COMMENT_REPLY_EXISTS)]))
         except:
             pass
         context = {}
@@ -441,17 +450,17 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save(comment=comment, user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_comment(self, request, pk=None):
         try:
             comment = ProjectComment.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Комментарий {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if comment.project.user != request.user:
-            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_NOT_OWNER)]))
         comment.delete()
         return Response(status=status.HTTP_200_OK)
 
@@ -460,10 +469,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
         try:
             reply = ProjectCommentReply.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages([f'Комментарий {constants.RESPONSE_DOES_NOT_EXIST}']),
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if reply.user != request.user:
-            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_NOT_OWNER)]))
         reply.delete()
         return Response(status=status.HTTP_200_OK)
 
@@ -485,9 +494,9 @@ class ProfileViewSet(viewsets.GenericViewSet,
         try:
             notification = Notification.objects.get(id=pk)
         except:
-            return Response(response.make_messages([f'Уведомление {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages_new([('notification', constants.RESPONSE_DOES_NOT_EXIST)]))
         if notification.user != request.user:
-            return Response(response.make_messages([constants.RESPONSE_NOT_OWNER]))
+            return Response(response.make_messages_new([('notification', constants.RESPONSE_NOT_OWNER)]))
         notification.read = True
         notification.save()
         return Response(status=status.HTTP_200_OK)
@@ -513,12 +522,12 @@ class IsPhoneValidView(views.APIView):
             if phone_obj:
                 if phone_obj.user:
                     if phone_obj.user != request.user:
-                        return Response(response.make_messages([constants.RESPONSE_PHONE_REGISTERED]))
+                        return Response(response.make_messages_new([('phone', constants.RESPONSE_PHONE_REGISTERED)]))
             data = {
                 'is_valid': is_valid
             }
             return Response(data)
-        return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
 class ApplicationViewSet(viewsets.GenericViewSet,
@@ -582,14 +591,18 @@ class ApplicationViewSet(viewsets.GenericViewSet,
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
-            return Response(response.make_messages([f'Заявка с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         user = request.user
         if user.role == constants.ROLE_CLIENT:
             if application.client != user:
-                return Response(response.make_messages([constants.RESPONSE_CANT_MODIFY]))
+                return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CONFIRMED:
-                return Response(response.make_messages([f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Приянятые']),
-                                status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    response.make_messages_new(
+                        [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Принятые')]
+                    ),
+                    status.HTTP_400_BAD_REQUEST
+                )
             context = {
                 'user': user
             }
@@ -602,15 +615,15 @@ class ApplicationViewSet(viewsets.GenericViewSet,
                 application.status = constants.APPLICATION_FINISHED
                 application.save()
                 return Response(serialzier.data, status.HTTP_200_OK)
-            return Response(response.make_errors(serialzier), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serialzier), status.HTTP_400_BAD_REQUEST)
         elif user.role == constants.ROLE_MERCHANT:
             if application.merchant != user:
-                return Response(response.make_messages([constants.RESPONSE_CANT_MODIFY]))
+                return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CONFIRMED and \
                     application.status != constants.APPLICATION_FINISHED:
                 return Response(
-                    response.make_messages(
-                        [f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают подтверждения, в процессе']
+                    response.make_messages_new(
+                        [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают подтверждения, в процессе')]
                     ),
                     status.HTTP_400_BAD_REQUEST
                 )
@@ -620,31 +633,35 @@ class ApplicationViewSet(viewsets.GenericViewSet,
                 application.status = constants.APPLICATION_FINISHED_CONFIRMED
                 application.save()
                 return Response(serializer.data, status.HTTP_200_OK)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def decline(self, request, pk=None):
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
-            return Response(response.make_messages([f'Заявка с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         user = request.user
         if user.role == constants.ROLE_CLIENT:
             if application.client != user:
-                return Response(response.make_messages([constants.RESPONSE_CANT_MODIFY]))
+                return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CREATED:
-                return Response(response.make_messages([f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают ответа']),
-                                status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    response.make_messages_new(
+                        [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают ответа')]
+                    ),
+                    status.HTTP_400_BAD_REQUEST
+                )
             application.status = constants.APPLICATION_DECLINED_CLIENT
             application.save()
             return Response(status=status.HTTP_200_OK)
         elif user.role == constants.ROLE_MERCHANT:
             if application.merchant != user:
-                return Response(response.make_messages([constants.RESPONSE_CANT_MODIFY]))
+                return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CREATED:
                 return Response(
-                    response.make_messages(
-                        [f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые']
+                    response.make_messages_new(
+                        [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые')]
                     ),
                     status.HTTP_400_BAD_REQUEST
                 )
@@ -652,21 +669,21 @@ class ApplicationViewSet(viewsets.GenericViewSet,
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status.HTTP_200_OK)
-            return Response(response.make_errors(serializer), status.HTTP_400_BAD_REQUEST)
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[IsMerchant])
     def accept(self, request, pk=None):
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
-            return Response(response.make_messages([f'Заявка с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         user = request.user
         if application.merchant != user:
-            return Response(response.make_messages([constants.RESPONSE_CANT_MODIFY]))
+            return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
         if application.status != constants.APPLICATION_CREATED:
             return Response(
-                response.make_messages(
-                    [f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые']
+                response.make_messages_new(
+                    [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые')]
                 ),
                 status.HTTP_400_BAD_REQUEST
             )
@@ -680,11 +697,11 @@ class ApplicationViewSet(viewsets.GenericViewSet,
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
-            return Response(response.make_messages([f'Заявка с id {pk} {constants.RESPONSE_DOES_NOT_EXIST}']))
+            return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         if application.status != constants.APPLICATION_FINISHED_CONFIRMED:
             return Response(
-                response.make_messages(
-                    [f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Завершенные']
+                response.make_messages_new(
+                    [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Завершенные')]
                 ),
                 status.HTTP_400_BAD_REQUEST
             )
@@ -697,4 +714,4 @@ class ApplicationViewSet(viewsets.GenericViewSet,
         if serializer.is_valid():
             serializer.save(client=application.client, merchant=application.merchant, project=application.project)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(response.make_errors(serializer), status=status.HTTP_400_BAD_REQUEST)
+        return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)

@@ -28,9 +28,9 @@ class PaidFeaturesAPIView(APIView):
     def get(self, request):
         type = request.data.get('type')
         if not type:
-            return Response(response.make_messages([f'type {constants.RESPONSE_FIELD_REQUIRED}']))
+            return Response(response.make_messages_new([('type', constants.RESPONSE_FIELD_REQUIRED)]))
         if not isinstance(type, int) or type < 1 or type > len(constants.PAID_FEATURE_TYPES):
-            return Response(response.make_messages([f'Тип {constants.RESPONSE_PAID_TYPE_INVALID}']))
+            return Response(response.make_messages_new([('type', constants.RESPONSE_PAID_TYPE_INVALID)]))
         features = PaidFeatureType.objects.filter(type=type)
         serializer = PaidFeatureTypeListSerializer(features, many=True)
         return Response(serializer.data)
