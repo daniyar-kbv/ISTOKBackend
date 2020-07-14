@@ -10,7 +10,9 @@ from main.tasks import deactivate_project_feature, deactivate_user_feature, noti
 from utils import general
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-import requests, constants, os
+import requests, constants, os, logging
+
+logger = logging.getLogger('utils_payments')
 
 
 def make_payment(type, request, instance, target):

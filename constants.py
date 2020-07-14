@@ -131,7 +131,7 @@ RESPONSE_REPLY_EXISTS = 'На этот отзыв уже существует о
 RESPONSE_COMMENT_REPLY_EXISTS = 'На этот комментарий уже существует ответ'
 RESPONSE_DATA_TYPES_DIGITS = 'Должен быть числовым'
 RESPONSE_NO_FEATURE = 'Подходящие виды платных услуг не существуют'
-RESPONSE_NO_PK = 'Отсутствует пареметр pk в url'
+RESPONSE_NO_PK = 'Отсутствует параметр pk в url'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'

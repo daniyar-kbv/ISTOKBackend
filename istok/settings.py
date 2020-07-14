@@ -219,10 +219,34 @@ LOGGING = {
         }
     },
     'handlers': {
+        'blog_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs') + '/blog/blog.log',
+            'formatter': 'verbose',
+            'backupCount': 5,
+            'maxBytes': 5000000
+        },
         'main_file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'logs') + '/main/main.log',
+            'formatter': 'verbose',
+            'backupCount': 5,
+            'maxBytes': 5000000
+        },
+        'payments_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs') + '/payments/payments.log',
+            'formatter': 'verbose',
+            'backupCount': 5,
+            'maxBytes': 5000000
+        },
+        'profiles_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs') + '/profiles/profiles.log',
             'formatter': 'verbose',
             'backupCount': 5,
             'maxBytes': 5000000
@@ -235,6 +259,14 @@ LOGGING = {
             'backupCount': 5,
             'maxBytes': 5000000
         },
+        'utils_payments_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs') + '/utils/payments.log',
+            'formatter': 'verbose',
+            'backupCount': 5,
+            'maxBytes': 5000000
+        },
         'console_handler': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -242,8 +274,23 @@ LOGGING = {
         }
     },
     'loggers': {
+        'blog': {
+            'handlers': ['blog_file', 'console_handler'],
+            'level': 'DEBUG',
+            'propogate': True,
+        },
         'main': {
             'handlers': ['main_file', 'console_handler'],
+            'level': 'DEBUG',
+            'propogate': True,
+        },
+        'payments': {
+            'handlers': ['payments_file', 'console_handler'],
+            'level': 'DEBUG',
+            'propogate': True,
+        },
+        'profiles': {
+            'handlers': ['profiles_file', 'console_handler'],
             'level': 'DEBUG',
             'propogate': True,
         },
@@ -251,7 +298,12 @@ LOGGING = {
             'handlers': ['users_file', 'console_handler'],
             'level': 'DEBUG',
             'propogate': True,
-        }
+        },
+        'utils_payments': {
+            'handlers': ['utils_payments_file', 'console_handler'],
+            'level': 'DEBUG',
+            'propogate': True,
+        },
     },
 }
 

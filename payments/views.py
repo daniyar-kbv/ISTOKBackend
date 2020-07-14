@@ -14,7 +14,9 @@ from users.models import MainUser
 from utils import response, permissions, payments, auth
 from datetime import timedelta, datetime
 from dateutil.relativedelta import relativedelta
-import constants, requests
+import constants, requests, logging
+
+logger = logging.getLogger(__name__)
 
 
 class PaidFeaturesAPIView(APIView):
@@ -37,6 +39,7 @@ class PaidFeaturesAPIView(APIView):
 
     def post(self, request, pk=None):
         serializer = PaidFeaturePostSerializer(data=request.data, context=request.build_absolute_uri(reverse('test_auth')))
+        logger.info(f'Payment for features by user ({request.user.email}): started')
         if serializer.is_valid():
             auth_response = requests.get(request.build_absolute_uri(reverse('test_auth')), headers={
                 'Authorization': f'JWT {serializer.data.get("token")}'
@@ -49,14 +52,21 @@ class PaidFeaturesAPIView(APIView):
             else:
                 if not pk:
                     # TODO: failure url
+                    logger.error(
+                        f'Payment for features by user ({request.user.email}): failed. {constants.RESPONSE_NO_PK}')
                     return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={constants.RESPONSE_NO_PK}')
                 try:
                     instance = Project.objects.get(id=pk)
                 except:
                     # TODO: failure url
+                    logger.error(
+                        f'Payment for features by user ({request.user.email}): failed. {constants.RESPONSE_NO_PK}')
                     return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={constants.RESPONSE_NO_PK}')
+            logger.info(f'Payment for features by user ({request.user.email}): succeeded')
             return payments.make_payment(type, request, instance, target)
         # TODO: failure url
+        logger.error(
+            f'Payment for features by user ({request.user.email}): failed. {response.get_message(serializer)}')
         return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={response.get_message(serializer)}')
 
 

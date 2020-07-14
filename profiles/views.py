@@ -28,8 +28,9 @@ from utils import response, pagination
 from utils.permissions import IsClient, IsAuthenticated, IsMerchant, HasPhone
 from datetime import timedelta, datetime
 from dateutil.relativedelta import relativedelta
-import constants
+import constants, logging
 
+logger = logging.getLogger(__name__)
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
@@ -50,6 +51,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 serializer = MerchantProfileGetSerializer(user, context=request)
                 return Response(serializer.data)
         if request.method == 'PUT':
+            logger.info(f'Edit profile ({pk}) by user ({request.user.email}): started')
             if user.role == constants.ROLE_CLIENT:
                 profile = user.profile
                 email = request.data.get('email')
@@ -67,7 +69,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 serializer = ClientProfileUpdateSerializer(profile, data=request.data, context=context)
                 if serializer.is_valid():
                     serializer.save()
+                    logger.info(f'Edit profile ({pk}) by user ({request.user.email}): succeeded')
                     return Response(serializer.data, status.HTTP_200_OK)
+                logger.error(
+                    f'Edit profile ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
                 return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
             elif user.role == constants.ROLE_MERCHANT:
                 request.data._mutable = True
@@ -84,16 +89,22 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 if total_documents:
                     try:
                         if int(total_documents) > 6:
+                            logger.error(
+                                f'Edit profile ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 6')
                             return Response(
                                 response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 6')]),
                                 status.HTTP_400_BAD_REQUEST
                             )
                     except:
+                        logger.error(
+                            f'Edit profile ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_RIGHT_ONLY_DIGITS}')
                         return Response(
                             response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
                             status.HTTP_400_BAD_REQUEST
                         )
                 else:
+                    logger.error(
+                        f'Edit profile ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
                     return Response(
                         response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
                         status.HTTP_400_BAD_REQUEST
@@ -113,16 +124,22 @@ class ProfileViewSet(viewsets.GenericViewSet,
                     data = {
                         'token': token
                     }
+                    logger.info(f'Edit profile ({pk}) by user ({request.user.email}): succeeded')
                     return Response(data)
+                logger.error(
+                    f'Edit profile ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
                 return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['put'], permission_classes=[permissions.IsAuthenticated])
     def change_password(self, request, pk=None):
         user = request.user
+        logger.info(f'Change password by user ({request.user.email}): started')
         serializer = UserChangePasswordSerializer(user, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f'Change password by user ({request.user.email}): succeeded')
             return Response(serializer.data, status.HTTP_200_OK)
+        logger.error(f'Change password by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'post'], permission_classes=[IsClient])
@@ -132,10 +149,14 @@ class ProfileViewSet(viewsets.GenericViewSet,
             serializer = FormQuestionGroupSerializer(groups, many=True)
             return Response(serializer.data)
         elif request.method == 'POST':
+            logger.info(f'Create client form by user ({request.user.email}): started')
             serializer = FormUserAnswerCreatePostSerializer(data=request.data, context=request)
             if serializer.is_valid():
                 serializer.save()
+                logger.info(f'Create client form by user ({request.user.email}): succeeded')
                 return Response(status=status.HTTP_200_OK)
+            logger.error(
+                f'Create client form by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
             return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
@@ -168,7 +189,6 @@ class ProfileViewSet(viewsets.GenericViewSet,
         }
         return Response(data)
 
-
     @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
     def projects(self, request, pk=None):
         if request.method == 'GET':
@@ -176,19 +196,25 @@ class ProfileViewSet(viewsets.GenericViewSet,
             serializer = ProjectProfileGetSerializer(projects, many=True, context=request)
             return Response(serializer.data)
         elif request.method == 'POST':
+            logger.info(f'Create project by user ({request.user.email}): started')
             context = {
                 'render': request.data.get('render')
             }
             if request.data.get('documents'):
                 context['documents'] = request.data.pop('documents')
                 if context['documents'] > 12:
+                    logger.error(
+                        f'Create project by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 12')
                     return Response(
                         response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 12')])
                     )
             serializer = ProjectCreateSerializer(data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save(user=request.user)
+                logger.info(f'Create project by user ({request.user.email}): succeeded')
                 return Response(serializer.data)
+            logger.error(
+                f'Create project by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
             return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get', 'put', 'delete'], permission_classes=[IsAuthenticated, IsMerchant])
@@ -206,6 +232,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             return Response(serializer.data)
         elif request.method == 'PUT':
             documents = []
+            logger.info(f'Edit project ({pk}) by user ({request.user.email}): started')
             if request.data.get('documents'):
                 documents = request.data.pop('documents')
             delete_documents = []
@@ -215,16 +242,22 @@ class ProfileViewSet(viewsets.GenericViewSet,
             if total_documents:
                 try:
                     if int(total_documents) > 12:
+                        logger.error(
+                            f'Edit project ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 12')
                         return Response(
                             response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 12')]),
                             status.HTTP_400_BAD_REQUEST
                         )
                 except:
+                    logger.error(
+                        f'Edit project ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_RIGHT_ONLY_DIGITS}')
                     return Response(
                         response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
                         status.HTTP_400_BAD_REQUEST
                     )
             else:
+                logger.error(
+                    f'Edit project ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
                 return Response(response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
                                 status.HTTP_400_BAD_REQUEST)
             context = {
@@ -235,10 +268,15 @@ class ProfileViewSet(viewsets.GenericViewSet,
             serializer = ProjectUpdateSerializer(project, data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save()
+                logger.info(f'Edit project ({pk}) by user ({request.user.email}): succeeded')
                 return Response(serializer.data)
+            logger.error(
+                f'Edit project ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
             return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
         elif request.method == 'DELETE':
+            logger.info(f'Delete project ({pk}) by user ({request.user.email}): started')
             project.delete()
+            logger.info(f'Delete project ({pk}) by user ({request.user.email}): succeeded')
             return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
@@ -253,19 +291,19 @@ class ProfileViewSet(viewsets.GenericViewSet,
                             status.HTTP_400_BAD_REQUEST)
         project_serializer = ProjectForUpdateSerializer(project, context=request)
         categories = ProjectCategory.objects.all()
-        category_serialzier = ProjectCategoryShortSerializer(categories, many=True)
+        category_serializer = ProjectCategoryShortSerializer(categories, many=True)
         purposes = ProjectPurpose.objects.all()
-        purpose_serialzier = ProjectPurposeShortSerializer(purposes, many=True)
+        purpose_serializer = ProjectPurposeShortSerializer(purposes, many=True)
         types = ProjectType.objects.all()
-        type_serialzier = ProjectTypeSerializer(types, many=True)
+        type_serializer = ProjectTypeSerializer(types, many=True)
         styles = ProjectStyle.objects.all()
-        style_serialzier = ProjectStyleSerializer(styles, many=True)
+        style_serializer = ProjectStyleSerializer(styles, many=True)
         data = {
             'project': project_serializer.data,
-            'categories': category_serialzier.data,
-            'purposes': purpose_serialzier.data,
-            'styles': style_serialzier.data,
-            'types': type_serialzier.data
+            'categories': category_serializer.data,
+            'purposes': purpose_serializer.data,
+            'styles': style_serializer.data,
+            'types': type_serializer.data
         }
         return Response(data)
 
@@ -309,7 +347,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
         }
         return Response(data)
 
-    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsMerchant])
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsMerchant])
     def statistics(self, request, pk=None):
         try:
             feature = ProjectPaidFeature.objects.get(id=pk)
@@ -377,31 +415,44 @@ class ProfileViewSet(viewsets.GenericViewSet,
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_review(self, request, pk=None):
+        logger.info(f'Delete review ({pk}) by user ({request.user.email}): started')
         try:
             review = MerchantReview.objects.get(id=pk)
         except:
+            logger.error(
+                f'Delete review ({pk}) by user ({request.user.email}): failed. Отзыв {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('review', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         user = request.user
         if review.merchant != user:
+            logger.error(
+                f'Delete review ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_NOT_OWNER} обзора')
             return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
         review.delete()
+        logger.info(f'Delete review ({pk}) by user ({request.user.email}): succeeded')
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsMerchant])
     def review_reply(self, request, pk=None):
+        logger.info(f'Reply to review ({pk}) by user ({request.user.email}): started')
         try:
             review = MerchantReview.objects.get(id=pk)
         except:
+            logger.error(
+                f'Reply to review ({pk}) by user ({request.user.email}): failed. Отзыв {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('review', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             ReviewReply.objects.get(review=review)
+            logger.error(
+                f'Reply to review ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_REPLY_EXISTS}')
             return Response(response.make_messages_new([('review_reply', constants.RESPONSE_REPLY_EXISTS)]))
         except:
             pass
         user = request.user
         if review.merchant != user:
+            logger.error(
+                f'Reply to review ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_NOT_OWNER} обзора')
             return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
         context = {
             'user': user
@@ -409,36 +460,52 @@ class ProfileViewSet(viewsets.GenericViewSet,
         if request.data.get('documents'):
             documents = request.data.pop('documents')
             context['documents'] = documents
-        serialzier = MerchantReviewReplyCreateSerializer(data=request.data, context=context)
-        if serialzier.is_valid():
-            serialzier.save(review=review, user=user)
-            return Response(serialzier.data, status.HTTP_200_OK)
-        return Response(response.make_errors_new(serialzier), status.HTTP_400_BAD_REQUEST)
+        serializer = MerchantReviewReplyCreateSerializer(data=request.data, context=context)
+        if serializer.is_valid():
+            serializer.save(review=review, user=user)
+            logger.info(f'Reply to review ({pk}) by user ({request.user.email}): succeeded')
+            return Response(serializer.data, status.HTTP_200_OK)
+        logger.error(
+            f'Reply to review ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
+        return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_review_reply(self, request, pk=None):
+        logger.info(f'Delete review reply ({pk}) by user ({request.user.email}): started')
         try:
             reply = ReviewReply.objects.get(id=pk)
         except:
+            logger.error(
+                f'Delete review reply ({pk}) by user ({request.user.email}): failed. Ответ {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('review_reply', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         user = request.user
         if reply.user != user:
+            logger.error(
+                f'Delete review reply ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_NOT_OWNER} ответа')
             return Response(constants.RESPONSE_NOT_OWNER, status.HTTP_400_BAD_REQUEST)
         reply.delete()
+        logger.info(f'Delete review reply ({pk}) by user ({request.user.email}): succeeded')
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsMerchant])
     def comment_reply(self, request, pk=None):
+        logger.info(f'Reply to comment ({pk}) by user ({request.user.email}): started')
         try:
             comment = ProjectComment.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
+            logger.error(
+                f'Reply to comment ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if comment.project.user != request.user:
-            return Response(response.make_messages_new([('comment', constants.RESPONSE_NOT_OWNER)]))
+            logger.error(
+                f'Reply to comment ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_NOT_OWNER} проекта')
+            return Response(response.make_messages_new([('project', constants.RESPONSE_NOT_OWNER)]))
         try:
             ProjectCommentReply.objects.get(comment=comment)
+            logger.error(
+                f'Reply to comment ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_COMMENT_REPLY_EXISTS}')
             return Response(response.make_messages_new([('comment_reply', constants.RESPONSE_COMMENT_REPLY_EXISTS)]))
         except:
             pass
@@ -449,31 +516,46 @@ class ProfileViewSet(viewsets.GenericViewSet,
         serializer = ProjectCommentReplyCreateSerializer(data=request.data, context=context)
         if serializer.is_valid():
             serializer.save(comment=comment, user=request.user)
+            logger.info(f'Reply to comment ({pk}) by user ({request.user.email}): succeeded')
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        logger.error(
+            f'Reply to comment ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_comment(self, request, pk=None):
+        logger.info(f'Delete comment ({pk}) by user ({request.user.email}): started')
         try:
             comment = ProjectComment.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
+            logger.error(
+                f'Delete comment ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if comment.project.user != request.user:
-            return Response(response.make_messages_new([('comment', constants.RESPONSE_NOT_OWNER)]))
+            logger.error(
+                f'Delete comment ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_NOT_OWNER} проекта')
+            return Response(response.make_messages_new([('project', constants.RESPONSE_NOT_OWNER)]))
         comment.delete()
+        logger.info(f'Delete comment ({pk}) by user ({request.user.email}): succeeded')
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsMerchant])
     def delete_comment_reply(self, request, pk=None):
+        logger.info(f'Delete comment reply ({pk}) by user ({request.user.email}): started')
         try:
             reply = ProjectCommentReply.objects.get(id=pk)
         except Project.DoesNotExist:
-            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
+            logger.error(
+                f'Delete comment reply ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if reply.user != request.user:
-            return Response(response.make_messages_new([('comment', constants.RESPONSE_NOT_OWNER)]))
+            logger.error(
+                f'Delete comment reply ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_NOT_OWNER} ответа')
+            return Response(response.make_messages_new([('comment_reply', constants.RESPONSE_NOT_OWNER)]))
         reply.delete()
+        logger.info(f'Delete comment reply ({pk}) by user ({request.user.email}): succeeded')
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
@@ -491,14 +573,20 @@ class ProfileViewSet(viewsets.GenericViewSet,
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def read_notification(self, request, pk=None):
+        logger.info(f'Read notification ({pk}) by user ({request.user.email}): started')
         try:
             notification = Notification.objects.get(id=pk)
         except:
+            logger.error(
+                f'Read notification ({pk}) by user ({request.user.email}): failed. Уведомление {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('notification', constants.RESPONSE_DOES_NOT_EXIST)]))
         if notification.user != request.user:
+            logger.error(
+                f'Read notification ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_NOT_OWNER} уведомления')
             return Response(response.make_messages_new([('notification', constants.RESPONSE_NOT_OWNER)]))
         notification.read = True
         notification.save()
+        logger.info(f'Read notification ({pk}) by user ({request.user.email}): succeeded')
         return Response(status=status.HTTP_200_OK)
 
 
@@ -514,6 +602,7 @@ class IsPhoneValidView(views.APIView):
         })
         if serializer.is_valid():
             is_valid = False
+            logger.info(f'Validation of phone ({phone}) by user ({request.user.email}): started')
             try:
                 phone_obj = MerchantPhone.objects.get(phone=phone)
                 is_valid = phone_obj.is_valid
@@ -522,11 +611,16 @@ class IsPhoneValidView(views.APIView):
             if phone_obj:
                 if phone_obj.user:
                     if phone_obj.user != request.user:
+                        logger.error(
+                            f'Validation of phone ({phone}) by user ({request.user.email}): failed. {constants.RESPONSE_PHONE_REGISTERED}')
                         return Response(response.make_messages_new([('phone', constants.RESPONSE_PHONE_REGISTERED)]))
             data = {
                 'is_valid': is_valid
             }
+            logger.info(f'Validation of phone ({phone}) by user ({request.user.email}): succeeded')
             return Response(data)
+        logger.error(
+            f'Validation of phone {phone} by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
@@ -588,15 +682,22 @@ class ApplicationViewSet(viewsets.GenericViewSet,
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def finish(self, request, pk=None):
+        logger.info(f'Finish application ({pk}) by user ({request.user.email}): started')
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
+            logger.error(
+                f'Finish application ({pk}) by user ({request.user.email}): failed. Заявка {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         user = request.user
         if user.role == constants.ROLE_CLIENT:
             if application.client != user:
+                logger.error(
+                    f'Finish application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_CANT_MODIFY}')
                 return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CONFIRMED:
+                logger.error(
+                    f'Finish application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Принятые')
                 return Response(
                     response.make_messages_new(
                         [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Принятые')]
@@ -609,21 +710,28 @@ class ApplicationViewSet(viewsets.GenericViewSet,
             if request.data.get('documents'):
                 documents = request.data.pop('documents')
                 context['documents'] = documents
-            serialzier = MerchantReviewCreateSerializer(data=request.data, context=context)
-            if serialzier.is_valid():
-                serialzier.save(merchant=application.merchant, user=user)
+            serializer = MerchantReviewCreateSerializer(data=request.data, context=context)
+            if serializer.is_valid():
+                serializer.save(merchant=application.merchant, user=user)
                 application.status = constants.APPLICATION_FINISHED
                 application.save()
-                return Response(serialzier.data, status.HTTP_200_OK)
-            return Response(response.make_errors_new(serialzier), status.HTTP_400_BAD_REQUEST)
+                logger.info(f'Finish application ({pk}) by user ({request.user.email}): succeeded')
+                return Response(serializer.data, status.HTTP_200_OK)
+            logger.error(
+                f'Finish application ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
+            return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
         elif user.role == constants.ROLE_MERCHANT:
             if application.merchant != user:
+                logger.error(
+                    f'Finish application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_CANT_MODIFY}')
                 return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CONFIRMED and \
                     application.status != constants.APPLICATION_FINISHED:
+                logger.error(
+                    f'Finish application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают подтверждения, В процессе')
                 return Response(
                     response.make_messages_new(
-                        [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают подтверждения, в процессе')]
+                        [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают подтверждения, В процессе')]
                     ),
                     status.HTTP_400_BAD_REQUEST
                 )
@@ -632,20 +740,30 @@ class ApplicationViewSet(viewsets.GenericViewSet,
                 serializer.save(user=user, client=application.client)
                 application.status = constants.APPLICATION_FINISHED_CONFIRMED
                 application.save()
+                logger.info(f'Finish application ({pk}) by user ({request.user.email}): succeeded')
                 return Response(serializer.data, status.HTTP_200_OK)
+            logger.error(
+                f'Finish application ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
             return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def decline(self, request, pk=None):
+        logger.info(f'Decline application ({pk}) by user ({request.user.email}): started')
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
+            logger.error(
+                f'Decline application ({pk}) by user ({request.user.email}): failed. Заявка {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         user = request.user
         if user.role == constants.ROLE_CLIENT:
             if application.client != user:
+                logger.error(
+                    f'Decline application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_CANT_MODIFY}')
                 return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CREATED:
+                logger.error(
+                    f'Decline application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают ответа')
                 return Response(
                     response.make_messages_new(
                         [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Ожидают ответа')]
@@ -654,11 +772,16 @@ class ApplicationViewSet(viewsets.GenericViewSet,
                 )
             application.status = constants.APPLICATION_DECLINED_CLIENT
             application.save()
+            logger.info(f'Decline application ({pk}) by user ({request.user.email}): succeeded')
             return Response(status=status.HTTP_200_OK)
         elif user.role == constants.ROLE_MERCHANT:
             if application.merchant != user:
+                logger.error(
+                    f'Decline application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_CANT_MODIFY}')
                 return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
             if application.status != constants.APPLICATION_CREATED:
+                logger.error(
+                    f'Decline application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые')
                 return Response(
                     response.make_messages_new(
                         [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые')]
@@ -668,19 +791,29 @@ class ApplicationViewSet(viewsets.GenericViewSet,
             serializer = ApplicationDeclineSerializer(application, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                logger.info(f'Decline application ({pk}) by user ({request.user.email}): succeeded')
                 return Response(serializer.data, status.HTTP_200_OK)
+            logger.error(
+                f'Decline application ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
             return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[IsMerchant])
     def accept(self, request, pk=None):
+        logger.info(f'Accept application ({pk}) by user ({request.user.email}): started')
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
+            logger.error(
+                f'Accept application ({pk}) by user ({request.user.email}): failed. Заявка {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         user = request.user
         if application.merchant != user:
+            logger.error(
+                f'Accept application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_CANT_MODIFY}')
             return Response(response.make_messages_new([('application', constants.RESPONSE_CANT_MODIFY)]))
         if application.status != constants.APPLICATION_CREATED:
+            logger.error(
+                f'Accept application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые')
             return Response(
                 response.make_messages_new(
                     [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Новые')]
@@ -689,16 +822,22 @@ class ApplicationViewSet(viewsets.GenericViewSet,
             )
         application.status = constants.APPLICATION_CONFIRMED
         application.save()
+        logger.info(f'Accept application ({pk}) by user ({request.user.email}): succeeded')
         return Response(status.HTTP_200_OK)
 
     # TODO: add permissions.HasPhone
     @action(detail=True, methods=['post'], permission_classes=[IsClient, ])
     def resend(self, request, pk=None):
+        logger.info(f'Resend application ({pk}) by user ({request.user.email}): started')
         try:
             application = Application.objects.get(id=pk)
         except Application.DoesNotExist:
+            logger.error(
+                f'Resend application ({pk}) by user ({request.user.email}): failed. Заявка {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('application', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]))
         if application.status != constants.APPLICATION_FINISHED_CONFIRMED:
+            logger.error(
+                f'Resend application ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Завершенные')
             return Response(
                 response.make_messages_new(
                     [('application', f'{constants.RESPONSE_APPLICATION_STATUS_NOT_VALID} Завершенные')]
@@ -713,5 +852,8 @@ class ApplicationViewSet(viewsets.GenericViewSet,
         serializer = ApplicationCreateSerializer(data=request.data, context=context)
         if serializer.is_valid():
             serializer.save(client=application.client, merchant=application.merchant, project=application.project)
+            logger.info(f'Resend application ({pk}) by user ({request.user.email}): succeeded')
             return Response(serializer.data, status=status.HTTP_200_OK)
+        logger.error(
+            f'Resend application ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
