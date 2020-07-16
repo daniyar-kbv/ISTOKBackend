@@ -47,11 +47,13 @@ def make_payment(type, request, instance, target):
     res_data = response.json()
     success = res_data.get('Success')
     model = res_data.get('Model')
+    logger.info(f'Make payment type ({transaction_type}) by user ({request.user.email}): started')
     if success:
         make_features(type, instance, transaction)
         #     TODO: success url
         model = res_data.get('Model')
         message = model.get('CardHolderMessage')
+        logger.info(f'Make payment type ({transaction_type}) by user ({request.user.email}): succeeded. {message}')
         return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={message}')
     else:
         if model:
@@ -69,7 +71,11 @@ def make_payment(type, request, instance, target):
                 return render(request, '3ds_prod.html', context=context)
             elif message:
                 # TODO: failure url
+                logger.error(
+                    f'Make payment type ({transaction_type}) by user ({request.user.email}): failed. {message}')
                 return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={message}')
+        logger.error(
+            f'Make payment type ({transaction_type}) by user ({request.user.email}): failed. {constants.RESPONSE_SERVER_ERROR}')
         return redirect(request.build_absolute_uri(reverse("result_page")))
 
 
@@ -80,6 +86,7 @@ def confirm_3ds(request):
     }
     response = make_request(constants.PAYMENT_REQUEST_3DS, data).json()
     success = response.get('Success')
+    logger.info(f'Confirm 3ds by user ({request.user.email}): started')
     if success:
         if int(request.GET.get('target')) == constants.PAID_FEATURE_FOR_USER:
             instance = MainUser.objects.get(id=int(request.GET.get('instance_id')))
@@ -91,6 +98,7 @@ def confirm_3ds(request):
         # TODO: success url
         model = response.get('Model')
         message = model.get('CardHolderMessage')
+        logger.info(f'Confirm 3ds by user ({request.user.email}): succeeded. {message}')
         return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={message}')
     else:
         model = response.get('Model')
@@ -98,8 +106,10 @@ def confirm_3ds(request):
             message = model.get('CardHolderMessage')
             if message:
                 # TODO: failure url
+                logger.error(f'Confirm 3ds by user ({request.user.email}): failed. {message}')
                 return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={message}')
         # TODO: failure url
+        logger.error(f'Confirm 3ds by user ({request.user.email}): failed. {constants.RESPONSE_SERVER_ERROR}')
         return redirect(request.build_absolute_uri(reverse("result_page")))
 
 

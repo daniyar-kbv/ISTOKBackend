@@ -115,14 +115,14 @@ class UserViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['post'])
     def login_regular(self, request, pk=None):
-        logger.info(f'Regular login ({request.data.get("email")}): started')
         serializer = UserLoginSerializer(data=request.data)
+        logger.info(f'Regular login (email: {request.data.get("email")}): started')
         if serializer.is_valid():
             email = serializer.data.get('email')
             password = serializer.data.get('password')
             if not email:
                 logger.error(
-                    f'Regular login ({request.data.get("email")}): failed. {constants.RESPONSE_ENTER_EMAIL_OR_PHONE}')
+                    f'Regular login (email: {request.data.get("email")}): failed. {constants.RESPONSE_ENTER_EMAIL_OR_PHONE}')
                 return Response(response.make_messages_new([('email', constants.RESPONSE_ENTER_EMAIL_OR_PHONE)]),
                                 status.HTTP_400_BAD_REQUEST)
             if email:
@@ -137,7 +137,7 @@ class UserViewSet(viewsets.GenericViewSet,
                             raise Exception()
                     except:
                         logger.error(
-                            f'Regular login ({request.data.get("email")}): failed. {constants.RESPONSE_USER_EMAIL_NOT_EXIST}')
+                            f'Regular login (email: {request.data.get("email")}): failed. {constants.RESPONSE_USER_EMAIL_NOT_EXIST}')
                         return Response(
                             response.make_messages_new([('email', constants.RESPONSE_USER_EMAIL_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST
@@ -148,15 +148,16 @@ class UserViewSet(viewsets.GenericViewSet,
                 data = {
                     'token': token
                 }
-                logger.info(f'Regular login ({request.data.get("email")}): succeeded')
+                logger.info(f'Regular login (email: {request.data.get("email")}): succeeded')
                 return Response(data, status.HTTP_200_OK)
             logger.error(
-                f'Regular login ({request.data.get("email")}): failed. {constants.PASSWORD} {constants.INCORRECT}')
+                f'Regular login (email: {request.data.get("email")}): failed. {constants.PASSWORD} {constants.INCORRECT}')
             return Response(
                 response.make_messages_new([('password', constants.INCORRECT)]),
                 status.HTTP_400_BAD_REQUEST
             )
-        logger.error(f'Regular login ({request.data.get("email")}): failed. {response.make_errors_new(serializer)}')
+        logger.error(
+            f'Regular login (email: {request.data.get("email")}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'], name='send-activation-email')
@@ -200,7 +201,7 @@ class UserViewSet(viewsets.GenericViewSet,
                 return Response(status.HTTP_200_OK)
         if not email and not role:
             logger.error(
-                f'Activation email sending ({response.make_messages_new([("email", response.missing_field("Email")), ("role", response.missing_field("Роль"))])})')
+                f'Activation email sending: failed. ({response.missing_field("Email"), response.missing_field("Роль")}')
             return Response(
                 response.make_messages_new(
                     [('email', response.missing_field('Email')), ('role', response.missing_field("Роль"))]
@@ -208,7 +209,7 @@ class UserViewSet(viewsets.GenericViewSet,
                 status.HTTP_400_BAD_REQUEST
             )
         if not email:
-            logger.error(f'Activation email sending ({email}): failed. {response.missing_field("Email")}')
+            logger.error(f'Activation email sending: failed. {response.missing_field("Email")}')
             return Response(response.make_messages_new([('email', response.missing_field('Email'))]),
                             status.HTTP_400_BAD_REQUEST)
         if not role:
@@ -332,8 +333,9 @@ class UserViewSet(viewsets.GenericViewSet,
         role = request.data.get('role')
         social_list = [constants.FACEBOOK, constants.GOOGLE, constants.VK_WEB]
         role_list = [constants.ROLE_CLIENT, constants.ROLE_MERCHANT]
-        logger.info(f'Social login ({social_type}): started')
         info, error = oauth.get_social_info(request.data, social_type)
+
+        logger.info(f'Social login ({social_type}): started')
         if not social_type or not access_token or not role:
             logger.error(f'Social login ({social_type}): failed. {constants.RESPONSE_EMPTY_INPUT_DATA}')
             return Response(
@@ -346,9 +348,6 @@ class UserViewSet(viewsets.GenericViewSet,
                 response.make_messages_new([('social_login', constants.RESPONSE_INCORRECT_INPUT_DATA)]),
                 status.HTTP_400_BAD_REQUEST
             )
-        if not info:
-            logger.error(f'Social login ({social_type}): failed. {constants.RESPONSE_SERVER_ERROR}')
-            return Response(response.make_messages_new([('server', error)]), status.HTTP_500_INTERNAL_SERVER_ERROR)
         if not info:
             logger.error(f'Social login ({social_type}): failed. {constants.RESPONSE_SERVER_ERROR}')
             return Response(response.make_messages_new([('server', error)]), status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -395,7 +394,7 @@ class UserViewSet(viewsets.GenericViewSet,
                 logger.error(f'Social login ({social_type}): failed. {response.make_errors_new(serializer)}')
                 return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
             info['register'] = True
-            logger.info(f'Social login ({social_type}): succeeded')
+        logger.info(f'Social login ({social_type}): succeeded')
         return Response(info, status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
