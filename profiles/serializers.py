@@ -432,7 +432,7 @@ class FormUserAnswerCreatePostSerializer(serializers.Serializer):
         questions = FormQuestion.objects.all()
         for answer in answers_objects:
             if questions.filter(question=answer.question.question).count() > 0:
-                questions.exclude(question=answer.question.question)
+                questions = questions.exclude(id=answer.question_id)
         if questions.count() > 0:
             raise serializers.ValidationError(
                 response.make_messages_new([('question', constants.VALIDATION_FORM_NOT_COMPLETE)])

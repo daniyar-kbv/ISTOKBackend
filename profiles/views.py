@@ -202,7 +202,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
             }
             if request.data.get('documents'):
                 context['documents'] = request.data.pop('documents')
-                if context['documents'] > 12:
+                if len(context['documents']) > 12:
                     logger.error(
                         f'Create project by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 12')
                     return Response(
