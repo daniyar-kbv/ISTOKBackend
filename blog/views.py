@@ -42,7 +42,7 @@ class BlogViewSet(viewsets.GenericViewSet,
         except BlogPost.DoesNotExist:
             logger.error(
                 f'Like of blog post ({pk}) by user ({request.user.email}): failed. Пост {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages_new([('post', constants.RESPONSE_DOES_NOT_EXIST)]),
+            return Response(response.make_messages_new([('post', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             post.user_likes.get(id=request.user.id)

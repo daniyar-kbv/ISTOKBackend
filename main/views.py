@@ -144,7 +144,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         except Project.DoesNotExist:
             logger.error(
                 f'Favorite of project ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
+            return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             favorite = ProjectUserFavorite.objects.get(user=request.user, project=project)
@@ -181,7 +181,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
                 project = self.queryset.get(id=pk)
             except Project.DoesNotExist:
                 logger.error(f'Project ({pk}) comment create: failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
-                return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
+                return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                                 status.HTTP_400_BAD_REQUEST)
             context = {}
             if request.data.get('documents'):

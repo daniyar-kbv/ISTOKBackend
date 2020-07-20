@@ -33,7 +33,7 @@
                 // сформирована криптограмма
                 {#alert(result.packet);#}
 
-                document.getElementById("downloadForm").setAttribute("action", `{{ pay_url }}52/`);
+                document.getElementById("downloadForm").setAttribute("action", `{{ pay_url }}1/`);
                 document.getElementById("packetInput").setAttribute("value", `${result.packet}`);
                 function submitForm() { downloadForm.submit(); }
                 submitForm();

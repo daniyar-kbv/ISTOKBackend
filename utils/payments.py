@@ -12,7 +12,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import requests, constants, os, logging
 
-logger = logging.getLogger('utils_payments')
+logger = logging.getLogger('payments')
 
 
 def make_payment(type, request, instance, target):

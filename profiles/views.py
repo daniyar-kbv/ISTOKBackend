@@ -156,7 +156,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 logger.info(f'Send client form by user ({request.user.email}): succeeded')
                 return Response(status=status.HTTP_200_OK)
             logger.error(
-                f'Get/send client form by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
+                f'Send client form by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
             return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
@@ -497,10 +497,10 @@ class ProfileViewSet(viewsets.GenericViewSet,
         logger.info(f'Reply to comment ({pk}) by user ({request.user.email}): started')
         try:
             comment = ProjectComment.objects.get(id=pk)
-        except ProjectCommentReply.DoesNotExist:
+        except ProjectComment.DoesNotExist:
             logger.error(
-                f'Reply to comment ({pk}) by user ({request.user.email}): failed. Ответ {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages_new([('reply', constants.RESPONSE_DOES_NOT_EXIST)]),
+                f'Reply to comment ({pk}) by user ({request.user.email}): failed. Комментарий {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
                             status.HTTP_400_BAD_REQUEST)
         if comment.project.user != request.user:
             logger.error(

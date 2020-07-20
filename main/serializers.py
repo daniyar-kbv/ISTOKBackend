@@ -417,19 +417,19 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         try:
             category = ProjectCategory.objects.get(id=validated_data.pop('category'))
         except:
-            return serializers.ValidationError(f'Category {constants.RESPONSE_DOES_NOT_EXIST}')
+            raise serializers.ValidationError(f'Category {constants.RESPONSE_DOES_NOT_EXIST}')
         try:
             purpose = ProjectPurpose.objects.get(id=validated_data.pop('purpose'))
         except:
-            return serializers.ValidationError(f'Purpose {constants.RESPONSE_DOES_NOT_EXIST}')
+            raise serializers.ValidationError(f'Purpose {constants.RESPONSE_DOES_NOT_EXIST}')
         try:
             style = ProjectStyle.objects.get(id=validated_data.pop('style'))
         except:
-            return serializers.ValidationError(f'Style {constants.RESPONSE_DOES_NOT_EXIST}')
+            raise serializers.ValidationError(f'Style {constants.RESPONSE_DOES_NOT_EXIST}')
         try:
             type = ProjectType.objects.get(id=validated_data.pop('type'))
         except:
-            return serializers.ValidationError(f'Type {constants.RESPONSE_DOES_NOT_EXIST}')
+            raise serializers.ValidationError(f'Type {constants.RESPONSE_DOES_NOT_EXIST}')
         if validated_data.get('price_from') > validated_data.get('price_to'):
             raise serializers.ValidationError(
                 response.make_messages_new([('price', constants.VALIDATION_PRICE_INVALID)])

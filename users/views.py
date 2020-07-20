@@ -510,10 +510,10 @@ class ProjectReview(viewsets.GenericViewSet):
         logger.info(f'Complain to merchant review ({pk}) by user ({request.user.email}): started')
         try:
             review = self.queryset.get(id=pk)
-        except Project.DoesNotExist:
+        except MerchantReview.DoesNotExist:
             logger.error(
-                f'Complain to merchant review ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
+                f'Complain to merchant review ({pk}) by user ({request.user.email}): failed. Обзор {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('review', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = ReviewComplainSerializer(data=request.data)
         if serializer.is_valid():
@@ -533,10 +533,10 @@ class ReviewReplyViewSet(viewsets.GenericViewSet):
         logger.info(f'Complain to review reply ({pk}) by user ({request.user.email}): started')
         try:
             reply = self.queryset.get(id=pk)
-        except Project.DoesNotExist:
+        except ReviewReply.DoesNotExist:
             logger.error(
-                f'Complain to review reply ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
+                f'Complain to review reply ({pk}) by user ({request.user.email}): failed. Ответ {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('reply', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = ReviewReplyComplainSerializer(data=request.data)
         if serializer.is_valid():
