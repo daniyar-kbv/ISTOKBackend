@@ -86,7 +86,7 @@ def confirm_3ds(request):
     }
     response = make_request(constants.PAYMENT_REQUEST_3DS, data).json()
     success = response.get('Success')
-    logger.info(f'Confirm 3ds by user ({request.user.email}): started')
+    logger.info(f'Confirm 3ds: started')
     if success:
         if int(request.GET.get('target')) == constants.PAID_FEATURE_FOR_USER:
             instance = MainUser.objects.get(id=int(request.GET.get('instance_id')))
@@ -98,7 +98,7 @@ def confirm_3ds(request):
         # TODO: success url
         model = response.get('Model')
         message = model.get('CardHolderMessage')
-        logger.info(f'Confirm 3ds by user ({request.user.email}): succeeded. {message}')
+        logger.info(f'Confirm 3ds: succeeded. {message}')
         return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={message}')
     else:
         model = response.get('Model')
@@ -106,10 +106,10 @@ def confirm_3ds(request):
             message = model.get('CardHolderMessage')
             if message:
                 # TODO: failure url
-                logger.error(f'Confirm 3ds by user ({request.user.email}): failed. {message}')
+                logger.error(f'Confirm 3ds: failed. {message}')
                 return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={message}')
         # TODO: failure url
-        logger.error(f'Confirm 3ds by user ({request.user.email}): failed. {constants.RESPONSE_SERVER_ERROR}')
+        logger.error(f'Confirm 3ds: failed. {constants.RESPONSE_SERVER_ERROR}')
         return redirect(request.build_absolute_uri(reverse("result_page")))
 
 
