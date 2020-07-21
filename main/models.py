@@ -29,12 +29,14 @@ class ProjectManager(models.Manager):
                 queryset = queryset.filter(purpose_id__in=request.data.get('purposes'))
             if request.data.get('styles'):
                 queryset = queryset.filter(style_id__in=request.data.get('styles'))
-            if request.data.get('area_from') and request.data.get('area_to'):
-                queryset = queryset.filter(Q(area__gte=request.data.get('area_from')) &
-                                           Q(area__lte=request.data.get('area_to')))
-            if request.data.get('price_from') and request.data.get('price_to'):
-                queryset = queryset.filter(Q(price__gte=request.data.get('price_from')) &
-                                           Q(price__lte=request.data.get('price_to')))
+            if request.data.get('area_from'):
+                queryset = queryset.filter(area_from__gte=request.data.get('area_from'))
+            if request.data.get('area_to'):
+                queryset = queryset.filter(area_to__lte=request.data.get('area_to'))
+            if request.data.get('price_from'):
+                queryset = queryset.filter(price_from__gte=request.data.get('price_from'))
+            if request.data.get('price_to'):
+                queryset = queryset.filter(price_to__lte=request.data.get('price_to'))
             queryset = queryset.order_by(request.data.get('order_by') if request.data.get('order_by') else '-creation_date')
         return queryset.distinct()
 
