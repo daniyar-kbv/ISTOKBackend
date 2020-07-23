@@ -105,7 +105,7 @@ RESPONSE_USER_EMAIL_NOT_EXIST = 'Пользователя с таким email и
 RESPONSE_INVALID_ROLE = 'Введенной роли не существует'
 RESPONSE_INCORRECT_INPUT_DATA = 'Входные данные указаны неверно'
 RESPONSE_EMPTY_INPUT_DATA = 'Входные данные отсутствуют'
-RESPONSE_ENTER_EMAIL_OR_PHONE = 'Введите имейл или номер телефона'
+RESPONSE_ENTER_EMAIL_OR_PHONE = 'Введите email или номер телефона'
 RESPONSE_ENTER_ONLY_EMAIL_OR_PHONE = 'Введите только имейл или номер телефона'
 RESPONSE_ENTER_ROLE = 'Введите роль'
 RESPONSE_VERIFICATION_DOES_NOT_EXIST = 'Подтверждение с таким номером не найдено'
@@ -131,7 +131,7 @@ RESPONSE_REPLY_EXISTS = 'На этот отзыв уже существует о
 RESPONSE_COMMENT_REPLY_EXISTS = 'На этот комментарий уже существует ответ'
 RESPONSE_DATA_TYPES_DIGITS = 'Должен быть числовым'
 RESPONSE_NO_FEATURE = 'Подходящие виды платных услуг не существуют'
-RESPONSE_NO_PK = 'Отсутствует пареметр pk в url'
+RESPONSE_NO_PK = 'Отсутствует параметр pk в url'
 
 VALIDATION_PHONE_FORMAT_ERROR = 'Формат номера телефона: +X (XXX) XXX-XX-XX'
 VALIDATION_CANT_BE_BLANK = 'Не может быть пустым'

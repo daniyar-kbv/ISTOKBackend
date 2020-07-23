@@ -5,7 +5,9 @@ from rest_framework.decorators import action
 from blog.models import BlogPost, BlogPostCategory
 from blog.serializers import BlogPostSearchSerializer, BlogPostDetailSerializer, BlogPostCategorySerializer
 from utils import pagination, response
-import constants
+import constants, logging
+
+logger = logging.getLogger(__name__)
 
 
 class BlogViewSet(viewsets.GenericViewSet,
@@ -34,10 +36,13 @@ class BlogViewSet(viewsets.GenericViewSet,
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
+        logger.info(f'Like of blog post ({pk}) by user ({request.user.email}): started')
         try:
             post = BlogPost.objects.get(id=pk)
         except BlogPost.DoesNotExist:
-            return Response(response.make_messages_new([('post', constants.RESPONSE_DOES_NOT_EXIST)]),
+            logger.error(
+                f'Like of blog post ({pk}) by user ({request.user.email}): failed. Пост {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('post', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             post.user_likes.get(id=request.user.id)
@@ -46,6 +51,7 @@ class BlogViewSet(viewsets.GenericViewSet,
         except:
             post.user_likes.add(request.user)
             post.save()
+        logger.info(f'Like of blog post ({pk}) by user ({request.user.email}): succeeded')
         return Response(status=status.HTTP_200_OK)
 
 

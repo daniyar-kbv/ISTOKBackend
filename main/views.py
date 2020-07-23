@@ -138,19 +138,20 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
-        logger.info(f'Favorite of project({pk}) user({request.user.email}) started')
+        logger.info(f'Favorite of project ({pk}) by user ({request.user.email}): started')
         try:
             project = Project.objects.get(id=pk)
         except Project.DoesNotExist:
-            logger.error(f'Favorite of project({pk}) user({request.user.email}) failed: {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
+            logger.error(
+                f'Favorite of project ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             favorite = ProjectUserFavorite.objects.get(user=request.user, project=project)
             favorite.delete()
         except:
             ProjectUserFavorite.objects.create(user=request.user, project=project)
-        logger.info(f'Favorite of project({pk}) user({request.user.email}) succeeded')
+        logger.info(f'Favorite of project ({pk}) by user ({request.user.email}): succeeded')
         return Response(status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
@@ -175,12 +176,12 @@ class ProjectViewSet(viewsets.GenericViewSet,
             serializer = ProjectCommentWithReplySerializer(comments, many=True, context=request)
             return Response(serializer.data, status.HTTP_200_OK)
         elif request.method == 'POST':
-            logger.info(f'Project({pk}) comment create: started')
+            logger.info(f'Project ({pk}) comment create: started')
             try:
                 project = self.queryset.get(id=pk)
             except Project.DoesNotExist:
-                logger.error(f'Project({pk}) comment create failed: Проект {constants.RESPONSE_DOES_NOT_EXIST}')
-                return Response(response.make_messages_new([('project', constants.RESPONSE_DOES_NOT_EXIST)]),
+                logger.error(f'Project ({pk}) comment create: failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
+                return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                                 status.HTTP_400_BAD_REQUEST)
             context = {}
             if request.data.get('documents'):
@@ -189,30 +190,39 @@ class ProjectViewSet(viewsets.GenericViewSet,
             serializer = ProjectCommentCreateSerializer(data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save(project=project, user=request.user)
-                logger.info(f'Project({pk}) comment create succeeded')
+                logger.info(f'Project ({pk}) comment create: succeeded')
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-            logger.error(f'Project({pk}) comment create failed: {response.make_errors_new(serializer)}')
+            logger.error(f'Project ({pk}) comment create: failed. {response.make_errors_new(serializer)}')
             return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def complain(self, request, pk=None):
+        logger.info(f'Complain to project ({pk}) by user ({request.user.email}): started')
         try:
             project = self.queryset.get(id=pk)
         except Project.DoesNotExist:
+            logger.error(
+                f'Complain to project ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = ProjectComplainSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user, project=project)
+            logger.info(f'Complain to project ({pk}) by user ({request.user.email}): succeeded')
             return Response(serializer.data, status.HTTP_200_OK)
+        logger.error(
+            f'Complain to project ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
     # TODO: add permissions.HasPhone
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsClient, ])
     def submit(self, request, pk=None):
+        logger.info(f'Submit application for a project ({pk}) by user ({request.user.email}): started')
         try:
             project = Project.objects.get(id=pk)
         except Project.DoesNotExist:
+            logger.error(
+                f'Submit application for a project ({pk}) by user ({request.user.email}): failed. Проект {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('project', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         context = {
@@ -222,7 +232,10 @@ class ProjectViewSet(viewsets.GenericViewSet,
         serializer = ApplicationCreateSerializer(data=request.data, context=context)
         if serializer.is_valid():
             serializer.save(client=request.user, merchant=project.user, project=project)
+            logger.info(f'Submit application for a project ({pk}) by user ({request.user.email}): succeeded')
             return Response(serializer.data, status=status.HTTP_200_OK)
+        logger.error(
+            f'Submit application for a project ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -300,13 +313,13 @@ class CommentViewSet(viewsets.GenericViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
-        logger.info(f'Like of project comment ({pk}) user({request.user.email}) started')
+        logger.info(f'Like of comment ({pk}) by user ({request.user.email}): started')
         try:
             comment = ProjectComment.objects.get(id=pk)
         except ProjectComment.DoesNotExist:
             logger.error(
-                f'Like of project comment ({pk}) user({request.user.email}) failed, {constants.RESPONSE_DOES_NOT_EXIST}')
-            return Response(response.make_messages_new([('comment', constants.RESPONSE_DOES_NOT_EXIST)]),
+                f'Like of comment ({pk}) by user ({request.user.email}): failed. Комментарий {constants.RESPONSE_DOES_NOT_EXIST}')
+            return Response(response.make_messages_new([('comment', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         try:
             comment.user_likes.get(id=request.user.id)
@@ -317,20 +330,26 @@ class CommentViewSet(viewsets.GenericViewSet):
             comment.user_likes.add(request.user)
             comment.likes_count = comment.likes_count + 1
             comment.save()
-        logger.info(f'Like of project comment ({pk}) user({request.user.email}) succeeded')
+        logger.info(f'Like of comment ({pk}) by user ({request.user.email}): succeeded')
         return Response(status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def complain(self, request, pk=None):
+        logger.info(f'Complain to comment ({pk}) by user ({request.user.email}): started')
         try:
             comment = self.queryset.get(id=pk)
-        except Project.DoesNotExist:
+        except ProjectComment.DoesNotExist:
+            logger.error(
+                f'Complain to comment ({pk}) by user ({request.user.email}): failed. Комментарий {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('comment', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = CommentComplainSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user, comment=comment)
+            logger.info(f'Complain to comment ({pk}) by user ({request.user.email}): succeeded')
             return Response(serializer.data, status.HTTP_200_OK)
+        logger.error(
+            f'Complain to comment ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 
@@ -339,15 +358,21 @@ class CommentReplyViewSet(viewsets.GenericViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def complain(self, request, pk=None):
+        logger.info(f'Complain to comment reply ({pk}) by user ({request.user.email}): started')
         try:
             reply = self.queryset.get(id=pk)
-        except Project.DoesNotExist:
+        except ProjectCommentReply.DoesNotExist:
+            logger.error(
+                f'Complain to comment reply ({pk}) by user ({request.user.email}): failed. Ответ {constants.RESPONSE_DOES_NOT_EXIST}')
             return Response(response.make_messages_new([('reply', f'{pk} {constants.RESPONSE_DOES_NOT_EXIST}')]),
                             status.HTTP_400_BAD_REQUEST)
         serializer = CommentReplyComplainSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user, reply=reply)
+            logger.info(f'Complain to comment reply ({pk}) by user ({request.user.email}): succeeded')
             return Response(serializer.data, status.HTTP_200_OK)
+        logger.error(
+            f'Complain to comment reply ({pk}) by user ({request.user.email}): failed. {response.make_errors_new(serializer)}')
         return Response(response.make_errors_new(serializer), status.HTTP_400_BAD_REQUEST)
 
 

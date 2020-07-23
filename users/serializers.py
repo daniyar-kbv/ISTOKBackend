@@ -6,7 +6,9 @@ from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone
 from main.models import Project, ProjectDocument, ProjectTag, ProjectCategory
 from utils import response, validators
 
-import constants, re, math
+import constants, re, math, logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectCategoryShortSerializer(serializers.ModelSerializer):
@@ -133,6 +135,8 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
         if serializer.is_valid():
             user = serializer.save()
         else:
+            logger.error(
+                f'Registration with email: ({constants.ROLES[0]}) failed. {response.make_errors_new(serializer)}')
             raise serializers.ValidationError(serializer.errors)
         profile = ClientProfile.objects.create(user=user, **validated_data)
         if settings.DEBUG:

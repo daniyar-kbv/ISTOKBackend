@@ -9,7 +9,9 @@ from main.models import ProjectUserFavorite
 from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagSerializer
 from utils import response, upload, validators, general
 from datetime import datetime
-import constants, os
+import constants, os, logging
+
+logger = logging.getLogger(__name__)
 
 
 class ClientProfileGetSerializer(serializers.ModelSerializer):
@@ -426,14 +428,18 @@ class FormUserAnswerCreatePostSerializer(serializers.Serializer):
                 answer_obj = FormAnswer.objects.get(id=answer)
                 answers_objects.append(answer_obj)
             except:
+                logger.error(
+                    f'Send client form: failed. {answer} {constants.RESPONSE_DOES_NOT_EXIST}')
                 raise serializers.ValidationError(
                     response.make_messages_new([('answer', f'{answer} {constants.RESPONSE_DOES_NOT_EXIST}')])
                 )
         questions = FormQuestion.objects.all()
         for answer in answers_objects:
             if questions.filter(question=answer.question.question).count() > 0:
-                questions.exclude(question=answer.question.question)
+                questions = questions.exclude(id=answer.question_id)
         if questions.count() > 0:
+            logger.error(
+                f'Send client form: failed. {constants.VALIDATION_FORM_NOT_COMPLETE}')
             raise serializers.ValidationError(
                 response.make_messages_new([('question', constants.VALIDATION_FORM_NOT_COMPLETE)])
             )
@@ -589,6 +595,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         try:
             category = ProjectCategory.objects.get(id=validated_data.pop('category'))
         except:
+            logger.error(f'Submit application for a project: failed. {constants.RESPONSE_DOES_NOT_EXIST}')
             raise serializers.ValidationError(
                 response.make_messages_new([('category', constants.RESPONSE_DOES_NOT_EXIST)])
             )
@@ -599,6 +606,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         doc_objects = []
         if documents:
             if len(documents) > 6:
+                logger.error(f'Submit application for a project: failed. {constants.RESPONSE_MAX_FILES} 6')
                 raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
                 doc_data = {
@@ -612,6 +620,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
                     application.delete()
                     for doc_obj in doc_objects:
                         doc_obj.delete()
+                    logger.error(f'Submit application for a project: failed. {response.make_errors_new(serializer)}')
                     raise serializers.ValidationError(response.make_errors_new(serializer))
         return application
 
