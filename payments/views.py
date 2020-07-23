@@ -14,7 +14,9 @@ from users.models import MainUser
 from utils import response, permissions, payments, auth
 from datetime import timedelta, datetime
 from dateutil.relativedelta import relativedelta
-import constants, requests
+import constants, requests, logging
+
+logger = logging.getLogger(__name__)
 
 
 class PaidFeaturesAPIView(APIView):
@@ -28,15 +30,16 @@ class PaidFeaturesAPIView(APIView):
     def get(self, request):
         type = request.data.get('type')
         if not type:
-            return Response(response.make_messages([f'type {constants.RESPONSE_FIELD_REQUIRED}']))
+            return Response(response.make_messages_new([('type', constants.RESPONSE_FIELD_REQUIRED)]))
         if not isinstance(type, int) or type < 1 or type > len(constants.PAID_FEATURE_TYPES):
-            return Response(response.make_messages([f'Тип {constants.RESPONSE_PAID_TYPE_INVALID}']))
+            return Response(response.make_messages_new([('type', constants.RESPONSE_PAID_TYPE_INVALID)]))
         features = PaidFeatureType.objects.filter(type=type)
         serializer = PaidFeatureTypeListSerializer(features, many=True)
         return Response(serializer.data)
 
     def post(self, request, pk=None):
         serializer = PaidFeaturePostSerializer(data=request.data, context=request.build_absolute_uri(reverse('test_auth')))
+        logger.info(f'Payment for features by user ({request.user.email}): started')
         if serializer.is_valid():
             auth_response = requests.get(request.build_absolute_uri(reverse('test_auth')), headers={
                 'Authorization': f'JWT {serializer.data.get("token")}'
@@ -49,14 +52,21 @@ class PaidFeaturesAPIView(APIView):
             else:
                 if not pk:
                     # TODO: failure url
+                    logger.error(
+                        f'Payment for features by user ({request.user.email}): failed. {constants.RESPONSE_NO_PK}')
                     return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={constants.RESPONSE_NO_PK}')
                 try:
                     instance = Project.objects.get(id=pk)
                 except:
                     # TODO: failure url
+                    logger.error(
+                        f'Payment for features by user ({request.user.email}): failed. {constants.RESPONSE_NO_PK}')
                     return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={constants.RESPONSE_NO_PK}')
+            logger.info(f'Payment for features by user ({request.user.email}): succeeded')
             return payments.make_payment(type, request, instance, target)
         # TODO: failure url
+        logger.error(
+            f'Payment for features by user ({request.user.email}): failed. {response.get_message(serializer)}')
         return redirect(f'{request.build_absolute_uri(reverse("result_page"))}?message={response.get_message(serializer)}')
 
 

@@ -6,7 +6,9 @@ from users.models import MainUser, ClientProfile, MerchantProfile, MerchantPhone
 from main.models import Project, ProjectDocument, ProjectTag, ProjectCategory
 from utils import response, validators
 
-import constants, re, math
+import constants, re, math, logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectCategoryShortSerializer(serializers.ModelSerializer):
@@ -133,6 +135,8 @@ class ClientProfileCreateSerializer(serializers.ModelSerializer):
         if serializer.is_valid():
             user = serializer.save()
         else:
+            logger.error(
+                f'Registration with email: ({constants.ROLES[0]}) failed. {response.make_errors_new(serializer)}')
             raise serializers.ValidationError(serializer.errors)
         profile = ClientProfile.objects.create(user=user, **validated_data)
         if settings.DEBUG:
@@ -243,13 +247,17 @@ class UserLoginSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         if value == '' or value is None:
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_CANT_BE_BLANK]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('email', constants.VALIDATION_CANT_BE_BLANK)])
+            )
         return value
 
     def validate_phone(self, value):
         regex = constants.PHONE_FORMAT
         if not isinstance(value, str) or re.search(regex, value) is None:
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('phone', constants.VALIDATION_PHONE_FORMAT_ERROR)])
+            )
         return value
 
 
@@ -261,7 +269,9 @@ class MerchantPhoneVerification(serializers.ModelSerializer):
     def validate_phone(self, value):
         regex = constants.PHONE_FORMAT
         if not isinstance(value, str) or re.search(regex, value) is None:
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('phone', constants.VALIDATION_PHONE_FORMAT_ERROR)])
+            )
         return value
 
 
@@ -275,9 +285,13 @@ class CodeVerificationSerializer(serializers.ModelSerializer):
     def validate_code(self, value):
         for char in value:
             if char not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-                raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
+                raise serializers.ValidationError(
+                    response.make_messages_new([('phone', constants.VALIDATION_PHONE_FORMAT_ERROR)])
+                )
         if len(value) != 4:
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_PHONE_FORMAT_ERROR]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('phone', constants.VALIDATION_PHONE_FORMAT_ERROR)])
+            )
         return value
 
     def create(self, validated_data):
@@ -286,7 +300,9 @@ class CodeVerificationSerializer(serializers.ModelSerializer):
             try:
                 merchant_phone = MerchantPhone.objects.get(phone=phone)
             except MerchantPhone.DoesNotExist:
-                raise serializers.ValidationError(response.make_messages([constants.RESPONSE_SERVER_ERROR]))
+                raise serializers.ValidationError(
+                    response.make_messages_new([('server', constants.RESPONSE_SERVER_ERROR)])
+                )
         else:
             merchant_phone = MerchantPhone.objects.create(phone=phone)
         try:
@@ -550,12 +566,14 @@ class MerchantReviewCreateSerializer(serializers.ModelSerializer):
                     serializer.save()
                 else:
                     review.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         return review
 
     def validate_rating(self, value):
         if value < 0 or value > 10:
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_RATING_RANGE]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('rating', constants.VALIDATION_RATING_RANGE)])
+            )
         return value
 
 
@@ -583,7 +601,7 @@ class MerchantReviewReplyCreateSerializer(serializers.ModelSerializer):
                     doc_serializers.append(serializer)
                 else:
                     reply.delete()
-                    raise serializers.ValidationError(response.make_errors(serializer))
+                    raise serializers.ValidationError(response.make_errors_new(serializer))
         for serializer in doc_serializers:
             serializer.save()
         return reply
@@ -596,5 +614,7 @@ class ClientRatingCreateSerializer(serializers.ModelSerializer):
 
     def validate_rating(self, value):
         if value < 0 or value > 10:
-            raise serializers.ValidationError(response.make_messages([constants.VALIDATION_RATING_RANGE]))
+            raise serializers.ValidationError(
+                response.make_messages_new([('rating', constants.VALIDATION_RATING_RANGE)])
+            )
         return value

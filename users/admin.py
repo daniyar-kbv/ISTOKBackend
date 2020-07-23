@@ -17,7 +17,7 @@ from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdm
 import constants
 
 
-class InlineReviewDocument(admin.StackedInline):
+class InlineReviewDocument(NestedStackedInline):
     model = ReviewDocument
     extra = 0
 

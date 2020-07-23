@@ -27,7 +27,7 @@
             if (result.success) {
                 // сформирована криптограмма
                 {#alert(result.packet);#}
-                document.getElementById("downloadForm").setAttribute("action", "http://0.0.0.0:8990/api/tests/projects/tests/");
+                document.getElementById("downloadForm").setAttribute("action", "http://127.0.0.1:8990/api/tests/projects/tests/");
                 document.getElementById("packetInput").setAttribute("value", `${result.packet}`);
                 function submitForm() { downloadForm.submit(); }
                 submitForm();
