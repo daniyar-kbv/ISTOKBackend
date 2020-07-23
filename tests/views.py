@@ -108,6 +108,17 @@ class ProjectViewSet(viewsets.GenericViewSet,
     def tests2(self, request, pk=None):
         return Response(request.build_absolute_uri(reverse('test_auth')))
 
+    @action(detail=False, methods=['get'], authentication_classes=[auth.CsrfExemptSessionAuthentication, ])
+    def test_cities(self, request, pk=None):
+        cities = ['Абай', 'Акколь', 'Аксай', 'Аксу', 'Актау', 'Актобе', 'Алга', 'Алматы', 'Арал', 'Аркалык', 'Аркалык', 'Арыс', 'Астана', 'Атбасар', 'Атырау', 'Аягоз', 'Байконур', 'Балхаш', 'Булаево', 'Державинск', 'Ерейментау', 'Есик', 'Есиль', 'Жанаозен', 'Жанатас', 'Жаркент', 'Жезказган', 'Жем', 'Жетысай', 'Житикара', 'Зайсан', 'Зыряновск', 'Капшагай', 'Караганды', 'Кокшетау', 'Костанай', 'Кызылорда', 'Ленгер', 'Лисаковск', 'Макинск', 'Павлодар', 'Петропавловск', 'Риддер', 'Рудный', 'Сатпаев', 'Степногорск', 'Талгар', 'Талдыкорган', 'Тараз', 'Уральск', 'Усть-Каменогорск', 'Хромтау', 'Шемонаиха', 'Шымкент', 'Щучинск', 'Экибастуз']
+        char = ''
+        if request.GET.get('char'):
+            char = request.GET.get('char')
+        data = {
+            'cities': [city for city in cities if city[0].lower() == char.lower() or char == '']
+        }
+        return Response(data)
+
 
 class BlogPostViewSet(viewsets.GenericViewSet,
                       mixins.CreateModelMixin):
