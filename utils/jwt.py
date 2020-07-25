@@ -28,7 +28,7 @@ def jwt_payload_handler(user):
         payload['role'] = user.role
     if user.profile:
         payload['first_name'] = user.profile.first_name
-        payload['first_name'] = user.profile.last_name
+        payload['last_name'] = user.profile.last_name
 
     payload[username_field] = username
 
