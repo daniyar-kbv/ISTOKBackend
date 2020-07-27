@@ -113,13 +113,19 @@ class ProjectViewSet(viewsets.GenericViewSet,
         import random
         cities = ['Абай', 'Акколь', 'Аксай', 'Аксу', 'Актау', 'Актобе', 'Алга', 'Алматы', 'Арал', 'Аркалык', 'Аркалык', 'Арыс', 'Астана', 'Атбасар', 'Атырау', 'Аягоз', 'Байконур', 'Балхаш', 'Булаево', 'Державинск', 'Ерейментау', 'Есик', 'Есиль', 'Жанаозен', 'Жанатас', 'Жаркент', 'Жезказган', 'Жем', 'Жетысай', 'Житикара', 'Зайсан', 'Зыряновск', 'Капшагай', 'Караганды', 'Кокшетау', 'Костанай', 'Кызылорда', 'Ленгер', 'Лисаковск', 'Макинск', 'Павлодар', 'Петропавловск', 'Риддер', 'Рудный', 'Сатпаев', 'Степногорск', 'Талгар', 'Талдыкорган', 'Тараз', 'Уральск', 'Усть-Каменогорск', 'Хромтау', 'Шемонаиха', 'Шымкент', 'Щучинск', 'Экибастуз']
         char = ''
-        url = '/api/media/test_cities/' + random.choice(['clowdy.png', 'clowdy2.png', 'sunny.png', 'rain.png'])
-        abs_uri = request.build_absolute_uri(url)
         if request.GET.get('char'):
             char = request.GET.get('char')
+        cities_filtered = [city for city in cities if city[0].lower() == char.lower() or char == '']
+        datas = []
+        for city in cities_filtered:
+            url = '/api/media/test_cities/' + random.choice(['clowdy.png', 'clowdy2.png', 'sunny.png', 'rain.png'])
+            abs_uri = request.build_absolute_uri(url)
+            datas.append({
+                'city': city,
+                'weather': abs_uri
+            })
         data = {
-            'cities': [city for city in cities if city[0].lower() == char.lower() or char == ''],
-            'img': abs_uri
+            'cities': datas
         }
         return Response(data)
 
