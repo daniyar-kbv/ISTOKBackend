@@ -115,7 +115,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
         char = ''
         if request.GET.get('char'):
             char = request.GET.get('char')
-        cities_filtered = [city for city in cities if char.lower() in city.lower() or char == '']
+        cities_filtered = [city for city in cities if city.lower().startswith(char.lower()) or char == '']
         datas = []
         for city in cities_filtered:
             url = '/api/media/test_cities/' + random.choice(['clowdy.png', 'clowdy2.png', 'sunny.png', 'rain.png'])
