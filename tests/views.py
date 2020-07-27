@@ -110,12 +110,16 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
     @action(detail=False, methods=['get'], authentication_classes=[auth.CsrfExemptSessionAuthentication, ])
     def test_cities(self, request, pk=None):
+        import random
         cities = ['Абай', 'Акколь', 'Аксай', 'Аксу', 'Актау', 'Актобе', 'Алга', 'Алматы', 'Арал', 'Аркалык', 'Аркалык', 'Арыс', 'Астана', 'Атбасар', 'Атырау', 'Аягоз', 'Байконур', 'Балхаш', 'Булаево', 'Державинск', 'Ерейментау', 'Есик', 'Есиль', 'Жанаозен', 'Жанатас', 'Жаркент', 'Жезказган', 'Жем', 'Жетысай', 'Житикара', 'Зайсан', 'Зыряновск', 'Капшагай', 'Караганды', 'Кокшетау', 'Костанай', 'Кызылорда', 'Ленгер', 'Лисаковск', 'Макинск', 'Павлодар', 'Петропавловск', 'Риддер', 'Рудный', 'Сатпаев', 'Степногорск', 'Талгар', 'Талдыкорган', 'Тараз', 'Уральск', 'Усть-Каменогорск', 'Хромтау', 'Шемонаиха', 'Шымкент', 'Щучинск', 'Экибастуз']
         char = ''
+        url = '/api/media/test_cities/' + random.choice(['clowdy.png', 'clowdy2.png', 'sunny.png', 'rain.png'])
+        abs_uri = request.build_absolute_uri(url)
         if request.GET.get('char'):
             char = request.GET.get('char')
         data = {
-            'cities': [city for city in cities if city[0].lower() == char.lower() or char == '']
+            'cities': [city for city in cities if city[0].lower() == char.lower() or char == ''],
+            'img': abs_uri
         }
         return Response(data)
 
