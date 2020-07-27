@@ -182,10 +182,18 @@ class ProfileViewSet(viewsets.GenericViewSet,
     def for_update(self, request, pk=None):
         serializer = MerchantProfileForUpdate(request.user.profile, context=request)
         categories = ProjectCategory.objects.all()
-        categories_serializer = ProjectCategorySpecializationSerializer(categories, many=True)
+        categories_json = []
+        for category in categories:
+            if category.specializations.all().count() > 0:
+                for specialization in category.specializations.all():
+                    categories_serializer = ProjectCategorySpecializationSerializer(category, context=specialization)
+                    categories_json.append(categories_serializer.data)
+            else:
+                categories_serializer = ProjectCategorySpecializationSerializer(category, context=None)
+                categories_json.append(categories_serializer.data)
         data = {
             'profile': serializer.data,
-            'categories': categories_serializer.data
+            'categories': categories_json
         }
         return Response(data)
 

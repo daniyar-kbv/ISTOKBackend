@@ -40,16 +40,18 @@ class ProjectCategoryShortSerializer(serializers.ModelSerializer):
 
 
 class ProjectCategorySpecializationSerializer(serializers.ModelSerializer):
-    specializations = serializers.SerializerMethodField()
+    specialization = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectCategory
-        fields = ('id', 'name', 'specializations')
+        fields = ('id', 'name', 'specialization')
 
-    def get_specializations(self, obj):
-        specializations = Specialization.objects.filter(category=obj)
-        serializer = SpecializationSerializer(specializations, many=True)
-        return serializer.data
+    def get_specialization(self, obj):
+        if self.context:
+            specialization = self.context
+            serializer = SpecializationSerializer(specialization)
+            return serializer.data
+        return self.context
 
 
 class ProjectCategorySerializer(serializers.ModelSerializer):

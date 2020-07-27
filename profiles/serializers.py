@@ -6,7 +6,7 @@ from profiles.models import FormAnswer, FormQuestion, FormQuestionGroup, FormUse
     ApplicationDocument, Notification
 from payments.models import PaidFeatureType, UsersPaidFeature, ProjectPaidFeature
 from main.models import ProjectUserFavorite
-from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagSerializer
+from main.serializers import ProjectCategoryShortSerializer, CitySerializer, ProjectTagShortSerializer
 from utils import response, upload, validators, general
 from datetime import datetime
 import constants, os, logging
@@ -234,7 +234,7 @@ class MerchantProfileForUpdate(serializers.ModelSerializer):
     specializations = serializers.SerializerMethodField()
     city = CitySerializer()
     email = serializers.SerializerMethodField()
-    tags = serializers.SerializerMethodField
+    tags = serializers.SerializerMethodField()
     phones = serializers.SerializerMethodField()
     documents = serializers.SerializerMethodField()
 
@@ -252,12 +252,9 @@ class MerchantProfileForUpdate(serializers.ModelSerializer):
         return specializations
 
     def get_tags(self, obj):
-        tags = []
         tag_objects = obj.tags.all()
-        for tag in tag_objects:
-            serializer = SpecializationWithCategorySerializer(tag)
-            tags.append(serializer.data)
-        return tags
+        serializer = ProjectTagShortSerializer(tag_objects, many=True)
+        return serializer.data
 
     def get_email(self, obj):
         return obj.user.email
