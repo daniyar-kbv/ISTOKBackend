@@ -2,6 +2,7 @@ from rest_framework_jwt.compat import get_username_field, get_username
 from rest_framework_jwt.settings import api_settings
 from calendar import timegm
 from datetime import datetime
+from users.models import MerchantPhone
 import uuid, warnings, time
 
 
@@ -29,6 +30,11 @@ def jwt_payload_handler(user):
     if user.profile:
         payload['first_name'] = user.profile.first_name
         payload['last_name'] = user.profile.last_name
+    phones = []
+    for p in MerchantPhone.objects.filter(user=user):
+        phones.append(p.phone)
+    payload['phones'] = phones
+
 
     payload[username_field] = username
 
