@@ -276,8 +276,8 @@ class MerchantProfileForUpdate(serializers.ModelSerializer):
 
 
 class MerchantProfileUpdate(serializers.ModelSerializer):
-    specializations = serializers.ListSerializer(required=False)
-    categories = serializers.ListSerializer(required=False)
+    specializations = serializers.ListField(required=False)
+    categories = serializers.ListField(required=False)
     description_short = serializers.CharField(required=False)
     description_full = serializers.CharField(required=False)
 
