@@ -276,6 +276,11 @@ class MerchantProfileForUpdate(serializers.ModelSerializer):
 
 
 class MerchantProfileUpdate(serializers.ModelSerializer):
+    specializations = serializers.ListSerializer(required=False)
+    categories = serializers.ListSerializer(required=False)
+    description_short = serializers.CharField(required=False)
+    description_full = serializers.CharField(required=False)
+
     class Meta:
         model = MerchantProfile
         fields = ('first_name', 'last_name', 'company_name', 'city', 'address', 'specializations', 'tags',
@@ -343,16 +348,18 @@ class MerchantProfileUpdate(serializers.ModelSerializer):
                     doc.delete()
         for serializer in doc_serializers:
             serializer.save()
-        categories = validated_data.pop('categories')
-        specializations = validated_data.pop('specializations')
+        if validated_data.get('specializations'):
+            specializations = validated_data.pop('specializations')
+            instance.specializations.clear()
+            for specialization in specializations:
+                instance.specializations.add(specialization)
+        if validated_data.get('categories'):
+            categories = validated_data.pop('categories')
+            instance.categories.clear()
+            for category in categories:
+                instance.categories.add(category)
         tags = validated_data.pop('tags')
-        instance.specializations.clear()
-        instance.categories.clear()
         instance.tags.clear()
-        for specialization in specializations:
-            instance.specializations.add(specialization)
-        for category in categories:
-            instance.categories.add(category)
         for tag in tags:
             instance.tags.add(tag)
         instance.first_name = validated_data.get('first_name', instance.first_name)
