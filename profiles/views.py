@@ -86,29 +86,30 @@ class ProfileViewSet(viewsets.GenericViewSet,
                 if request.data.get('delete_documents'):
                     delete_documents = request.data.pop('delete_documents')
                 total_documents = request.data.get('total_documents')
-                if total_documents:
-                    try:
-                        if int(total_documents) > 6:
+                if len(documents) > 0 or len(delete_documents) > 0:
+                    if total_documents:
+                        try:
+                            if int(total_documents) > 6:
+                                logger.error(
+                                    f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 6')
+                                return Response(
+                                    response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 6')]),
+                                    status.HTTP_400_BAD_REQUEST
+                                )
+                        except:
                             logger.error(
-                                f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 6')
+                                f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_RIGHT_ONLY_DIGITS}')
                             return Response(
-                                response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 6')]),
+                                response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
                                 status.HTTP_400_BAD_REQUEST
                             )
-                    except:
+                    else:
                         logger.error(
-                            f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_RIGHT_ONLY_DIGITS}')
+                            f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
                         return Response(
-                            response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
+                            response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
                             status.HTTP_400_BAD_REQUEST
                         )
-                else:
-                    logger.error(
-                        f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
-                    return Response(
-                        response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
-                        status.HTTP_400_BAD_REQUEST
-                    )
                 context = {
                     'phones': phones,
                     'documents': documents,
