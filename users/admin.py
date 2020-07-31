@@ -343,7 +343,7 @@ class MerchantPhoneAdmin(admin.ModelAdmin):
 class MerchantReviewAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'merchant', 'rating', 'text', 'creation_date')
     # filter_horizontal = ('user_likes', )
-    # inlines = [InlineReviewReply]
+    inlines = [InlineReviewReply]
     # readonly_fields = ['user_likes', 'likes_count', 'rating']
     # ordering = ['-creation_date', ]
     # list_filter = [('rating', RangeNumericFilter), 'creation_date', ('likes_count', RangeNumericFilter)]
