@@ -342,15 +342,15 @@ class MerchantPhoneAdmin(admin.ModelAdmin):
 @admin.register(MerchantReview)
 class MerchantReviewAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'merchant', 'rating', 'text', 'creation_date')
-    filter_horizontal = ('user_likes', )
-    inlines = [InlineReviewReply]
-    readonly_fields = ['user_likes', 'likes_count', 'rating']
-    ordering = ['-creation_date', ]
+    # filter_horizontal = ('user_likes', )
+    # inlines = [InlineReviewReply]
+    # readonly_fields = ['user_likes', 'likes_count', 'rating']
+    # ordering = ['-creation_date', ]
     # list_filter = [('rating', RangeNumericFilter), 'creation_date', ('likes_count', RangeNumericFilter)]
-    autocomplete_fields = ['user', 'merchant']
-    formfield_overrides = {
-        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
-    }
+    # autocomplete_fields = ['user', 'merchant']
+    # formfield_overrides = {
+    #     models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    # }
     search_fields = ['text', ]
 
 
