@@ -22,7 +22,7 @@ class InlineReviewDocument(NestedStackedInline):
     extra = 0
 
 
-class InlineReviewReplyDocument(admin.StackedInline):
+class InlineReviewReplyDocument(NestedStackedInline):
     model = ReviewReplyDocument
     extra = 0
 
@@ -340,17 +340,17 @@ class MerchantPhoneAdmin(admin.ModelAdmin):
 
 
 @admin.register(MerchantReview)
-class MerchantReviewAdmin(admin.ModelAdmin):
+class MerchantReviewAdmin(NumericFilterModelAdmin, NestedModelAdmin):
     list_display = ('id', 'user', 'merchant', 'rating', 'text', 'creation_date')
-    # filter_horizontal = ('user_likes', )
-    inlines = [InlineReviewReply]
-    # readonly_fields = ['user_likes', 'likes_count', 'rating']
-    # ordering = ['-creation_date', ]
-    # list_filter = [('rating', RangeNumericFilter), 'creation_date', ('likes_count', RangeNumericFilter)]
-    # autocomplete_fields = ['user', 'merchant']
-    # formfield_overrides = {
-    #     models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
-    # }
+    filter_horizontal = ('user_likes', )
+    inlines = [InlineReviewDocument, InlineReviewComplain, InlineReviewReply]
+    readonly_fields = ['user_likes', 'likes_count', 'rating']
+    ordering = ['-creation_date', ]
+    list_filter = [('rating', RangeNumericFilter), 'creation_date', ('likes_count', RangeNumericFilter)]
+    autocomplete_fields = ['user', 'merchant']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }
     search_fields = ['text', ]
 
 
