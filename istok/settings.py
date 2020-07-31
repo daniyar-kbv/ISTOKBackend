@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django_celery_results',
     'phone_field',
     'corsheaders',
-    # 'admin_reorder',
+    'admin_reorder',
     'nested_inline',
     'admin_numeric_filter',
 
@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'django.middleware.locale.LocaleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'admin_reorder.middleware.ModelAdminReorder',
+    'admin_reorder.middleware.ModelAdminReorder',
 ]
 
 ROOT_URLCONF = 'istok.urls'
@@ -323,64 +323,64 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# ADMIN_REORDER = (
-#     {
-#         'app': 'main',
-#         'label': 'Основной',
-#         'models': (
-#             'main.Project',
-#             'main.ProjectComplain',
-#             'main.CommentComplain',
-#             'main.CommentReplyComplain',
-#             'main.ReviewComplain',
-#             'main.ReviewReplyComplain'
-#         )
-#     },
-#     {
-#         'app': 'users',
-#         'models': (
-#             'users.MainUser',
-#             'users.MerchantReview',
-#             'users.ClientRating',
-#             'users.MerchantPhone'
-#         )
-#     },
-#     {
-#         'app': 'profiles',
-#         'models': (
-#             {'model': 'profiles.FormQuestionGroup', 'label': 'Анкета'},
-#             'profiles.Application',
-#         )
-#     },
-#     {
-#         'app': 'payments',
-#         'models': (
-#             'payments.PaidFeatureType',
-#             'payments.UsersPaidFeature',
-#             'payments.ProjectPaidFeature',
-#             'payments.ProjectLinkedPaidFeatures',
-#             'payments.Transaction'
-#         )
-#     },
-#     {
-#         'app': 'other',
-#         'label': 'Другое',
-#         'models': (
-#             'users.ProjectCategory',
-#             {'model': 'users.ProjectPurposeType', 'label': 'Назначения'},
-#             'users.ProjectType',
-#             'users.ProjectStyle',
-#             {'model': 'users.Country', 'label': 'Города и Страны'},
-#             'other.FAQ'
-#         )
-#     },
-#     {
-#         'app': 'blog',
-#         'models': (
-#             'blog.BlogPostCategory',
-#             'blog.BlogPost',
-#             'blog.MainPageBlogPost'
-#         )
-#     },
-# )
+ADMIN_REORDER = (
+    {
+        'app': 'main',
+        'label': 'Основной',
+        'models': (
+            'main.Project',
+            'main.ProjectComplain',
+            'main.CommentComplain',
+            'main.CommentReplyComplain',
+            'main.ReviewComplain',
+            'main.ReviewReplyComplain'
+        )
+    },
+    {
+        'app': 'users',
+        'models': (
+            'users.MainUser',
+            'users.MerchantReview',
+            'users.ClientRating',
+            'users.MerchantPhone'
+        )
+    },
+    {
+        'app': 'profiles',
+        'models': (
+            {'model': 'profiles.FormQuestionGroup', 'label': 'Анкета'},
+            'profiles.Application',
+        )
+    },
+    {
+        'app': 'payments',
+        'models': (
+            'payments.PaidFeatureType',
+            'payments.UsersPaidFeature',
+            'payments.ProjectPaidFeature',
+            'payments.ProjectLinkedPaidFeatures',
+            'payments.Transaction'
+        )
+    },
+    {
+        'app': 'other',
+        'label': 'Другое',
+        'models': (
+            'users.ProjectCategory',
+            {'model': 'users.ProjectPurposeType', 'label': 'Назначения'},
+            'users.ProjectType',
+            'users.ProjectStyle',
+            {'model': 'users.Country', 'label': 'Города и Страны'},
+            'other.FAQ'
+        )
+    },
+    {
+        'app': 'blog',
+        'models': (
+            'blog.BlogPostCategory',
+            'blog.BlogPost',
+            'blog.MainPageBlogPost'
+        )
+    },
+)
 

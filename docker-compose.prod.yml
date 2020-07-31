@@ -33,7 +33,6 @@ services:
     restart: always
     build: .
     command: sh -c "/wait &&
-      ./manage.py compilemessages --locale=ru &&
       ./manage.py migrate &&
       ./manage.py runserver 0.0.0.0:8990"
     volumes:
