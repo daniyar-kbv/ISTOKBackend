@@ -5,6 +5,7 @@ RUN mkdir /istok/staticfiles
 RUN mkdir /istok/media
 WORKDIR /istok
 ADD requirements.txt /istok/
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 ADD . /istok/
 
