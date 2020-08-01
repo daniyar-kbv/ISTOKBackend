@@ -461,10 +461,10 @@ class ChangeList:
             qs, search_use_distinct = self.model_admin.get_search_results(request, qs, self.query)
 
         # Remove duplicates from results, if necessary
-        if filters_use_distinct | search_use_distinct:
-            return qs.distinct()
-        else:
-            return qs
+        # if filters_use_distinct | search_use_distinct:
+        #     return qs.distinct()
+        # else:
+        return qs
 
     def apply_select_related(self, qs):
         if self.list_select_related is True:
