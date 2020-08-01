@@ -7,7 +7,7 @@ from utils.upload import user_avatar_path, profile_document_path, project_catego
 from utils.validators import validate_file_size, basic_validate_images
 from itertools import chain
 from constants import ROLES, ROLE_CLIENT, ROLE_MERCHANT
-import os
+import os, math
 
 
 class ProjectCategory(models.Model):
@@ -220,6 +220,10 @@ class MainUserManager(BaseUserManager):
                 del filters['o']
             except KeyError:
                 pass
+            try:
+                del filters['p']
+            except KeyError:
+                pass
             for key in filters:
                 attribute = key.split('__')[0]
                 attr_type = type(getattr(MainUser, attribute))
@@ -245,6 +249,13 @@ class MainUserManager(BaseUserManager):
                             operator = num[0]
                         ordering.append(f'{operator}{fields[number-1]}')
                     queryset = queryset.order_by(*ordering)
+            if filters.__contains__('p'):
+                p = filters.pop('p')
+                number = math.floor(queryset.count()/100) + 1
+                if p > number:
+                    queryset = queryset[(p-1)*100:((p-1)*100)+100]
+                else:
+                    queryset = queryset[(p-1)*100:((p-1)*100)+((queryset.count()%100)*100)]
         return queryset, True
 
     def merchant_search(self, arg=None, request=None):
