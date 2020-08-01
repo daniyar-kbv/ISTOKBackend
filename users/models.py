@@ -250,7 +250,7 @@ class MainUserManager(BaseUserManager):
                         ordering.append(f'{operator}{fields[number-1]}')
                     queryset = queryset.order_by(*ordering)
             if filters.__contains__('p'):
-                p = filters.pop('p')
+                p = int(filters.pop('p')[0])
                 number = math.floor(queryset.count()/100) + 1
                 if p > number:
                     queryset = queryset[(p-1)*100:((p-1)*100)+100]
