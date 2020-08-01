@@ -249,13 +249,13 @@ class MainUserManager(BaseUserManager):
                             operator = num[0]
                         ordering.append(f'{operator}{fields[number-1]}')
                     queryset = queryset.order_by(*ordering)
-            if filters.__contains__('p'):
-                p = int(filters.pop('p')[0])
-                number = math.floor(queryset.count()/100) + 1
-                if p > number:
-                    queryset = queryset[(p)*100:((p)*100)+100]
-                else:
-                    queryset = queryset[(p)*100:((p)*100)+((queryset.count()%100)*100)]
+            # if filters.__contains__('p'):
+            #     p = int(filters.pop('p')[0])
+            #     number = math.floor(queryset.count()/100) + 1
+            #     if p > number:
+            #         queryset = queryset[(p)*100:((p)*100)+100]
+            #     else:
+            #         queryset = queryset[(p)*100:((p)*100)+((queryset.count()%100)*100)]
         return queryset, True
 
     def merchant_search(self, arg=None, request=None):
