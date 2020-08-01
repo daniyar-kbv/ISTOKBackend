@@ -102,23 +102,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 class ClientProfileUpdateSerializer(serializers.ModelSerializer):
     date_of_birth = serializers.DateField(format=constants.DATE_FORMAT, required=False)
-    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = ClientProfile
         fields = ('avatar', 'first_name', 'last_name', 'date_of_birth')
-
-    def get_avatar(self, obj):
-        try:
-            profile = obj.client_profile
-        except:
-            try:
-                profile = obj.merchant_profile
-            except:
-                raise serializers.ValidationError(constants.RESPONSE_SERVER_ERROR)
-        if profile.avatar:
-            return self.context.build_absolute_uri(profile.avatar.url)
-        return None
 
     def update(self, instance, validated_data):
         user_data = self.context.get('user_data')
