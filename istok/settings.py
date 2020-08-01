@@ -370,7 +370,7 @@ ADMIN_REORDER = (
             {'model': 'users.ProjectPurposeType', 'label': 'Назначения'},
             'users.ProjectType',
             'users.ProjectStyle',
-            'users.Specialization',
+            'users.Specialization' ,
             {'model': 'users.Country', 'label': 'Города и Страны'},
             'other.FAQ'
         )
