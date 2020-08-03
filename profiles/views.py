@@ -661,7 +661,7 @@ class ApplicationViewSet(viewsets.GenericViewSet,
         data = {
             'confirmed_count': queryset.filter(status=constants.APPLICATION_CONFIRMED).count(),
             'finished_count': queryset.filter(status=constants.APPLICATION_FINISHED_CONFIRMED).count(),
-            'declined_couresponse.missing_fieldnt': queryset.filter(Q(status=constants.APPLICATION_DECLINED_CLIENT) |
+            'declined_count': queryset.filter(Q(status=constants.APPLICATION_DECLINED_CLIENT) |
                                               Q(status=constants.APPLICATION_DECLINED_MERCHANT)).count()
         }
 
