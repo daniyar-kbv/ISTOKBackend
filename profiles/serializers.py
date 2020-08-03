@@ -701,7 +701,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = ('text', 'creation_date', 'read')
+        fields = ('id', 'text', 'creation_date', 'read')
 
 
 
