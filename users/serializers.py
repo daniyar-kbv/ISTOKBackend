@@ -323,7 +323,7 @@ class MerchantMainPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MerchantProfile
-        fields = ('id', 'user_name', 'rating', 'photo', 'avatar', 'specialization_name')
+        fields = ('user_id', 'user_name', 'rating', 'photo', 'avatar', 'specialization_name')
 
     def get_user_name(self, obj):
         return obj.user.get_full_name()
