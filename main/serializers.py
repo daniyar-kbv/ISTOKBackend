@@ -448,11 +448,15 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             for doc in documents:
                 if doc.name.find('"') != -1:
                     doc.name = doc.name.replace('"', '')
+                print('Точка 1:')
+                print(doc.name)
                 doc_data = {
                     'project': project.id,
                     'document': doc
                 }
                 serializer = ProjectDocumentSerializer(data=doc_data)
+                print('Точка 2:')
+                print(doc_data)
                 if serializer.is_valid():
                     doc_objects.append(serializer.save())
                 else:

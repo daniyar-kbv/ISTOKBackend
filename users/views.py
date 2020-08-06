@@ -229,9 +229,9 @@ class UserViewSet(viewsets.GenericViewSet,
             activation.is_active = False
             logger.info(f'Email verification ({email}): success')
             if activation.role == constants.ROLE_CLIENT:
-                return redirect(f'http://localhost:3000/registration-users?email={email}')
+                return redirect(f'http://istokhome.com/registration-users?email={email}')
             elif activation.role == constants.ROLE_MERCHANT:
-                return redirect(f'http://localhost:3000/registration-specials?email={email}')
+                return redirect(f'http://istokhome.com/registration-specials?email={email}')
         logger.error(f'Email verification ({email}): failed')
         return redirect(f'https://istokhome.com/registration-specials?role={activation.role}&email={email}')
 

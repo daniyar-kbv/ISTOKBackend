@@ -47,6 +47,8 @@ def project_document_saved(sender, instance, created=True, **kwargs):
         watermark = Image.open(path_watermark)
         path_base_image = instance.document.path
         base_image = Image.open(path_base_image)
+        print('Точка 3:')
+        print(base_image)
         if base_image.size[0]//3 < watermark.size[0] or base_image.size[1]//4 < watermark.size[1]:
             size = (base_image.size[0]//2, base_image.size[1]//3)
             watermark.thumbnail(size)
