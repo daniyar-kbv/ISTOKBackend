@@ -446,6 +446,8 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         doc_objects = []
         if documents:
             for doc in documents:
+                if doc.name.find('"') != -1:
+                    doc.name = doc.name.replace('"', '')
                 doc_data = {
                     'project': project.id,
                     'document': doc

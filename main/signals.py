@@ -4,6 +4,8 @@ from main.models import Project, ProjectDocument, Render360, ProjectComment, Pro
     ProjectCommentDocument, ProjectCommentReplyDocument
 from profiles.models import Notification
 from utils import upload
+from PIL import Image, ImageEnhance
+from django.conf import settings
 
 
 @receiver(pre_delete, sender=Project)
@@ -38,5 +40,21 @@ def project_comment_reply_deleted(sender, instance, created=True, **kwargs):
     if doc:
         upload.delete_folder(doc.document)
 
-
-
+@receiver(post_save, sender=ProjectDocument)
+def project_document_saved(sender, instance, created=True, **kwargs):
+    if created:
+        path_watermark = settings.MEDIA_ROOT + '/watermark/watermark.png'
+        watermark = Image.open(path_watermark)
+        path_base_image = instance.document.path
+        base_image = Image.open(path_base_image)
+        if base_image.size[0]//3 < watermark.size[0] or base_image.size[1]//4 < watermark.size[1]:
+            size = (base_image.size[0]//2, base_image.size[1]//3)
+            watermark.thumbnail(size)
+        watermark = watermark.convert('RGBA')
+        watermark = watermark.copy()
+        alpha = watermark.split()[3]
+        alpha = ImageEnhance.Brightness(alpha).enhance(1)
+        watermark.putalpha(alpha)
+        layer = Image.new('RGBA', base_image.size, (0, 0, 0, 0))
+        layer.paste(watermark, ((base_image.size[0]-watermark.size[0])//2, (base_image.size[1]-watermark.size[1])//2))
+        Image.composite(layer, base_image, layer).save(path_base_image)

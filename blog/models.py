@@ -24,10 +24,10 @@ class BlogPostManager(models.Manager):
         else:
             queryset = self.all()
         if request:
-            if request.data.get('categories'):
-                queryset = queryset.filter(category_id__in=request.data.get('categories'))
+            if request.GET.get('categories'):
+                queryset = queryset.filter(category_id__in=request.GET.get('categories'))
             queryset = queryset.order_by(
-                request.data.get('order_by') if request.data.get('order_by') else '-creation_date')
+                request.GET.get('order_by') if request.GET.get('order_by') else '-creation_date')
         return queryset.distinct()
 
 
