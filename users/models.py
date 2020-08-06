@@ -264,21 +264,21 @@ class MainUserManager(BaseUserManager):
                                 Q(merchant_profile__description_full__icontains=arg) |
                                 Q(merchant_profile__description_short__icontains=arg))
         if request:
-            if request.data.get('cities'):
-                queryset = queryset.filter(merchant_profile__city_id__in=request.data.get('cities'))
-            if request.data.get('categories'):
-                queryset = queryset.filter(merchant_profile__categories__in=request.data.get('categories'))
-            if request.data.get('specializations'):
-                queryset = queryset.filter(merchant_profile__specializations__in=request.data.get('specializations'))
-            if request.data.get('tags'):
-                queryset = queryset.filter(merchant_profile__tags__in=request.data.get('tags'))
-            if request.data.get('area_from') and request.data.get('area_to'):
-                queryset = queryset.filter(Q(area__gte=request.data.get('area_from')) &
-                                           Q(area__lte=request.data.get('area_to')))
-            if request.data.get('price_from') and request.data.get('price_to'):
-                queryset = queryset.filter(Q(price__gte=request.data.get('price_from')) &
-                                           Q(price__lte=request.data.get('price_to')))
-            queryset = queryset.order_by(request.data.get('order_by') if request.data.get('order_by') else '-merchant_profile__rating')
+            if request.GET.get('cities'):
+                queryset = queryset.filter(merchant_profile__city_id__in=request.GET.get('cities'))
+            if request.GET.get('categories'):
+                queryset = queryset.filter(merchant_profile__categories__in=request.GET.get('categories'))
+            if request.GET.get('specializations'):
+                queryset = queryset.filter(merchant_profile__specializations__in=request.GET.get('specializations'))
+            if request.GET.get('tags'):
+                queryset = queryset.filter(merchant_profile__tags__in=request.GET.get('tags'))
+            if request.GET.get('area_from') and request.GET.get('area_to'):
+                queryset = queryset.filter(Q(area__gte=request.GET.get('area_from')) &
+                                           Q(area__lte=request.GET.get('area_to')))
+            if request.GET.get('price_from') and request.GET.get('price_to'):
+                queryset = queryset.filter(Q(price__gte=request.GET.get('price_from')) &
+                                           Q(price__lte=request.GET.get('price_to')))
+            queryset = queryset.order_by(request.GET.get('order_by') if request.GET.get('order_by') else '-merchant_profile__rating')
         return queryset.distinct()
 
 

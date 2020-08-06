@@ -19,25 +19,25 @@ class ProjectManager(models.Manager):
         else:
             queryset = self.all()
         if request:
-            if request.data.get('cities'):
-                queryset = queryset.filter(user__merchant_profile__city_id__in=request.data.get('cities'))
-            if request.data.get('categories'):
-                queryset = queryset.filter(category_id__in=request.data.get('categories'))
-            if request.data.get('types'):
-                queryset = queryset.filter(type_id__in=request.data.get('types'))
-            if request.data.get('purposes'):
-                queryset = queryset.filter(purpose_id__in=request.data.get('purposes'))
-            if request.data.get('styles'):
-                queryset = queryset.filter(style_id__in=request.data.get('styles'))
-            if request.data.get('area_from'):
-                queryset = queryset.filter(area_from__gte=request.data.get('area_from'))
-            if request.data.get('area_to'):
-                queryset = queryset.filter(area_to__lte=request.data.get('area_to'))
-            if request.data.get('price_from'):
-                queryset = queryset.filter(price_from__gte=request.data.get('price_from'))
-            if request.data.get('price_to'):
-                queryset = queryset.filter(price_to__lte=request.data.get('price_to'))
-            queryset = queryset.order_by(request.data.get('order_by') if request.data.get('order_by') else '-creation_date')
+            if request.GET.get('cities'):
+                queryset = queryset.filter(user__merchant_profile__city_id__in=request.GET.get('cities'))
+            if request.GET.get('categories'):
+                queryset = queryset.filter(category_id__in=request.GET.get('categories'))
+            if request.GET.get('types'):
+                queryset = queryset.filter(type_id__in=request.GET.get('types'))
+            if request.GET.get('purposes'):
+                queryset = queryset.filter(purpose_id__in=request.GET.get('purposes'))
+            if request.GET.get('styles'):
+                queryset = queryset.filter(style_id__in=request.GET.get('styles'))
+            if request.GET.get('area_from'):
+                queryset = queryset.filter(area_from__gte=request.GET.get('area_from'))
+            if request.GET.get('area_to'):
+                queryset = queryset.filter(area_to__lte=request.GET.get('area_to'))
+            if request.GET.get('price_from'):
+                queryset = queryset.filter(price_from__gte=request.GET.get('price_from'))
+            if request.GET.get('price_to'):
+                queryset = queryset.filter(price_to__lte=request.GET.get('price_to'))
+            queryset = queryset.order_by(request.GET.get('order_by') if request.GET.get('order_by') else '-creation_date')
         return queryset.distinct()
 
 
