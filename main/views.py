@@ -240,7 +240,7 @@ class ProjectViewSet(viewsets.GenericViewSet,
 
 
 class ProjectsSearch(views.APIView):
-    def get(self, request):
+    def post(self, request):
         search = request.GET.get('search')
         if not search:
             search = ''
@@ -264,7 +264,7 @@ class ProjectsSearch(views.APIView):
 
 
 class MerchantsSearch(views.APIView):
-    def get(self, request):
+    def post(self, request):
         search = request.GET.get('search')
         if not search:
             search = ''
@@ -288,7 +288,7 @@ class MerchantsSearch(views.APIView):
 
 
 class BlogSearch(views.APIView):
-    def get(self, request):
+    def post(self, request):
         search = request.GET.get('search')
         if not search:
             search = ''

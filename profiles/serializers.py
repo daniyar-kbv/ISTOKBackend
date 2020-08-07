@@ -613,6 +613,8 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
                 logger.error(f'Submit application for a project: failed. {constants.RESPONSE_MAX_FILES} 6')
                 raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
+                if doc.name.find('"') != -1:
+                    doc.name = doc.name.replace('"', '')
                 doc_data = {
                     'application': application.id,
                     'document': doc

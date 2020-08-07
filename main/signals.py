@@ -6,6 +6,7 @@ from profiles.models import Notification
 from utils import upload
 from PIL import Image, ImageEnhance
 from django.conf import settings
+import os
 
 
 @receiver(pre_delete, sender=Project)
@@ -42,19 +43,14 @@ def project_comment_reply_deleted(sender, instance, created=True, **kwargs):
 
 @receiver(post_save, sender=ProjectDocument)
 def project_document_saved(sender, instance, created=True, **kwargs):
-    print('Точка 3:')
-    print(instance.document.name)
     if created:
-        path_watermark = settings.MEDIA_ROOT + '/watermark/watermark.png'
+        path_watermark = os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT + '/watermark/watermark.png')
         watermark = Image.open(path_watermark)
-        path_base_image = instance.document.path
-        print('Точка 4:')
-        print(path_base_image)
+        path_base_image = os.path.join(settings.BASE_DIR, instance.document.path)
         base_image = Image.open(path_base_image)
         if base_image.size[0]//3 < watermark.size[0] or base_image.size[1]//4 < watermark.size[1]:
             size = (base_image.size[0]//2, base_image.size[1]//3)
             watermark.thumbnail(size)
-        watermark = watermark.convert('RGBA')
         watermark = watermark.copy()
         alpha = watermark.split()[3]
         alpha = ImageEnhance.Brightness(alpha).enhance(1)

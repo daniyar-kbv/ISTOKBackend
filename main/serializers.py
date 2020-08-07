@@ -448,15 +448,11 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             for doc in documents:
                 if doc.name.find('"') != -1:
                     doc.name = doc.name.replace('"', '')
-                print('Точка 1:')
-                print(doc.name)
                 doc_data = {
                     'project': project.id,
                     'document': doc
                 }
                 serializer = ProjectDocumentSerializer(data=doc_data)
-                print('Точка 2:')
-                print(doc_data)
                 if serializer.is_valid():
                     doc_objects.append(serializer.save())
                 else:
@@ -784,6 +780,8 @@ class ProjectCommentCreateSerializer(serializers.ModelSerializer):
             if len(documents) > 6:
                 raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
+                if doc.name.find('"') != -1:
+                    doc.name = doc.name.replace('"', '')
                 data = {
                     'document': doc,
                     'comment': comment.id
@@ -812,6 +810,8 @@ class ProjectCommentReplyCreateSerializer(serializers.ModelSerializer):
             if len(documents) > 6:
                 raise serializers.ValidationError(f'{constants.RESPONSE_MAX_FILES} 6')
             for doc in documents:
+                if doc.name.find('"') != -1:
+                    doc.name = doc.name.replace('"', '')
                 data = {
                     'document': doc,
                     'reply': reply.id
