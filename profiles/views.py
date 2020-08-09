@@ -574,7 +574,7 @@ class ProfileViewSet(viewsets.GenericViewSet,
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def notifications(self, request, pk=None):
         user = request.user
-        notifications = Notification.objects.filter(user=user)
+        notifications = Notification.objects.filter(user=user).order_by('read')
         paginator = pagination.CustomPagination()
         paginator.page_size = 13
         page = paginator.paginate_queryset(notifications, request)

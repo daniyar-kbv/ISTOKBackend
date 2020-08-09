@@ -122,12 +122,11 @@ class ProjectViewSet(viewsets.GenericViewSet,
         recents_serializer = None
         if not isinstance(request.user, AnonymousUser):
             recents = []
-            views = ProjectView.objects.filter(user=request.user, project=instance).order_by('-creation_date')
+            views = ProjectView.objects.filter(user=request.user).order_by('-creation_date')
             for index, view in enumerate(views):
                 if not recents.__contains__(view.project) and len(recents) < 4 and view.project != instance:
                     recents.append(view.project)
             recents_serializer = ProjectSearchSerializer(recents, many=True, context=request)
-
             ProjectView.objects.create(user=request.user, project=instance)
         data = {
             'project': project_serializer.data,
