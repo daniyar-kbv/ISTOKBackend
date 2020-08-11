@@ -8,11 +8,11 @@ class BlogPostMainPageSerializer(serializers.ModelSerializer):
     user = UserShortSerializer()
     category_name = serializers.SerializerMethodField()
     city_name = serializers.SerializerMethodField()
-    avatar = serializers.SerializerMethodField()
+    photo = serializers.SerializerMethodField()
 
     class Meta:
         model = BlogPost
-        fields = ('id', 'user', 'category_name', 'city_name', 'title', 'avatar')
+        fields = ('id', 'user', 'category_name', 'city_name', 'title', 'photo')
 
     def get_category_name(self, obj):
         return obj.category.name
@@ -20,9 +20,10 @@ class BlogPostMainPageSerializer(serializers.ModelSerializer):
     def get_city_name(self, obj):
         return obj.city.name
 
-    def get_avatar(self, obj):
-        if obj.user.profile.avatar:
-            return self.context.build_absolute_uri(obj.user.profile.avatar.url)
+    def get_photo(self, obj):
+        photo = PostDocument.objects.filter(post=obj).first()
+        if photo:
+            return self.context.build_absolute_uri(photo.document.url)
         return None
 
 

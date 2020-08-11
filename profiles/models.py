@@ -156,7 +156,7 @@ class Notification(models.Model):
                              verbose_name='Пользователь')
     text = models.TextField(null=False, blank=False, verbose_name='Содержание')
     read = models.BooleanField(default=False, blank=False, verbose_name='Прочитано')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=True, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Уведомление'
