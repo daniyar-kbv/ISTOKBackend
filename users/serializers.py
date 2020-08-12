@@ -428,6 +428,7 @@ class UserSearchSerializer(serializers.ModelSerializer):
     specialization_name = serializers.SerializerMethodField()
     projects_count = serializers.SerializerMethodField()
     tags_count = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
     city = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
     price_from_full = serializers.SerializerMethodField()
@@ -437,8 +438,8 @@ class UserSearchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MainUser
-        fields = ('id', 'full_name', 'specialization_name', 'projects_count', 'tags_count', 'city', 'avatar',
-                  'price_from_full', 'description_short', 'rating', 'is_pro')
+        fields = ('id', 'full_name', 'specialization_name', 'projects_count', 'tags_count', 'reviews_count', 'city',
+                  'avatar', 'price_from_full', 'description_short', 'rating', 'is_pro')
 
     def get_full_name(self, obj):
         return obj.get_full_name()
@@ -454,6 +455,11 @@ class UserSearchSerializer(serializers.ModelSerializer):
 
     def get_tags_count(self, obj):
         return obj.merchant_profile.tags.count()
+
+    def get_reviews_count(self, obj):
+        print(obj)
+        reviews = MerchantReview.objects.filter(merchant=obj)
+        return reviews.count()
 
     def get_city(self, obj):
         return obj.merchant_profile.city.name
@@ -489,7 +495,7 @@ class UserTopDetailSerializer(UserSearchSerializer):
         fields = UserSearchSerializer.Meta.fields + ('reviews_count', 'url')
 
     def get_reviews_count(self, obj):
-        return MerchantReview.objects.filter(user=obj).count()
+        return MerchantReview.objects.filter(merchant=obj).count()
 
     def get_url(self, obj):
         try:

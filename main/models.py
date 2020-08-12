@@ -127,6 +127,7 @@ class ProjectDocument(models.Model):
                                 verbose_name='Проект')
     document = models.FileField(upload_to=upload.project_document_path,
                                 validators=[validators.validate_file_size, validators.basic_validate_images],
+                                blank=False,
                                 verbose_name='Документ')
 
     class Meta:
