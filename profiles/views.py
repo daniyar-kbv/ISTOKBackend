@@ -93,21 +93,21 @@ class ProfileViewSet(viewsets.GenericViewSet,
                                 logger.error(
                                     f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 6')
                                 return Response(
-                                    response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 6')]),
+                                    response.make_messages_new([('documents', f'{constants.RESPONSE_MAX_FILES} 6')]),
                                     status.HTTP_400_BAD_REQUEST
                                 )
                         except:
                             logger.error(
                                 f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_RIGHT_ONLY_DIGITS}')
                             return Response(
-                                response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
+                                response.make_messages_new([('documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
                                 status.HTTP_400_BAD_REQUEST
                             )
                     else:
                         logger.error(
                             f'Edit profile by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
                         return Response(
-                            response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
+                            response.make_messages_new([('documents', constants.RESPONSE_FIELD_REQUIRED)]),
                             status.HTTP_400_BAD_REQUEST
                         )
                 context = {
@@ -215,8 +215,14 @@ class ProfileViewSet(viewsets.GenericViewSet,
                     logger.error(
                         f'Create project by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 12')
                     return Response(
-                        response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 12')])
+                        response.make_messages_new([('documents', f'{constants.RESPONSE_MAX_FILES} 12')])
                     )
+            else:
+                logger.error(
+                    f'Create project by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
+                return Response(
+                    response.make_messages_new([('documents', f'{constants.RESPONSE_FIELD_REQUIRED}')])
+                )
             serializer = ProjectCreateSerializer(data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save(user=request.user)
@@ -258,20 +264,20 @@ class ProfileViewSet(viewsets.GenericViewSet,
                         logger.error(
                             f'Edit project ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_MAX_FILES} 12')
                         return Response(
-                            response.make_messages_new([('total_documents', f'{constants.RESPONSE_MAX_FILES} 12')]),
+                            response.make_messages_new([('documents', f'{constants.RESPONSE_MAX_FILES} 12')]),
                             status.HTTP_400_BAD_REQUEST
                         )
                 except:
                     logger.error(
                         f'Edit project ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_RIGHT_ONLY_DIGITS}')
                     return Response(
-                        response.make_messages_new([('total_documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
+                        response.make_messages_new([('documents', constants.RESPONSE_RIGHT_ONLY_DIGITS)]),
                         status.HTTP_400_BAD_REQUEST
                     )
             else:
                 logger.error(
                     f'Edit project ({pk}) by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
-                return Response(response.make_messages_new([('total_documents', constants.RESPONSE_FIELD_REQUIRED)]),
+                return Response(response.make_messages_new([('documents', constants.RESPONSE_FIELD_REQUIRED)]),
                                 status.HTTP_400_BAD_REQUEST)
             context = {
                 'documents': documents,

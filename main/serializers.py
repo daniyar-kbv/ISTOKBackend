@@ -180,7 +180,7 @@ class ProjectMainPageSerializer(serializers.ModelSerializer):
 
     def get_price_from_full(self, obj):
         price = int(obj.price_from) if obj.price_from % math.trunc(obj.price_from) == 0 else obj.price_from
-        return f'от {price} тг/м2'
+        return price
 
 
 class ProjectModalSerializer(serializers.ModelSerializer):
@@ -227,7 +227,7 @@ class ProjectModalSerializer(serializers.ModelSerializer):
 
     def get_price_from_full(self, obj):
         price = int(obj.price_from) if obj.price_from % math.trunc(obj.price_from) == 0 else obj.price_from
-        return f'от {price} тг/м2'
+        return price
 
     def get_price_total_full(self, obj):
         price_from = int(obj.price_from) if obj.price_from % math.trunc(obj.price_from) == 0 else obj.price_from
@@ -318,7 +318,7 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
 
     def get_price_from_full(self, obj):
         price = int(obj.price_from) if obj.price_from % math.trunc(obj.price_from) == 0 else obj.price_from
-        return f'от {price} тг/м2'
+        return price
 
 
 class ProjectDetailListSerializer(ProjectSearchSerializer):

@@ -473,7 +473,7 @@ class UserSearchSerializer(serializers.ModelSerializer):
         try:
             price_from = obj.projects.order_by('price_from').first().price_from
             price = int(price_from) if price_from % math.trunc(price_from) == 0 else price_from
-            return f'от {price} тг/м2'
+            return price
         except:
             return None
 
