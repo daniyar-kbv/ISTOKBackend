@@ -333,7 +333,9 @@ ADMIN_REORDER = (
             'main.CommentComplain',
             'main.CommentReplyComplain',
             'main.ReviewComplain',
-            'main.ReviewReplyComplain'
+            'main.ReviewReplyComplain',
+            'main.Subscriber',
+            'main.Mailing'
         )
     },
     {
@@ -372,9 +374,7 @@ ADMIN_REORDER = (
             'users.ProjectStyle',
             'users.Specialization',
             {'model': 'users.Country', 'label': 'Города и Страны'},
-            'other.FAQ',
-            'other.MailingRecipient',
-            'other.Mailing'
+            'other.FAQ'
         )
     },
     {

@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from users.models import UserActivation, MainUser, ProfileDocument, ProjectCategory, MerchantReview, ClientRating, \
     ReviewDocument, ReviewReply, ReviewReplyDocument, CodeVerification
+from main.models import Subscriber
 from main.tasks import send_email, send_sms
 from utils import emails, upload
 import constants
@@ -17,6 +18,10 @@ def activation_created(sender, instance, created=True, **kwargs):
                                  emails.generate_activation_email(instance.email, request=instance._request),
                                  instance.email)
 
+@receiver(post_save, sender=MainUser)
+def user_post_save(sender, instance, created=True, **kwargs):
+    if created:
+        Subscriber.objects.create(email=instance.email)
 
 @receiver(pre_delete, sender=MainUser)
 def user_pre_delete(sender, instance, created=True, **kwargs):

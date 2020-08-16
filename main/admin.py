@@ -3,7 +3,7 @@ from django.forms import Textarea
 from django.db import models
 from main.models import Project, ProjectDocument, ProjectComment, ProjectView, ProjectCommentReply, \
     ProjectCommentDocument, Render360, ProjectCommentReplyDocument, ProjectComplain, CommentComplain, \
-    CommentReplyComplain
+    CommentReplyComplain, Subscriber, Mailing
 from users.models import MerchantReview
 from profiles.models import Application, ApplicationDocument
 from payments.models import ProjectPaidFeature, Transaction
@@ -175,3 +175,20 @@ class CommentComplainAdmin(ComplainAdmin):
 class CommentReplyComplainAdmin(ComplainAdmin):
     list_display = ComplainAdmin.list_display[:2] + ('reply', ) + ComplainAdmin.list_display[2:]
     autocomplete_fields = ComplainAdmin.autocomplete_fields + ['reply', ]
+
+@admin.register(Subscriber)
+class SubscriberAdmin(admin.ModelAdmin):
+    list_display = ('id', 'email', 'subscription_date')
+    ordering = ['-subscription_date']
+    search_fields = ['email']
+    list_filter = ['subscription_date', 'is_subscribed']
+
+
+@admin.register(Mailing)
+class MailingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'creation_date')
+    search_fields = ['title', 'text', ]
+    list_filter = ['creation_date']
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 5, 'cols': 150})},
+    }

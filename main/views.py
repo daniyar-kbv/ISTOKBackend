@@ -10,12 +10,12 @@ from django.shortcuts import redirect
 from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
 from main.models import Project, ProjectUserFavorite, ProjectView, ProjectComment, ProjectComplain, City, \
-    ProjectCategory, CommentReplyComplain, CommentComplain, ProjectCommentReply
+    ProjectCategory, CommentReplyComplain, CommentComplain, ProjectCommentReply, Subscriber
 from main.serializers import ProjectMainPageSerializer, ServicesMainPageSerialzier, ProjectModalSerializer, \
     ProjectSearchSerializer, ProjectDetailSerializer, ProjectCommentDetailSerializer, ProjectCommentWithReplySerializer, \
     ProjectCommentCreateSerializer, CitySerializer, ProjectCategoryShortSerializer, CountrySerializer, \
     ProjectTypeSerializer, ProjectPurposeTypeFullSerializer, ProjectStyleSerializer, CommentComplainSerializer, \
-    CommentReplyComplainSerializer, ProjectComplainSerializer
+    CommentReplyComplainSerializer, ProjectComplainSerializer, SubscriberSerializer
 from blog.models import MainPageBlogPost, BlogPost
 from blog.serializers import BlogPostMainPageSerializer, BlogPostSearchSerializer
 from users.models import ProjectCategory, MerchantProfile, MerchantReview, MainUser, Specialization, ProjectTag, Country, \
@@ -89,6 +89,23 @@ class MainPageFavorites(views.APIView):
         projects = Project.objects.filter(user_favorites__user=request.user).order_by("-user_favorites__creation_date")
         projects_serializer = ProjectMainPageSerializer(projects, many=True, context=request)
         return Response(projects_serializer.data, status.HTTP_200_OK)
+
+
+class SubscriptionViewSet(viewsets.GenericViewSet,
+                         mixins.ListModelMixin,
+                         mixins.RetrieveModelMixin,
+                         mixins.CreateModelMixin):
+    queryset = Subscriber.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = SubscriberSerializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+        else:
+            return Response(response.make_errors_new(serializer), status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 
 class ProjectViewSet(viewsets.GenericViewSet,

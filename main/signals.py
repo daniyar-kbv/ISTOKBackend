@@ -1,8 +1,9 @@
 from django.db.models.signals import pre_delete, post_save
 from django.dispatch import receiver
 from main.models import Project, ProjectDocument, Render360, ProjectComment, ProjectCommentReply, \
-    ProjectCommentDocument, ProjectCommentReplyDocument
+    ProjectCommentDocument, ProjectCommentReplyDocument, Subscriber, Mailing
 from profiles.models import Notification
+from main.tasks import send_email
 from utils import upload
 from PIL import Image, ImageEnhance
 from django.conf import settings
@@ -58,3 +59,11 @@ def project_comment_reply_deleted(sender, instance, created=True, **kwargs):
         #layer = Image.new('RGBA', base_image.size, (0, 0, 0, 0))
         #layer.paste(watermark, ((base_image.size[0]-watermark.size[0])//2, (base_image.size[1]-watermark.size[1])//2))
         #Image.composite(layer, base_image, layer).save(path_base_image)
+
+
+@receiver(post_save, sender=Mailing)
+def mailing_created(sender, instance, created=True, **kwargs):
+    emails = Subscriber.objects.filter(is_subscribed=True).values_list('email', flat=True)
+    if created:
+        for email in emails:
+            send_email.delay(instance.title, instance.text, email)

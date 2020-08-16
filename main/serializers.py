@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView, ProjectCommentReply, \
     ProjectCommentDocument, Render360, ProjectType, ProjectCommentReplyDocument, CommentComplain, CommentReplyComplain, \
-    ProjectComplain, ReviewComplain, ReviewReplyComplain
+    ProjectComplain, ReviewComplain, ReviewReplyComplain, Subscriber
 from users.models import ProjectCategory, ProjectType, ProjectStyle, ProjectPurpose, ProjectPurposeSubType, ProjectTag, \
     ProjectPurposeType, MerchantProfile, Specialization
 from users.models import Country, City
@@ -860,3 +860,9 @@ class ReviewReplyComplainSerializer(serializers.ModelSerializer):
         model = ReviewReplyComplain
         fields = '__all__'
         read_only_fields = ['user', 'reply']
+
+
+class SubscriberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscriber
+        fields = '__all__'
