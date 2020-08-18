@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework import status
 from django.contrib.auth.models import AnonymousUser
 from main.models import Project, ProjectDocument, ProjectUserFavorite, ProjectComment, ProjectView, ProjectCommentReply, \
     ProjectCommentDocument, Render360, ProjectType, ProjectCommentReplyDocument, CommentComplain, CommentReplyComplain, \
@@ -462,7 +463,8 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(response.make_errors_new(serializer))
         else:
             raise serializers.ValidationError(
-                response.make_messages_new([('project document', constants.RESPONSE_FIELD_REQUIRED)])
+                response.make_messages_new([('project document', constants.RESPONSE_FIELD_REQUIRED)]),
+                status.HTTP_400_BAD_REQUEST
             )
         render = self.context.get('render')
         if render:
