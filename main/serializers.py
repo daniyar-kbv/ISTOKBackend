@@ -460,6 +460,10 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
                     for doc_obj in doc_objects:
                         doc_obj.delete()
                     raise serializers.ValidationError(response.make_errors_new(serializer))
+        else:
+            raise serializers.ValidationError(
+                response.make_messages_new([('project document', constants.RESPONSE_FIELD_REQUIRED)])
+            )
         render = self.context.get('render')
         if render:
             doc_data = {
