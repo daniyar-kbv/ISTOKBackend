@@ -217,12 +217,6 @@ class ProfileViewSet(viewsets.GenericViewSet,
                     return Response(
                         response.make_messages_new([('documents', f'{constants.RESPONSE_MAX_FILES} 12')])
                     )
-            #else:
-                #logger.error(
-                    #f'Create project by user ({request.user.email}): failed. {constants.RESPONSE_FIELD_REQUIRED}')
-                #return Response(
-                    #response.make_messages_new([('documents', f'{constants.RESPONSE_FIELD_REQUIRED}')])
-                #)
             serializer = ProjectCreateSerializer(data=request.data, context=context)
             if serializer.is_valid():
                 serializer.save(user=request.user)

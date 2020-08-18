@@ -100,7 +100,7 @@ class Application(models.Model):
                                  blank=False,
                                  related_name='applications',
                                  verbose_name='Категория')
-    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     project = models.ForeignKey(Project,
                                 on_delete=models.SET_NULL,
                                 null=True,

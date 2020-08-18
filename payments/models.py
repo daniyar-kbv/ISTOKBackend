@@ -127,7 +127,7 @@ class ProjectPaidFeature(PaidFeature):
 
 
 class Transaction(models.Model):
-    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создание')
+    creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     feature_type = models.ForeignKey(PaidFeatureType,
                              on_delete=models.CASCADE,
                              null=True,

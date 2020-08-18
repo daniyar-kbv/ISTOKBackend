@@ -80,7 +80,7 @@ class Project(models.Model):
     description = models.CharField(max_length=1000, null=False, blank=False, verbose_name='Описание')
     is_top = models.BooleanField(default=False, verbose_name='Топ')
     is_detailed = models.BooleanField(default=False, verbose_name='Выделенный')
-    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     rating = models.FloatField(null=False, blank=True, default=0, verbose_name='Рейтинг')
     to_profile_count = models.PositiveSmallIntegerField(null=False, blank=True, default=0,
                                                         verbose_name='Переходы в профиль')
@@ -108,7 +108,7 @@ class ProjectUserFavorite(models.Model):
                                 blank=False,
                                 related_name='user_favorites',
                                 verbose_name='Проект')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=True, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Проект избранное'
@@ -126,8 +126,9 @@ class ProjectDocument(models.Model):
                                 related_name='documents',
                                 verbose_name='Проект')
     document = models.FileField(upload_to=upload.project_document_path,
-                                validators=[validators.validate_file_size, validators.basic_validate_images],
+                                null=False,
                                 blank=False,
+                                validators=[validators.validate_file_size, validators.basic_validate_images],
                                 verbose_name='Документ')
 
     class Meta:
@@ -170,7 +171,7 @@ class ProjectView(models.Model):
                                 blank=False,
                                 related_name='views',
                                 verbose_name='Пользователь')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True)
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=True)
 
     class Meta:
         verbose_name = 'Просмотр проета'
@@ -200,7 +201,7 @@ class ProjectComment(models.Model):
     likes_count = models.IntegerField(default=0, null=False, blank=True, verbose_name='Количество лайков')
     rating = models.FloatField(null=False, blank=True, default=0, verbose_name='Рейтинг')
     text = models.CharField(max_length=1000, blank=False, null=False, verbose_name='Основной текст')
-    creation_date = models.DateTimeField(auto_now=True, null=True, blank=True, verbose_name='Дата')
+    creation_date = models.DateTimeField(auto_now_add=True, null=True, blank=True, verbose_name='Дата')
 
     class Meta:
         verbose_name = 'Комментарий проекта'
@@ -224,7 +225,7 @@ class ProjectCommentReply(models.Model):
                                    related_name='reply',
                                    verbose_name='Комментарий')
     text = models.CharField(max_length=1000, blank=False, null=False, verbose_name='Основной текст')
-    creation_date = models.DateTimeField(auto_now=True, null=True, blank=True)
+    creation_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     user_likes = models.ManyToManyField(MainUser,
                                         blank=True,
                                         related_name='project_comments_reply_likes',
@@ -284,7 +285,7 @@ class Complain(models.Model):
                              blank=False,
                              verbose_name='Пользователь')
     text = models.CharField(max_length=1000, null=False, blank=False, verbose_name='Причина')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата')
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=True, verbose_name='Дата')
     is_active = models.BooleanField(default=True, null=False, blank=True, verbose_name='Активная')
 
     class Meta:

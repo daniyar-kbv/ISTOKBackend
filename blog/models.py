@@ -41,7 +41,7 @@ class BlogPost(models.Model):
                              blank=False,
                              related_name='blog_posts',
                              verbose_name='Создатель')
-    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     user_likes = models.ManyToManyField(MainUser,
                                         blank=True,
                                         related_name='blog_post_likes',

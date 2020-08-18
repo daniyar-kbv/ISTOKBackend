@@ -286,7 +286,7 @@ class MainUser(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
     email = models.EmailField(unique=True, verbose_name='Email')
     role = models.PositiveSmallIntegerField(choices=ROLES, default=ROLE_CLIENT, verbose_name='Роль')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата регистрации')
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=True, verbose_name='Дата регистрации')
 
     is_staff = models.BooleanField(default=False, verbose_name='Админ')
     is_active = models.BooleanField(default=True, verbose_name='Активный')
@@ -480,7 +480,7 @@ class UserActivation(models.Model):
                                 verbose_name='Пользователь')
     email = models.EmailField(null=False, blank=False, verbose_name='Email')
     is_active = models.BooleanField(default=True, null=False, blank=False, verbose_name='Активный')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=True, verbose_name='Дата создания')
     role = models.PositiveSmallIntegerField(choices=ROLES, default=ROLE_CLIENT, verbose_name='Роль')
     name = models.CharField(max_length=100, null=True, blank=True, verbose_name='Имя')
 
@@ -522,7 +522,7 @@ class CodeVerification(models.Model):
                                  related_name='verification',
                                  verbose_name='Номер телефона')
     code = models.CharField(max_length=4, null=False, blank=False, verbose_name='Код')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=False, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=False, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Подтпреждение номера телефона'
@@ -554,11 +554,11 @@ class MerchantReview(models.Model):
                                null=False,
                                blank=True,
                                verbose_name='Рейтинг')
-    text = models.CharField(max_length=500,
+    text = models.CharField(max_length=1000,
                             null=False,
                             blank=False,
                             verbose_name='Основной текст')
-    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Отзыв'
@@ -605,7 +605,7 @@ class ReviewReply(models.Model):
                                         blank=True,
                                         related_name='reply_likes',
                                         verbose_name='Лайки')
-    creation_date = models.DateTimeField(auto_now=True, null=False, blank=False)
+    creation_date = models.DateTimeField(auto_now_add=True, null=False, blank=False)
     likes_count = models.IntegerField(default=0, null=False, blank=True, verbose_name='Количество лайков')
 
     class Meta:
@@ -649,7 +649,7 @@ class ClientRating(models.Model):
                                related_name='client_ratings',
                                verbose_name='Клиент')
     rating = models.FloatField(null=False, blank=False, default=0, verbose_name='Рейтинг')
-    creation_date = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+    creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
     class Meta:
         verbose_name = 'Рейтинг клиента'
