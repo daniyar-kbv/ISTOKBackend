@@ -46,7 +46,7 @@ class ChangeListSearchForm(forms.Form):
         }
 
 
-class ChangeList:
+class xChangeList:
     search_form_class = ChangeListSearchForm
 
     def __init__(self, request, model, list_display, list_display_links,
