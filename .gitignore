@@ -99,3 +99,4 @@ docker-compose.dev.yml
 nginx/
 
 media/
+.env.*
